@@ -1,0 +1,100 @@
+{
+  "theme": "dark",
+  "archetype": "5 (Luxury)",
+  "emotional_tone": "Premium, Artisanal, Cinematic, Exclusive",
+  "typography": {
+    "fonts": {
+      "heading": "Cormorant Garamond, serif",
+      "body": "Outfit, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none font-light",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight leading-snug font-normal",
+      "h3": "text-xl sm:text-2xl tracking-tight font-medium",
+      "body": "text-base leading-relaxed text-gray-300",
+      "label": "text-xs tracking-[0.2em] uppercase text-gray-400 font-semibold"
+    },
+    "custom_rules": "Avoid using regular sans-serif for massive hero text. Use Cormorant Garamond for cinematic impact. Always apply tracking-tight to headings."
+  },
+  "colors": {
+    "background": "#0A0A0A",
+    "surface": "#141414",
+    "surface_elevated": "#1A1A1A",
+    "primary": "#D4AF37",
+    "primary_hover": "#E5C365",
+    "primary_active": "#C9A44A",
+    "text_primary": "#F7F7F7",
+    "text_secondary": "#A1A1AA",
+    "text_accent": "#D4AF37",
+    "border": "rgba(255, 255, 255, 0.08)",
+    "border_gold": "rgba(212, 175, 55, 0.3)",
+    "glass": "rgba(255, 255, 255, 0.03)",
+    "glow": "rgba(201, 164, 74, 0.25)"
+  },
+  "surfaces_and_materials": {
+    "glassmorphism": "backdrop-blur-xl bg-white/[0.03] border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+    "premium_card": "bg-[#141414] border border-white/[0.05] shadow-lg",
+    "gold_glow": "shadow-[0_0_30px_rgba(201,164,74,0.25)]",
+    "tracing_beam_active": "border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+  },
+  "layout_and_spacing": {
+    "philosophy": "Generous Spacing, Mobile-first, Asymmetrical touches for marketing sections.",
+    "container_padding": "p-6 md:p-10",
+    "grids": {
+      "marketing": "grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8 to gap-12",
+      "dashboard_calculators": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
+    }
+  },
+  "motion_and_interaction": {
+    "hover_states": "Soft lift (-translate-y-1), increased gold glow, border color transition to primary.",
+    "page_transitions": "Framer motion fade in and slide up (y: 20, opacity: 0 -> y: 0, opacity: 1).",
+    "fluid_shader": "Use react-three-fiber or WebGL liquid distortion for the hero background or palette visualizer to simulate organic resin waves.",
+    "rules": "Avoid bouncy animations. Use smooth, easing transitions suitable for luxury (ease: [0.22, 1, 0.36, 1])."
+  },
+  "components_strategy": {
+    "navigation": "Crystal glassmorphism sticky header (z-50). Visible links on desktop.",
+    "buttons": {
+      "primary": "bg-[#D4AF37] text-black hover:bg-[#E5C365] transition-colors font-medium rounded-sm px-6 py-3",
+      "outline": "border border-[#D4AF37]/50 text-[#D4AF37] hover:bg-[#D4AF37]/10 rounded-sm px-6 py-3"
+    },
+    "cards": "Cardless or sharp rectangular edges (rounded-sm max 4px). Avoid heavy Vercel-like rounded borders.",
+    "forms": "Shadcn based but customized to dark luxury: bg-[#1A1A1A] border-white/10 text-white focus:border-[#D4AF37] focus:ring-[#D4AF37]/20."
+  },
+  "icons_and_assets": {
+    "library": "lucide-react",
+    "style": "Thin, minimalist strokes."
+  },
+  "image_urls": [
+    {
+      "url": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/85037f386f3c11bcbef00a23d72dd4714fccca1c20bc8bf141bab79348b3aa42.png",
+      "category": "hero_background",
+      "description": "Cinematic macro photography of dark luxury liquid epoxy resin, glowing golden swirls mixing with deep black."
+    },
+    {
+      "url": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/8893dddb4a4aac3825178ef63fb561d03bf9657d31147ff1186f4f936a86c88a.png",
+      "category": "mockup_clock",
+      "description": "Elegant epoxy resin wall clock, black and gold resin art."
+    },
+    {
+      "url": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/7b2d1ab81e6fd84987bce59f1a7c322fdd889a3b38785c1a0285fbbe2e417bfd.png",
+      "category": "mockup_tray",
+      "description": "Luxury epoxy resin serving tray, black marble and gold flakes."
+    },
+    {
+      "url": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/558457381e345cb3c1c6c3d72bdad5af5a5268bc28780fa0de83d250e614c681.png",
+      "category": "mockup_geode",
+      "description": "Elegant epoxy resin geode art piece, deep black and sparkling gold crystals."
+    }
+  ],
+  "instructions_to_main_agent": [
+    "Rebuild the application using React and Tailwind CSS in a modular way.",
+    "Implement the 'Dark Luxury' theme. Do NOT use generic purple or standard SaaS blue. Rely on #0A0A0A base, #141414 surface, and #D4AF37 gold accents.",
+    "Use Framer Motion for premium hover effects, transitions, and cinematic reveals. Add a soft glow effect (`shadow-[0_0_30px_rgba(201,164,74,0.25)]`) to active or premium elements.",
+    "Implement real piece preview functionality using the provided mockup images (clock, tray, geode).",
+    "Integrate a fluid shader or animated liquid background in the Hero and Visualizer sections, simulating organic resin flow.",
+    "Ensure the UI layout uses generous spacing and sharp, high-end rectangular aesthetics (avoid overly rounded 'bubbly' cards).",
+    "Make sure forms and calculators (proportions, pricing) use customized Shadcn components matching the luxury dark theme.",
+    "Ensure mobile responsiveness with full-width cards and accessible, larger buttons."
+  ]
+}
