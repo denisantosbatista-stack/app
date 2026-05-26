@@ -43,7 +43,7 @@ export function isDark(hex) {
 }
 
 export function copyToClipboard(text) {
-  const useFallback = () => {
+  const fallbackCopy = () => {
     try {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -59,7 +59,7 @@ export function copyToClipboard(text) {
     }
   };
   if (navigator.clipboard && window.isSecureContext) {
-    return navigator.clipboard.writeText(text).catch(useFallback);
+    return navigator.clipboard.writeText(text).catch(fallbackCopy);
   }
-  return useFallback();
+  return fallbackCopy();
 }
