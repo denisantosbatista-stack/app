@@ -143,7 +143,9 @@ function useToast() {
         listeners.splice(index, 1)
       }
     };
-  }, [state])
+    // setState/listeners are module-level stable refs; intentional [] dep
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return {
     ...state,

@@ -14,10 +14,10 @@ export default function Home() {
       {/* Marquee de inspiração */}
       <div className="overflow-hidden border-y border-white/[0.04] py-6 bg-ink-surface/50">
         <div className="flex gap-10 animate-marquee whitespace-nowrap text-zinc-500 text-xs tracking-[0.32em] uppercase">
-          {[...Array(2)].map((_, k) => (
-            <div key={k} className="flex gap-10">
+          {["a", "b"].map((rep) => (
+            <div key={`marquee-${rep}`} className="flex gap-10">
               {["Resina Premium", "✦", "Paletas IA", "✦", "Geodos & Mármore", "✦", "Joalheria Artesanal", "✦", "Dourado Eterno", "✦", "Visualizador Líquido", "✦"].map((t, i) => (
-                <span key={i} className={i % 2 === 0 ? "text-zinc-300" : "text-gold"}>
+                <span key={`${rep}-${i}-${t}`} className={i % 2 === 0 ? "text-zinc-300" : "text-gold"}>
                   {t}
                 </span>
               ))}

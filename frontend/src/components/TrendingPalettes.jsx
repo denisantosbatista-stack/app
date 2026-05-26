@@ -50,9 +50,9 @@ export default function TrendingPalettes() {
               data-testid={`trending-card-${p.id}`}
             >
               <div className="flex h-32">
-                {p.colors.map((c, j) => (
+                {p.colors.map((c) => (
                   <div
-                    key={j}
+                    key={`${p.id}-${c.hex}-${c.role}`}
                     style={{ background: c.hex }}
                     className="flex-1 relative transition-all duration-500 group-hover:flex-[1.2]"
                   >

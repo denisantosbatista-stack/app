@@ -33,13 +33,13 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
       data-testid={`palette-card-${palette.id}`}
     >
       <div className="flex h-20">
-        {palette.colors.map((c, i) => (
+        {palette.colors.map((c) => (
           <div
-            key={i}
+            key={`${palette.id}-${c.hex}-${c.role}`}
             onClick={(e) => handleCopyHex(e, c.hex)}
             className="flex-1 relative cursor-copy transition-all duration-300 hover:flex-[1.4] group/swatch"
             style={{ backgroundColor: c.hex }}
-            data-testid={`swatch-${palette.id}-${i}`}
+            data-testid={`swatch-${palette.id}-${c.role}`}
           >
             <span
               className={`absolute inset-0 flex items-center justify-center text-[10px] font-mono opacity-0 group-hover/swatch:opacity-100 transition-opacity ${

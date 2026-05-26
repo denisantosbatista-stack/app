@@ -35,9 +35,9 @@ export default function Hero() {
 
       {/* Floating particles */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {[...Array(14)].map((_, i) => (
+        {Array.from({ length: 14 }, (_, i) => `p-${i}`).map((id, i) => (
           <motion.div
-            key={i}
+            key={id}
             className="absolute w-1 h-1 rounded-full bg-gold/60"
             style={{
               left: `${(i * 37) % 100}%`,
@@ -131,8 +131,8 @@ export default function Hero() {
               { v: "12+", l: "Paletas premium" },
               { v: "10", l: "Estilos artísticos" },
               { v: "∞", l: "Combinações IA" },
-            ].map((s, i) => (
-              <div key={i} className="border-l border-gold/20 pl-3">
+            ].map((s) => (
+              <div key={s.l} className="border-l border-gold/20 pl-3">
                 <div className="font-display text-3xl gold-text">{s.v}</div>
                 <div className="text-[10px] tracking-[0.2em] uppercase text-zinc-400 mt-1">
                   {s.l}

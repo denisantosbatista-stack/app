@@ -95,7 +95,7 @@ class TestPaletteCRUD:
         data = r.json()
         assert isinstance(data, list)
         for p in data:
-            assert p["favorite"] is True
+            assert p["favorite"] == True  # noqa: E712
 
     def test_patch_palette_favorite_and_tags(self, session):
         pid = TestPaletteCRUD.created_ids[0]
@@ -107,7 +107,7 @@ class TestPaletteCRUD:
         assert r.status_code == 200, r.text
         data = r.json()
         assert data["id"] == pid
-        assert data["favorite"] is True
+        assert data["favorite"] == True  # noqa: E712
         assert "premium" in data["tags"]
         assert "_id" not in data
 
@@ -136,7 +136,7 @@ class TestPaletteCRUD:
         r = session.delete(f"{API}/palettes/{pid}", timeout=15)
         assert r.status_code == 200
         body = r.json()
-        assert body.get("deleted") is True
+        assert body.get("deleted") == True  # noqa: E712
         assert body.get("id") == pid
 
         # Verify removal from list

@@ -113,6 +113,8 @@ export default function ResinVisualizer({ palette, animated = true, size = 480, 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
+    // All other deps are derived from `palette` and locals inside the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [palette, animated, size, intensity, dpr]);
 
   return (
