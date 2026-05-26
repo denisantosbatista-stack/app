@@ -1,52 +1,37 @@
+import { Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
-import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+import Navbar from "@/components/Navbar";
+import MobileNav from "@/components/MobileNav";
+import Home from "@/pages/Home";
+import Studio from "@/pages/Studio";
+import Library from "@/pages/Library";
+import Calculator from "@/pages/Calculator";
+import Tips from "@/pages/Tips";
+import { usePaletteStore } from "@/store/usePaletteStore";
 
 function App() {
+  const loadSaved = usePaletteStore((s) => s.loadSaved);
+
+  useEffect(() => {
+    loadSaved();
+  }, [loadSaved]);
+
   return (
-    <div className="App">
-      <BrowserRouter>
+    <div className="min-h-screen bg-ink text-white relative overflow-x-hidden" data-testid="app-root">
+      <Navbar />
+      <main className="pb-24 md:pb-8">
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/" element={<Home />} />
+          <Route path="/studio" element={<Studio />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/calculator" element={<Calculator />} />
+          <Route path="/tips" element={<Tips />} />
         </Routes>
-      </BrowserRouter>
+      </main>
+      <MobileNav />
+      <footer className="border-t border-white/[0.06] py-10 px-6 text-center text-xs tracking-[0.2em] uppercase text-zinc-500">
+        LindArt · Studio de Resina Premium · © 2026
+      </footer>
     </div>
   );
 }
