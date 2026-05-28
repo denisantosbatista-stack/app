@@ -52,12 +52,12 @@ src/
 ### P1
 - [x] Comparador A vs B de paletas (lado a lado com diferença perceptual) — entregue v1.2
 - [x] Share via URL com paleta serializada (querystring `?c=hex-hex-...&n=Nome`) — entregue v1.2
-- [ ] Calculadora de precificação (custo material + mão de obra + margem)
+- [x] Calculadora de precificação (custo material + mão de obra + margem) — entregue v1.2
+- [x] Mais mockups (mesa, jóias close-up) + estilos isolados em galeria — 9 mockups disponíveis (v1.1+)
 - [ ] Calculadora de medidas (peças por molde 3D)
-- [ ] Mais mockups (mesa, jóias close-up) + estilos isolados em galeria
 ### P2
 - [ ] Onboarding tour com tooltips (Joyride/Shepherd)
-- [ ] Atalhos de teclado (G = gerar IA, S = salvar, E = exportar)
+- [x] Atalhos de teclado (G = gerar IA, S = salvar, E = exportar, F = favoritar, ? = ajuda) — entregue v1.3
 - [ ] Templates prontos por categoria (joalheria, decoração, mesa, geodo)
 - [ ] Misturador físico de cores em tempo real (mistura perceptual LAB)
 ### P3 (monetização)
@@ -88,3 +88,8 @@ src/
   - Página `/compare` (A vs B): seleção independente de A e B, swap, métricas WCAG (contraste min) + diversidade ΔE perceptual + temperatura, matriz de contraste 4×4 com pares acessíveis (AA/AAA), share individual de cada lado, copy hex inline.
   - Mobile bottom-nav reduzido para 4 itens (Início, Studio, Salvos, A/B) com max-w-[180px] para não colidir com o badge fixo da plataforma; itens Custo/Dicas seguem acessíveis pelo header desktop.
   - Fallback `onError` no `<img>` do `MockupShowcase` (gradiente dourado/preto) para resiliência caso CDN externo falhe.
+- 2026-05-28: v1.3 entregue — Atalhos de teclado + validação E2E
+  - Atalhos globais no Studio: **G** (foca prompt da IA + scroll), **S** (salva paleta ativa), **E** (abre modal de exportar), **F** (favoritar), **?** (toast de ajuda). Ignora quando o foco está em input/textarea/select.
+  - Hint visual com `<kbd>` no header do Studio (data-testid `keyboard-shortcuts-hint`).
+  - testing_agent_v3_fork iteração 4: **8/8 cenários v1.2 PASSED** + 6/6 rotas sem erro de console.
+  - Calculadora de precificação validada (R$ 226.25 → 451.25 com price-hourly de 40 → 100; lucro/margem atualizam dinâmicos).

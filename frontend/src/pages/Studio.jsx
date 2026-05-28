@@ -46,6 +46,46 @@ export default function Studio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Atalhos de teclado: G (gerar), S (salvar), E (exportar), F (favoritar), ? (ajuda)
+  useEffect(() => {
+    const isTypingTarget = (el) => {
+      if (!el) return false;
+      const tag = el.tagName?.toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+    };
+    const handler = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+      const k = e.key.toLowerCase();
+      if (k === "g") {
+        e.preventDefault();
+        const input = document.querySelector('[data-testid="ai-prompt-input"]');
+        if (input) {
+          input.focus();
+          input.scrollIntoView({ behavior: "smooth", block: "center" });
+          toast("Descreva sua paleta e Enter para gerar", { icon: "✨", duration: 2000 });
+        }
+      } else if (k === "s") {
+        e.preventDefault();
+        document.querySelector('[data-testid="save-palette-btn"]')?.click();
+      } else if (k === "e") {
+        e.preventDefault();
+        document.querySelector('[data-testid="export-palette-btn"]')?.click();
+      } else if (k === "f") {
+        e.preventDefault();
+        document.querySelector('[data-testid="fav-palette-btn"]')?.click();
+      } else if (k === "?" || (e.shiftKey && k === "/")) {
+        e.preventDefault();
+        toast(
+          "Atalhos: G gerar · S salvar · E exportar · F favoritar",
+          { icon: "⌨️", duration: 4000 }
+        );
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const allPalettes = useMemo(
     () => [
       ...(sharedPalette ? [sharedPalette] : []),
@@ -131,6 +171,17 @@ export default function Studio() {
           Selecione uma paleta, escolha o estilo e veja a magia em peças reais.
           Toque uma cor para copiar o HEX.
         </p>
+        <div
+          className="hidden md:flex items-center gap-2 mt-4 text-[10px] uppercase tracking-[0.18em] text-zinc-500"
+          data-testid="keyboard-shortcuts-hint"
+        >
+          <span className="opacity-70">Atalhos:</span>
+          <Kbd>G</Kbd><span className="opacity-60">gerar</span>
+          <Kbd>S</Kbd><span className="opacity-60">salvar</span>
+          <Kbd>E</Kbd><span className="opacity-60">exportar</span>
+          <Kbd>F</Kbd><span className="opacity-60">favoritar</span>
+          <Kbd>?</Kbd><span className="opacity-60">ajuda</span>
+        </div>
       </motion.div>
 
       <div className="mb-10">
@@ -224,6 +275,14 @@ function HeaderButton({ onClick, icon: Icon, label, testid, primary }) {
     >
       <Icon className="w-3 h-3" /> {label}
     </button>
+  );
+}
+
+function Kbd({ children }) {
+  return (
+    <kbd className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-[3px] border border-black/15 bg-white/70 text-[10px] font-mono font-semibold text-ink-text shadow-[0_1px_0_rgba(0,0,0,0.06)]">
+      {children}
+    </kbd>
   );
 }
 
