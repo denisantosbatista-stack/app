@@ -46,7 +46,7 @@ export default function TrendingPalettes() {
             <Link
               to="/studio"
               state={{ paletteId: p.id }}
-              className="group block bg-ink-surface rounded-sm overflow-hidden border border-white/[0.06] hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
+              className="group block bg-ink-surface rounded-sm overflow-hidden border border-black/[0.06] hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
               data-testid={`trending-card-${p.id}`}
             >
               <div className="flex h-32">
@@ -58,7 +58,7 @@ export default function TrendingPalettes() {
                   >
                     <span
                       className={`absolute inset-x-0 bottom-2 text-center text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity ${
-                        isDark(c.hex) ? "text-white" : "text-black"
+                        isDark(c.hex) ? "text-ink-text" : "text-black"
                       }`}
                     >
                       {c.hex.toUpperCase()}
@@ -69,7 +69,7 @@ export default function TrendingPalettes() {
               <div className="p-4 flex items-center justify-between">
                 <div>
                   <div className="font-display text-lg leading-tight">{p.name}</div>
-                  <div className="text-xs text-zinc-400">{p.description}</div>
+                  <div className="text-xs text-zinc-600">{p.description}</div>
                 </div>
                 <div className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 border border-gold/30 text-gold rounded-sm">
                   {p.style}

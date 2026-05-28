@@ -17,7 +17,7 @@ function App() {
   }, [loadSaved]);
 
   return (
-    <div className="min-h-screen bg-ink text-white relative overflow-x-hidden" data-testid="app-root">
+    <div className="min-h-screen bg-ink text-ink-text relative overflow-x-hidden" data-testid="app-root">
       <Navbar />
       <main className="pb-24 md:pb-8">
         <Routes>
@@ -29,7 +29,7 @@ function App() {
         </Routes>
       </main>
       <MobileNav />
-      <footer className="border-t border-white/[0.06] py-10 px-6 text-center text-xs tracking-[0.2em] uppercase text-zinc-500">
+      <footer className="border-t border-black/[0.06] py-10 px-6 text-center text-xs tracking-[0.2em] uppercase text-ink-muted">
         LindArt · Studio de Resina Premium · © 2026
       </footer>
     </div>

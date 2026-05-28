@@ -54,8 +54,8 @@ const tips = [
 
 const levelColor = {
   Essencial: "text-gold border-gold/40",
-  Pro: "text-zinc-200 border-white/30",
-  Avançado: "text-zinc-400 border-white/20",
+  Pro: "text-zinc-700 border-black/25",
+  Avançado: "text-zinc-600 border-black/15",
   Crítico: "text-red-300 border-red-500/40",
 };
 
@@ -72,7 +72,7 @@ export default function Tips() {
         <h1 className="font-display text-4xl md:text-6xl tracking-tight leading-none">
           Maestria em <span className="italic gold-shimmer">resina epóxi</span>
         </h1>
-        <p className="text-zinc-400 mt-3 max-w-xl">
+        <p className="text-zinc-600 mt-3 max-w-xl">
           Princípios e dicas pro nível de joalheria, do preparo ao polimento.
         </p>
       </motion.div>
@@ -98,7 +98,7 @@ export default function Tips() {
               </span>
             </div>
             <h3 className="font-display text-xl mb-2 tracking-tight">{t.title}</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed">{t.desc}</p>
+            <p className="text-zinc-600 text-sm leading-relaxed">{t.desc}</p>
           </motion.div>
         ))}
       </div>

@@ -11,7 +11,7 @@ export default function LibraryEmpty() {
     >
       <Inbox className="w-10 h-10 text-gold/60 mx-auto mb-4" />
       <h3 className="font-display text-2xl mb-2">Sua biblioteca está vazia</h3>
-      <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
+      <p className="text-zinc-600 mb-6 max-w-md mx-auto text-sm">
         Crie ou gere paletas com IA, depois salve-as aqui para acessar a qualquer momento.
       </p>
       <Link

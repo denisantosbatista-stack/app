@@ -68,7 +68,7 @@ function FilterChip({ id, label, active, onClick }) {
     <button
       onClick={() => onClick(id)}
       className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-[0.18em] whitespace-nowrap transition-all ${
-        active ? "bg-gold text-ink" : "border border-white/10 text-zinc-300 hover:border-gold/40"
+        active ? "bg-gold text-ink" : "border border-black/10 text-zinc-700 hover:border-gold/40"
       }`}
       data-testid={`filter-${id}`}
     >

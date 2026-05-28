@@ -159,29 +159,52 @@ export const PRESET_PALETTES = [
 ];
 
 export const STYLES = [
-  { id: "geodo", label: "Geodo", description: "Cristais + bordas brutas" },
-  { id: "marmore", label: "Mármore", description: "Veios fluidos" },
-  { id: "oceano", label: "Oceano", description: "Ondas líquidas" },
-  { id: "galaxia", label: "Galáxia", description: "Nebulosa + glitter" },
-  { id: "floral", label: "Floral", description: "Suave + orgânico" },
-  { id: "metalico", label: "Metálico", description: "Mica + brilho" },
-  { id: "acido", label: "Ácido", description: "Vibrante + neon" },
-  { id: "pastel", label: "Pastel", description: "Delicado + leve" },
-  { id: "boho", label: "Boho", description: "Terroso + natural" },
-  { id: "luxo", label: "Luxo", description: "Dourado + profundidade" },
+  // Acabamentos clássicos
+  { id: "geodo", label: "Geodo", description: "Cristais + bordas brutas", category: "classico" },
+  { id: "marmore", label: "Mármore", description: "Veios fluidos", category: "classico" },
+  { id: "oceano", label: "Oceano", description: "Ondas líquidas", category: "classico" },
+  { id: "galaxia", label: "Galáxia", description: "Nebulosa + glitter", category: "classico" },
+  { id: "floral", label: "Floral", description: "Suave + orgânico", category: "classico" },
+  { id: "metalico", label: "Metálico", description: "Mica + brilho", category: "classico" },
+  { id: "acido", label: "Ácido", description: "Vibrante + neon", category: "classico" },
+  { id: "pastel", label: "Pastel", description: "Delicado + leve", category: "classico" },
+  { id: "boho", label: "Boho", description: "Terroso + natural", category: "classico" },
+  { id: "luxo", label: "Luxo", description: "Dourado + profundidade", category: "classico" },
+  // Acabamentos de luxo premium (novos)
+  { id: "pave-cristais", label: "Pavé Cristais", description: "Strass embutido · joalheria", category: "luxo", premium: true },
+  { id: "foil-dourado", label: "Foil Dourado", description: "Folha de ouro fragmentada", category: "luxo", premium: true },
+  { id: "holografico", label: "Holográfico", description: "Iridescente · arco-íris suave", category: "luxo", premium: true },
+  { id: "espelhado", label: "Espelhado", description: "Acabamento cromo polido", category: "luxo", premium: true },
+];
+
+export const PIECE_CATEGORIES = [
+  { id: "joalheria", label: "Joalheria" },
+  { id: "mesa", label: "Mesa & Casa" },
+  { id: "decorativo", label: "Decorativo" },
 ];
 
 export const PIECES = [
-  { id: "pingente-gota", label: "Pingente Gota", shape: "drop" },
-  { id: "pingente-geo", label: "Pingente Geo", shape: "hex" },
-  { id: "anel", label: "Anel", shape: "ring" },
-  { id: "brinco-oval", label: "Brinco Oval", shape: "oval" },
-  { id: "bracelete", label: "Bracelete", shape: "bracelet" },
-  { id: "porta-joias", label: "Porta-joias", shape: "tray" },
-  { id: "chaveiro", label: "Chaveiro", shape: "circle" },
-  { id: "coracao", label: "Coração", shape: "heart" },
-  { id: "folha", label: "Folha", shape: "leaf" },
-  { id: "marcador", label: "Marcador", shape: "bookmark" },
+  // Joalheria
+  { id: "pingente-gota", label: "Pingente Gota", shape: "drop", category: "joalheria" },
+  { id: "pingente-geo", label: "Pingente Geo", shape: "hex", category: "joalheria" },
+  { id: "anel", label: "Anel", shape: "ring", category: "joalheria" },
+  { id: "brinco-oval", label: "Brinco Oval", shape: "oval", category: "joalheria" },
+  { id: "bracelete", label: "Bracelete", shape: "bracelet", category: "joalheria" },
+  { id: "lua", label: "Lua Crescente", shape: "moon", category: "joalheria" },
+  { id: "estrela", label: "Estrela", shape: "star", category: "joalheria" },
+  // Decorativo
+  { id: "coracao", label: "Coração", shape: "heart", category: "decorativo" },
+  { id: "folha", label: "Folha", shape: "leaf", category: "decorativo" },
+  { id: "pena", label: "Pena", shape: "feather", category: "decorativo" },
+  { id: "marcador", label: "Marcador", shape: "bookmark", category: "decorativo" },
+  { id: "chaveiro", label: "Chaveiro", shape: "circle", category: "decorativo" },
+  { id: "prisma", label: "Prisma", shape: "prism", category: "decorativo" },
+  { id: "cubo", label: "Cubo", shape: "cube", category: "decorativo" },
+  // Mesa & Casa
+  { id: "porta-joias", label: "Bandeja", shape: "tray", category: "mesa" },
+  { id: "porta-copo", label: "Porta-copo", shape: "coaster", category: "mesa" },
+  { id: "sousplat", label: "Sousplat", shape: "sousplat", category: "mesa" },
+  { id: "luminaria", label: "Luminária", shape: "lamp", category: "mesa" },
 ];
 
 export const MOCKUPS = [
@@ -201,5 +224,22 @@ export const MOCKUPS = [
     url: "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/558457381e345cb3c1c6c3d72bdad5af5a5268bc28780fa0de83d250e614c681.png",
   },
 ];
+
+// Imagens reais associadas às paletas trending (atmospheric backgrounds)
+// Mapeia paleta id → URL de imagem fotorrealista
+export const PALETTE_PHOTOS = {
+  "rose-suave": "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=800&q=80",
+  "geodo-imperial": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/558457381e345cb3c1c6c3d72bdad5af5a5268bc28780fa0de83d250e614c681.png",
+  "lavanda-bruma": "https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=800&q=80",
+  "branco-cristal": "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=800&q=80",
+  "pessego-aurora": "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800&q=80",
+  "menta-pastel": "https://images.unsplash.com/photo-1502810190503-8303352d0dd1?w=800&q=80",
+  "ametista-pastel": "https://images.unsplash.com/photo-1551776235-c89bd961a40c?w=800&q=80",
+  "azul-celeste": "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=800&q=80",
+  "marmore-preto": "https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=800&q=80",
+  "oceano-profundo": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80",
+  "ambar-luxo": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/85037f386f3c11bcbef00a23d72dd4714fccca1c20bc8bf141bab79348b3aa42.png",
+  "galaxia-cosmica": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80",
+};
 
 export const HERO_BG = "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/85037f386f3c11bcbef00a23d72dd4714fccca1c20bc8bf141bab79348b3aa42.png";

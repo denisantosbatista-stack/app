@@ -16,7 +16,7 @@ export default function Navbar() {
       initial={{ y: -30, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="sticky top-0 z-50 glass-strong border-b border-white/[0.06]"
+      className="sticky top-0 z-50 glass-strong border-b border-black/[0.06]"
       data-testid="navbar"
     >
       <div className="max-w-7xl mx-auto px-6 md:px-10 py-4 flex items-center justify-between">
@@ -26,7 +26,7 @@ export default function Navbar() {
           </div>
           <div className="leading-tight">
             <div className="font-display text-xl tracking-tight gold-shimmer">LindArt</div>
-            <div className="text-[10px] tracking-[0.32em] uppercase text-zinc-400 -mt-0.5">
+            <div className="text-[10px] tracking-[0.32em] uppercase text-zinc-600 -mt-0.5">
               Studio Premium
             </div>
           </div>
@@ -40,7 +40,7 @@ export default function Navbar() {
               end={l.end}
               className={({ isActive }) =>
                 `text-sm tracking-wide transition-colors duration-300 relative ${
-                  isActive ? "text-white" : "text-zinc-400 hover:text-white"
+                  isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
                 }`
               }
               data-testid={`nav-link-${l.to.replace("/", "") || "home"}`}

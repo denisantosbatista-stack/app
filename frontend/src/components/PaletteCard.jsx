@@ -28,7 +28,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
       className={`group text-left relative overflow-hidden rounded-sm transition-all duration-500
         ${active
           ? "ring-1 ring-gold shadow-gold bg-ink-elevated"
-          : "ring-1 ring-white/[0.06] bg-ink-surface hover:ring-white/20"
+          : "ring-1 ring-black/[0.06] bg-ink-surface hover:ring-black/20"
         }`}
       data-testid={`palette-card-${palette.id}`}
     >
@@ -43,7 +43,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
           >
             <span
               className={`absolute inset-0 flex items-center justify-center text-[10px] font-mono opacity-0 group-hover/swatch:opacity-100 transition-opacity ${
-                isDark(c.hex) ? "text-white" : "text-black"
+                isDark(c.hex) ? "text-ink-text" : "text-black"
               }`}
             >
               {c.hex.toUpperCase()}
@@ -54,7 +54,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
       <div className="p-3 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="font-display text-base leading-tight truncate">{palette.name}</div>
-          <div className="text-[11px] text-zinc-400 truncate">{palette.description}</div>
+          <div className="text-[11px] text-zinc-600 truncate">{palette.description}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {onFavorite && (
@@ -66,7 +66,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
                 onFavorite(palette);
               }}
               className={`p-1 rounded-sm transition-colors ${
-                favorite ? "text-gold" : "text-zinc-500 hover:text-white"
+                favorite ? "text-gold" : "text-zinc-500 hover:text-ink-text"
               }`}
               data-testid={`fav-btn-${palette.id}`}
             >
@@ -77,7 +77,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
             role="button"
             tabIndex={0}
             onClick={handleShare}
-            className="p-1 rounded-sm text-zinc-500 hover:text-white"
+            className="p-1 rounded-sm text-zinc-500 hover:text-ink-text"
             data-testid={`share-btn-${palette.id}`}
           >
             <Share2 className="w-3.5 h-3.5" />

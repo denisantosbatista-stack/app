@@ -38,7 +38,7 @@ export default function Calculator() {
         <h1 className="font-display text-4xl md:text-6xl tracking-tight leading-none">
           Proporções <span className="italic gold-shimmer">precisas</span>
         </h1>
-        <p className="text-zinc-400 mt-3 max-w-xl">
+        <p className="text-zinc-600 mt-3 max-w-xl">
           Calcule resina, endurecedor e pigmento sem desperdícios. Resultados em volume e peso.
         </p>
       </motion.div>
@@ -65,14 +65,14 @@ export default function Calculator() {
                 onChange={(e) => setVolume(Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="text-sm text-zinc-400 w-12">ml</span>
+              <span className="text-sm text-zinc-600 w-12">ml</span>
             </div>
             <div className="flex flex-wrap gap-1.5 mt-3">
               {presets.map((p) => (
                 <button
                   key={p.label}
                   onClick={() => setVolume(p.volume)}
-                  className="text-[10px] px-2.5 py-1 rounded-sm border border-white/10 text-zinc-300 hover:border-gold/40 uppercase tracking-wider"
+                  className="text-[10px] px-2.5 py-1 rounded-sm border border-black/10 text-zinc-700 hover:border-gold/40 uppercase tracking-wider"
                   data-testid={`calc-preset-${p.label}`}
                 >
                   {p.label} ({p.volume}ml)
@@ -91,7 +91,7 @@ export default function Calculator() {
                   className={`px-3 py-2.5 rounded-sm text-sm transition-all ${
                     ratio === r
                       ? "bg-gold text-ink shadow-gold"
-                      : "border border-white/10 text-zinc-300 hover:border-gold/40"
+                      : "border border-black/10 text-zinc-700 hover:border-gold/40"
                   }`}
                   data-testid={`calc-ratio-${r}`}
                 >
@@ -123,7 +123,7 @@ export default function Calculator() {
                 onChange={(e) => setPigment(Number(e.target.value))}
                 className="flex-1"
               />
-              <span className="text-sm text-zinc-400">%</span>
+              <span className="text-sm text-zinc-600">%</span>
             </div>
             <p className="text-[11px] text-zinc-500 mt-2 flex gap-1.5 items-start">
               <AlertCircle className="w-3 h-3 text-gold mt-0.5 shrink-0" />
@@ -166,7 +166,7 @@ export default function Calculator() {
               testid="result-pigment"
             />
 
-            <div className="pt-4 mt-2 border-t border-white/[0.06] grid grid-cols-2 gap-3">
+            <div className="pt-4 mt-2 border-t border-black/[0.06] grid grid-cols-2 gap-3">
               <Tip title="Tempo de mistura" desc="2-3 min lentos · evite bolhas" />
               <Tip title="Tempo de cura" desc="24-72h dependendo da resina" />
             </div>
@@ -179,17 +179,17 @@ export default function Calculator() {
 
 function ResultRow({ icon: Icon, label, volumeMl, weightG, accent, testid }) {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-sm border border-white/[0.06] bg-ink-surface/50" data-testid={testid}>
+    <div className="flex items-center gap-4 p-4 rounded-sm border border-black/[0.06] bg-ink-surface/50" data-testid={testid}>
       <div className={`w-10 h-10 rounded-sm bg-gradient-to-br ${accent} flex items-center justify-center text-ink`}>
         <Icon className="w-4 h-4" />
       </div>
       <div className="flex-1">
-        <div className="text-xs uppercase tracking-[0.2em] text-zinc-400">{label}</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-zinc-600">{label}</div>
         <div className="font-display text-2xl gold-text mt-0.5">{volumeMl.toFixed(1)} ml</div>
       </div>
       <div className="text-right">
         <div className="text-[10px] uppercase tracking-wider text-zinc-500">Peso</div>
-        <div className="font-mono text-sm text-zinc-200">{weightG.toFixed(1)} g</div>
+        <div className="font-mono text-sm text-zinc-700">{weightG.toFixed(1)} g</div>
       </div>
     </div>
   );
@@ -199,7 +199,7 @@ function Tip({ title, desc }) {
   return (
     <div className="text-xs">
       <div className="text-gold tracking-wider uppercase text-[10px] mb-1">{title}</div>
-      <div className="text-zinc-300">{desc}</div>
+      <div className="text-zinc-700">{desc}</div>
     </div>
   );
 }

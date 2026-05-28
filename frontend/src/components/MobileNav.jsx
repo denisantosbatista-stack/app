@@ -12,7 +12,7 @@ const items = [
 export default function MobileNav() {
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-strong border-t border-white/[0.08] px-3 pt-2 pb-3"
+      className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-strong border-t border-black/[0.08] px-3 pt-2 pb-3"
       data-testid="mobile-nav"
     >
       <ul className="flex justify-between items-center max-w-md mx-auto">
@@ -23,7 +23,7 @@ export default function MobileNav() {
               end={end}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 py-1.5 transition-colors ${
-                  isActive ? "text-gold" : "text-zinc-400 hover:text-white"
+                  isActive ? "text-gold" : "text-zinc-600 hover:text-ink-text"
                 }`
               }
               data-testid={`mobile-nav-${to.replace("/", "") || "home"}`}

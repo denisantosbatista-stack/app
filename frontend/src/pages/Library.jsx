@@ -43,7 +43,7 @@ export default function Library() {
           <h1 className="font-display text-4xl md:text-6xl tracking-tight leading-none">
             Sua coleção <span className="italic gold-shimmer">curada</span>
           </h1>
-          <p className="text-zinc-400 mt-3 max-w-xl">
+          <p className="text-zinc-600 mt-3 max-w-xl">
             Paletas favoritas, criações pessoais e descobertas da IA — tudo sincronizado.
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function Library() {
               className={`text-[11px] px-3 py-2 rounded-sm uppercase tracking-[0.18em] transition-all ${
                 filter === f.id
                   ? "bg-gold text-ink shadow-gold"
-                  : "border border-white/10 text-zinc-300 hover:border-gold/40"
+                  : "border border-black/10 text-zinc-700 hover:border-gold/40"
               }`}
               data-testid={`lib-filter-${f.id}`}
             >

@@ -14,19 +14,20 @@ root.render(
         position="bottom-center"
         toastOptions={{
           style: {
-            background: "rgba(20, 20, 20, 0.92)",
-            color: "#F7F7F7",
-            border: "1px solid rgba(212, 175, 55, 0.3)",
+            background: "rgba(255, 255, 255, 0.95)",
+            color: "#141414",
+            border: "1px solid rgba(184, 149, 74, 0.3)",
             backdropFilter: "blur(20px)",
+            boxShadow: "0 8px 32px rgba(60, 50, 30, 0.12)",
             fontFamily: "Outfit, sans-serif",
             fontSize: "14px",
             letterSpacing: "0.01em",
           },
           success: {
-            iconTheme: { primary: "#D4AF37", secondary: "#0A0A0A" },
+            iconTheme: { primary: "#B8954A", secondary: "#FFFFFF" },
           },
           error: {
-            iconTheme: { primary: "#E25555", secondary: "#0A0A0A" },
+            iconTheme: { primary: "#C04545", secondary: "#FFFFFF" },
           },
         }}
       />

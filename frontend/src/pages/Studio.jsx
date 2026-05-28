@@ -94,7 +94,7 @@ export default function Studio() {
         <h1 className="font-display text-4xl md:text-6xl tracking-tight leading-none">
           Crie. Visualize. <span className="italic gold-shimmer">Exporte.</span>
         </h1>
-        <p className="text-zinc-400 mt-3 max-w-2xl">
+        <p className="text-zinc-600 mt-3 max-w-2xl">
           Selecione uma paleta, escolha o estilo e veja a magia em peças reais.
           Toque uma cor para copiar o HEX.
         </p>
@@ -162,7 +162,7 @@ function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport
         <div>
           <div className="label-eyebrow text-gold">Paleta ativa</div>
           <h3 className="font-display text-3xl tracking-tight mt-1">{palette.name}</h3>
-          <p className="text-zinc-400 text-sm">{palette.description}</p>
+          <p className="text-zinc-600 text-sm">{palette.description}</p>
         </div>
         <div className="flex gap-2">
           <HeaderButton onClick={onSave} icon={Save} label="Salvar" testid="save-palette-btn" />
@@ -201,13 +201,13 @@ function SwatchBlock({ swatch }) {
   return (
     <button
       onClick={handleClick}
-      className="group relative aspect-[3/4] rounded-sm overflow-hidden border border-white/[0.06] hover:border-gold/40 transition-all"
+      className="group relative aspect-[3/4] rounded-sm overflow-hidden border border-black/[0.06] hover:border-gold/40 transition-all"
       style={{ background: swatch.hex }}
       data-testid={`active-swatch-${swatch.role}`}
     >
       <div
         className={`absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-opacity ${
-          dark ? "text-white" : "text-black"
+          dark ? "text-ink-text" : "text-black"
         }`}
       >
         <div className="text-[10px] uppercase tracking-wider opacity-80">{swatch.role}</div>
@@ -215,7 +215,7 @@ function SwatchBlock({ swatch }) {
       </div>
       <div
         className={`absolute top-2 right-2 text-[9px] tracking-[0.2em] uppercase px-1.5 py-0.5 rounded-sm border ${
-          dark ? "border-white/30 text-white/80" : "border-black/30 text-black/70"
+          dark ? "border-black/25 text-ink-text/80" : "border-black/30 text-black/70"
         }`}
       >
         {swatch.role}

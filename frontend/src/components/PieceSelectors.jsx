@@ -16,7 +16,7 @@ export function StyleSelector({ activeStyleId, onChange, activeStyle }) {
             className={`text-[11px] px-3 py-2 rounded-sm uppercase tracking-[0.18em] whitespace-nowrap transition-all ${
               activeStyleId === s.id
                 ? "bg-gold text-ink shadow-gold"
-                : "border border-white/10 text-zinc-300 hover:border-gold/40"
+                : "border border-black/10 text-zinc-700 hover:border-gold/40"
             }`}
             data-testid={`style-${s.id}`}
           >
@@ -40,14 +40,14 @@ export function PieceSelector({ activePieceId, onChange, palette }) {
             className={`flex flex-col items-center gap-1.5 p-2 rounded-sm transition-all ${
               activePieceId === p.id
                 ? "bg-ink-elevated ring-1 ring-gold shadow-gold"
-                : "bg-ink-surface ring-1 ring-white/[0.06] hover:ring-white/20"
+                : "bg-ink-surface ring-1 ring-black/[0.06] hover:ring-black/20"
             }`}
             data-testid={`piece-${p.id}`}
           >
             <div className="w-12 h-12">
               <PieceShape piece={p} palette={palette} size={48} animated={false} />
             </div>
-            <span className="text-[9px] uppercase tracking-wider text-zinc-300">{p.label}</span>
+            <span className="text-[9px] uppercase tracking-wider text-zinc-700">{p.label}</span>
           </button>
         ))}
       </div>

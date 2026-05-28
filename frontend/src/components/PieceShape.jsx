@@ -148,6 +148,113 @@ export default function PieceShape({ piece, palette, size = 320, animated = true
         <path d="M110 140 Q 170 180 210 150" fill="none" stroke={`url(#${veinId})`} strokeWidth="1.4" opacity="0.5" />
       </g>
     ),
+    moon: (
+      <g filter={`url(#${shadowId})`}>
+        <path
+          d="M180 40 A 130 130 0 1 0 180 280 A 95 95 0 1 1 180 40 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.4)}
+          strokeWidth="1"
+        />
+        <path d="M120 100 Q 150 160 110 220" fill="none" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.7" />
+      </g>
+    ),
+    star: (
+      <g filter={`url(#${shadowId})`}>
+        <polygon
+          points="160,30 195,125 295,125 215,185 245,285 160,225 75,285 105,185 25,125 125,125"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <polygon
+          points="160,30 195,125 125,125"
+          fill={`url(#hl-${piece.id})`}
+          opacity="0.5"
+        />
+      </g>
+    ),
+    feather: (
+      <g filter={`url(#${shadowId})`}>
+        <path
+          d="M90 280 Q 130 100 200 50 Q 270 110 240 220 Q 200 250 130 250 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.4)}
+          strokeWidth="1"
+        />
+        <line x1="200" y1="50" x2="90" y2="280" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.6" />
+        {[0.25, 0.4, 0.55, 0.7, 0.85].map((t) => (
+          <line
+            key={t}
+            x1={200 - (200 - 90) * t}
+            y1={50 + (280 - 50) * t}
+            x2={200 - (200 - 90) * t + 60 - t * 40}
+            y2={50 + (280 - 50) * t - 30 + t * 20}
+            stroke={`url(#${veinId})`}
+            strokeWidth="1.2"
+            opacity="0.5"
+          />
+        ))}
+      </g>
+    ),
+    prism: (
+      <g filter={`url(#${shadowId})`}>
+        <polygon
+          points="160,30 280,250 40,250"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <polygon points="160,30 280,250 160,180" fill={accent} opacity="0.35" />
+        <polygon points="160,30 40,250 160,180" fill={`url(#hl-${piece.id})`} opacity="0.4" />
+        <line x1="160" y1="30" x2="160" y2="180" stroke={veins} strokeWidth="1" opacity="0.6" />
+      </g>
+    ),
+    cube: (
+      <g filter={`url(#${shadowId})`}>
+        <polygon
+          points="80,90 160,50 240,90 240,210 160,250 80,210"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <polygon points="80,90 160,50 240,90 160,130" fill={`url(#hl-${piece.id})`} opacity="0.55" />
+        <polygon points="240,90 240,210 160,250 160,130" fill={accent} opacity="0.3" />
+        <line x1="160" y1="130" x2="160" y2="250" stroke={veins} strokeWidth="1" opacity="0.4" />
+      </g>
+    ),
+    coaster: (
+      <g filter={`url(#${shadowId})`}>
+        <circle cx="160" cy="160" r="118" fill={`url(#${gradId})`} stroke={withAlpha(veins, 0.5)} strokeWidth="1.5" />
+        <circle cx="160" cy="160" r="118" fill="none" stroke={accent} strokeWidth="2" opacity="0.6" />
+        <circle cx="160" cy="160" r="100" fill="none" stroke={withAlpha(veins, 0.3)} strokeWidth="0.8" strokeDasharray="2 4" />
+        <path d="M75 130 Q 160 170 245 125" fill="none" stroke={`url(#${veinId})`} strokeWidth="1.6" opacity="0.6" />
+        <path d="M70 195 Q 170 230 250 190" fill="none" stroke={`url(#${veinId})`} strokeWidth="1.2" opacity="0.5" />
+      </g>
+    ),
+    sousplat: (
+      <g filter={`url(#${shadowId})`}>
+        <circle cx="160" cy="160" r="128" fill={accent} opacity="0.3" />
+        <circle cx="160" cy="160" r="118" fill={`url(#${gradId})`} stroke={withAlpha(veins, 0.5)} strokeWidth="1.5" />
+        <circle cx="160" cy="160" r="60" fill={detail} opacity="0.45" stroke={withAlpha(veins, 0.4)} strokeWidth="1" />
+        <path d="M55 145 Q 160 195 265 140" fill="none" stroke={`url(#${veinId})`} strokeWidth="1.5" opacity="0.5" />
+      </g>
+    ),
+    lamp: (
+      <g filter={`url(#${shadowId})`}>
+        <path
+          d="M110 60 L 210 60 L 230 200 Q 230 240 160 250 Q 90 240 90 200 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <ellipse cx="160" cy="60" rx="50" ry="10" fill={accent} opacity="0.8" />
+        <rect x="148" y="250" width="24" height="14" fill={veins} opacity="0.6" />
+        <rect x="100" y="264" width="120" height="6" rx="2" fill={detail} opacity="0.7" />
+        <path d="M110 130 Q 160 170 210 130" fill="none" stroke={`url(#${veinId})`} strokeWidth="1.8" opacity="0.7" />
+        <ellipse cx="135" cy="120" rx="18" ry="40" fill={`url(#hl-${piece.id})`} opacity="0.6" />
+      </g>
+    ),
   };
 
   const shape = shapes[piece.shape] || shapes.drop;

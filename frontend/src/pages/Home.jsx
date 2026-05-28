@@ -12,12 +12,12 @@ export default function Home() {
       <Hero />
 
       {/* Marquee de inspiração */}
-      <div className="overflow-hidden border-y border-white/[0.04] py-6 bg-ink-surface/50">
+      <div className="overflow-hidden border-y border-black/[0.04] py-6 bg-ink-surface/50">
         <div className="flex gap-10 animate-marquee whitespace-nowrap text-zinc-500 text-xs tracking-[0.32em] uppercase">
           {["a", "b"].map((rep) => (
             <div key={`marquee-${rep}`} className="flex gap-10">
               {["Resina Premium", "✦", "Paletas IA", "✦", "Geodos & Mármore", "✦", "Joalheria Artesanal", "✦", "Dourado Eterno", "✦", "Visualizador Líquido", "✦"].map((t, i) => (
-                <span key={`${rep}-${i}-${t}`} className={i % 2 === 0 ? "text-zinc-300" : "text-gold"}>
+                <span key={`${rep}-${i}-${t}`} className={i % 2 === 0 ? "text-zinc-700" : "text-gold"}>
                   {t}
                 </span>
               ))}
@@ -47,7 +47,7 @@ export default function Home() {
               <br />
               <span className="italic gold-shimmer">em segundos</span>
             </h2>
-            <p className="text-zinc-300 max-w-xl mx-auto mb-8 text-base md:text-lg">
+            <p className="text-zinc-700 max-w-xl mx-auto mb-8 text-base md:text-lg">
               Escreva um sentimento. Veja a IA materializar a paleta perfeita
               em peças reais de resina.
             </p>

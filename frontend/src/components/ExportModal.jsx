@@ -79,21 +79,21 @@ export default function ExportModal({ palette, captureRef, open, onClose }) {
             onClick={(e) => e.stopPropagation()}
             className="glass-strong rounded-sm w-full max-w-2xl max-h-[88vh] overflow-hidden flex flex-col"
           >
-            <header className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+            <header className="flex items-center justify-between p-5 border-b border-black/[0.06]">
               <div>
                 <div className="label-eyebrow text-gold">Exportar</div>
                 <h3 className="font-display text-2xl tracking-tight mt-1">{palette.name}</h3>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-white/5 rounded-sm transition-colors"
+                className="p-2 hover:bg-black/5 rounded-sm transition-colors"
                 data-testid="close-export-modal"
               >
                 <X className="w-4 h-4" />
               </button>
             </header>
 
-            <div className="p-5 grid grid-cols-2 md:grid-cols-5 gap-2 border-b border-white/[0.06]">
+            <div className="p-5 grid grid-cols-2 md:grid-cols-5 gap-2 border-b border-black/[0.06]">
               {Object.entries(formats).map(([key, f]) => (
                 <button
                   key={key}
@@ -101,7 +101,7 @@ export default function ExportModal({ palette, captureRef, open, onClose }) {
                   className={`flex items-center gap-2 px-3 py-2 rounded-sm text-xs uppercase tracking-wider transition-all ${
                     format === key
                       ? "bg-gold text-ink"
-                      : "border border-white/10 text-zinc-300 hover:border-gold/40"
+                      : "border border-black/10 text-zinc-700 hover:border-gold/40"
                   }`}
                   data-testid={`export-tab-${key}`}
                 >
@@ -111,7 +111,7 @@ export default function ExportModal({ palette, captureRef, open, onClose }) {
               ))}
               <button
                 onClick={handlePNG}
-                className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs uppercase tracking-wider border border-white/10 text-zinc-300 hover:border-gold/40"
+                className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs uppercase tracking-wider border border-black/10 text-zinc-700 hover:border-gold/40"
                 data-testid="export-tab-png"
               >
                 <FileImage className="w-3.5 h-3.5" />
@@ -119,7 +119,7 @@ export default function ExportModal({ palette, captureRef, open, onClose }) {
               </button>
               <button
                 onClick={handlePDF}
-                className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs uppercase tracking-wider border border-white/10 text-zinc-300 hover:border-gold/40"
+                className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs uppercase tracking-wider border border-black/10 text-zinc-700 hover:border-gold/40"
                 data-testid="export-tab-pdf"
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -128,12 +128,12 @@ export default function ExportModal({ palette, captureRef, open, onClose }) {
             </div>
 
             <div className="flex-1 overflow-auto p-5">
-              <pre className="text-xs text-zinc-200 font-mono bg-ink-elevated p-4 rounded-sm border border-white/[0.06] overflow-auto max-h-[40vh]">
+              <pre className="text-xs text-zinc-800 font-mono bg-ink-elevated p-4 rounded-sm border border-black/[0.06] overflow-auto max-h-[40vh]">
                 {current.content}
               </pre>
             </div>
 
-            <footer className="flex items-center justify-between p-5 border-t border-white/[0.06] bg-ink-surface/50">
+            <footer className="flex items-center justify-between p-5 border-t border-black/[0.06] bg-ink-surface/50">
               <span className="text-xs text-zinc-500 uppercase tracking-wider">
                 {palette.colors.length} cores
               </span>

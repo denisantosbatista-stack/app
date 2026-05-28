@@ -51,7 +51,7 @@ export default function AIGenerator({ onGenerated }) {
         <h3 className="font-display text-2xl md:text-3xl tracking-tight mb-2">
           Descreva. <span className="gold-shimmer">A IA cria.</span>
         </h3>
-        <p className="text-zinc-400 text-sm mb-5 max-w-lg">
+        <p className="text-zinc-600 text-sm mb-5 max-w-lg">
           Escreva um sentimento, paisagem ou conceito. Nossa IA gera a paleta perfeita
           com hierarquia de cores pensada para resina epóxi.
         </p>
@@ -91,7 +91,7 @@ export default function AIGenerator({ onGenerated }) {
                 setPrompt(s);
                 handleGenerate(s);
               }}
-              className="text-[11px] px-3 py-1.5 rounded-full border border-white/10 text-zinc-300 hover:border-gold/50 hover:text-white transition-colors"
+              className="text-[11px] px-3 py-1.5 rounded-full border border-black/10 text-zinc-700 hover:border-gold/50 hover:text-ink-text transition-colors"
               data-testid={`ai-suggestion-${s.slice(0, 12)}`}
             >
               {s}

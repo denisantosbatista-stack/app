@@ -36,7 +36,7 @@ export default function ToolsGrid() {
           >
             <Link
               to={t.to}
-              className="group block h-full relative overflow-hidden rounded-sm bg-ink-surface border border-white/[0.06] p-6 hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
+              className="group block h-full relative overflow-hidden rounded-sm bg-ink-surface border border-black/[0.06] p-6 hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
               data-testid={`tool-card-${t.to.replace("/", "")}`}
             >
               {t.badge && (
@@ -48,7 +48,7 @@ export default function ToolsGrid() {
                 <t.icon className="w-5 h-5" />
               </div>
               <h3 className="font-display text-xl mb-2 tracking-tight">{t.title}</h3>
-              <p className="text-zinc-400 text-sm leading-relaxed">{t.desc}</p>
+              <p className="text-zinc-600 text-sm leading-relaxed">{t.desc}</p>
               <div className="mt-5 text-xs text-gold tracking-[0.2em] uppercase flex items-center gap-2">
                 Acessar
                 <span className="transition-transform group-hover:translate-x-1">→</span>

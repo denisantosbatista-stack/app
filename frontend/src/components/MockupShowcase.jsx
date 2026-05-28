@@ -16,7 +16,7 @@ export default function MockupShowcase() {
           <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-none">
             Peças que <span className="italic gold-shimmer">encantam</span>
           </h2>
-          <p className="text-zinc-400 mt-3 max-w-lg">
+          <p className="text-zinc-600 mt-3 max-w-lg">
             Visualize como suas paletas podem renascer em peças tangíveis — desde
             relógios estatement até bandejas de mármore dourado.
           </p>
