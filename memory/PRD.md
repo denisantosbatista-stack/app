@@ -75,3 +75,11 @@ src/
 
 ## Datas
 - 2026-05-26: v1.0 entregue — refatoração completa, IA, persistência, exportação, preview, tema premium
+- 2026-05-28: v1.1 entregue — 7 melhorias P0+P1 validadas end-to-end (testing agent: 7/7 frontend, 10/10 backend)
+  1. Frases motivacionais cíclicas no loading da IA (loadingPhrases.js + AIGenerator)
+  2. Novas peças (chaveiro, prisma, cubo, sousplat, luminária) em 3 categorias
+  3. 4 novos acabamentos de luxo (pavê-cristais, foil-dourado, holográfico, espelhado)
+  4. Loading progressivo (LibrarySkeleton + shimmer-sweep) na Biblioteca
+  5. Imagens reais (CDN) no MockupShowcase (relógio, bandeja, geodo)
+  6. Calculadora de proporções funcional (volume/ratio/pigmento + presets + peso)
+  7. Imagens atmosféricas reais nas Trending Palettes (PALETTE_PHOTOS)
