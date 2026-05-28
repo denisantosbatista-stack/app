@@ -7,6 +7,7 @@ const links = [
   { to: "/studio", label: "Studio" },
   { to: "/library", label: "Biblioteca" },
   { to: "/calculator", label: "Proporções" },
+  { to: "/compare", label: "Comparar" },
   { to: "/tips", label: "Técnicas" },
 ];
 

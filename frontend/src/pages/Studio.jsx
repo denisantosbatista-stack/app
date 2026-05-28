@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { Heart, Save, Download } from "lucide-react";
+import { Heart, Save, Download, Share2 } from "lucide-react";
 import { PRESET_PALETTES, STYLES, PIECES } from "@/data/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteGrid from "@/components/PaletteGrid";
@@ -11,6 +11,7 @@ import AIGenerator from "@/components/AIGenerator";
 import ExportModal from "@/components/ExportModal";
 import { StyleSelector, PieceSelector } from "@/components/PieceSelectors";
 import { copyToClipboard, isDark } from "@/utils/color";
+import { encodePaletteToUrl, decodePaletteFromSearch } from "@/utils/share";
 
 export default function Studio() {
   const {
@@ -29,11 +30,30 @@ export default function Studio() {
   const [filterStyle, setFilterStyle] = useState("todos");
   const [exportOpen, setExportOpen] = useState(false);
   const [aiPalette, setAiPalette] = useState(null);
+  const [sharedPalette, setSharedPalette] = useState(null);
   const captureRef = useRef(null);
 
+  // Importa paleta vinda de link compartilhado (?c=hex-hex-...)
+  useEffect(() => {
+    const shared = decodePaletteFromSearch(window.location.search);
+    if (shared) {
+      setSharedPalette(shared);
+      setActivePalette(shared.id);
+      toast.success(`Paleta "${shared.name}" importada do link`, { duration: 3500 });
+      // Limpa querystring sem recarregar para evitar re-importar em refresh
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const allPalettes = useMemo(
-    () => [...(aiPalette ? [aiPalette] : []), ...PRESET_PALETTES, ...saved],
-    [saved, aiPalette]
+    () => [
+      ...(sharedPalette ? [sharedPalette] : []),
+      ...(aiPalette ? [aiPalette] : []),
+      ...PRESET_PALETTES,
+      ...saved,
+    ],
+    [saved, aiPalette, sharedPalette]
   );
 
   const filtered = useMemo(() => {
@@ -79,6 +99,19 @@ export default function Studio() {
       setActivePalette(newPal.id);
     } else {
       toggleFavorite(p.id);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = encodePaletteToUrl(activePalette);
+    try {
+      await copyToClipboard(url);
+      toast.success("Link da paleta copiado", {
+        duration: 2500,
+        icon: "🔗",
+      });
+    } catch {
+      toast.error("Não foi possível copiar o link");
     }
   };
 
@@ -132,6 +165,7 @@ export default function Studio() {
             onSave={handleSave}
             onFavorite={() => handleFavoriteToggle(activePalette)}
             onExport={() => setExportOpen(true)}
+            onShare={handleShare}
           />
 
           <StyleSelector activeStyleId={activeStyleId} onChange={setActiveStyle} activeStyle={activeStyle} />
@@ -155,7 +189,7 @@ export default function Studio() {
   );
 }
 
-function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport }) {
+function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport, onShare }) {
   return (
     <div className="glass rounded-sm p-5" ref={captureRef} data-testid="active-palette-display">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
@@ -164,9 +198,10 @@ function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport
           <h3 className="font-display text-3xl tracking-tight mt-1">{palette.name}</h3>
           <p className="text-zinc-600 text-sm">{palette.description}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <HeaderButton onClick={onSave} icon={Save} label="Salvar" testid="save-palette-btn" />
           <HeaderButton onClick={onFavorite} icon={Heart} label="Favoritar" testid="fav-palette-btn" />
+          <HeaderButton onClick={onShare} icon={Share2} label="Compartilhar" testid="share-palette-btn" />
           <HeaderButton onClick={onExport} icon={Download} label="Exportar" testid="export-palette-btn" primary />
         </div>
       </div>

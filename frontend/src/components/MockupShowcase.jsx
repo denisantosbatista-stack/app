@@ -40,6 +40,12 @@ export default function MockupShowcase() {
               alt={m.label}
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
               loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.style.background =
+                  "linear-gradient(135deg, #C9A96E, #2A2A2A)";
+                e.currentTarget.removeAttribute("src");
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between">

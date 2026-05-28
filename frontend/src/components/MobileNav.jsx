@@ -1,11 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { Home, Palette, Heart, Calculator, BookOpen } from "lucide-react";
+import { Home, Palette, Heart, Calculator, BookOpen, GitCompare } from "lucide-react";
 
 const items = [
   { to: "/", icon: Home, label: "Início", end: true },
   { to: "/studio", icon: Palette, label: "Studio" },
   { to: "/library", icon: Heart, label: "Salvos" },
-  { to: "/calculator", icon: Calculator, label: "Proporções" },
+  { to: "/compare", icon: GitCompare, label: "A/B" },
+  { to: "/calculator", icon: Calculator, label: "Custo" },
   { to: "/tips", icon: BookOpen, label: "Dicas" },
 ];
 
