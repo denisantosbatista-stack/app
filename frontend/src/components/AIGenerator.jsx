@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, Wand2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
+import { LOADING_PHRASES } from "@/data/loadingPhrases";
 
 const SUGGESTIONS = [
   "Oceano cristalino luxuoso",
@@ -15,8 +16,19 @@ const SUGGESTIONS = [
 
 export default function AIGenerator({ onGenerated }) {
   const [prompt, setPrompt] = useState("");
+  const [phraseIndex, setPhraseIndex] = useState(0);
   const generateWithAI = usePaletteStore((s) => s.generateWithAI);
   const aiGenerating = usePaletteStore((s) => s.aiGenerating);
+
+  // Cycle motivational phrases while generating
+  useEffect(() => {
+    if (!aiGenerating) return;
+    setPhraseIndex(Math.floor(Math.random() * LOADING_PHRASES.length));
+    const t = setInterval(() => {
+      setPhraseIndex((i) => (i + 1) % LOADING_PHRASES.length);
+    }, 1800);
+    return () => clearInterval(t);
+  }, [aiGenerating]);
 
   const handleGenerate = async (text) => {
     const q = (text || prompt).trim();
@@ -81,6 +93,24 @@ export default function AIGenerator({ onGenerated }) {
             {aiGenerating ? "Gerando" : "Gerar paleta"}
           </button>
         </div>
+
+        {/* Loading phrase ticker */}
+        <AnimatePresence mode="wait">
+          {aiGenerating && (
+            <motion.div
+              key={phraseIndex}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.4 }}
+              className="mt-4 flex items-center gap-2 text-sm italic text-gold-deep"
+              data-testid="ai-loading-phrase"
+            >
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold animate-pulseGold" />
+              {LOADING_PHRASES[phraseIndex]}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {SUGGESTIONS.map((s) => (

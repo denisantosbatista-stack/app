@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { PRESET_PALETTES } from "@/data/palettes";
+import { PRESET_PALETTES, PALETTE_PHOTOS } from "@/data/palettes";
 import { isDark } from "@/utils/color";
 import { Flame } from "lucide-react";
 
@@ -24,6 +24,9 @@ export default function TrendingPalettes() {
           <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-none">
             Paletas <span className="italic gold-shimmer">trending</span>
           </h2>
+          <p className="text-zinc-600 mt-3 max-w-lg text-sm">
+            Ambientações fotográficas reais inspirando cada combinação cromática.
+          </p>
         </div>
         <Link
           to="/studio"
@@ -34,50 +37,67 @@ export default function TrendingPalettes() {
       </motion.div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {featured.map((p, i) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ delay: i * 0.05, duration: 0.5 }}
-            whileHover={{ y: -4 }}
-          >
-            <Link
-              to="/studio"
-              state={{ paletteId: p.id }}
-              className="group block bg-ink-surface rounded-sm overflow-hidden border border-black/[0.06] hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
-              data-testid={`trending-card-${p.id}`}
+        {featured.map((p, i) => {
+          const photo = PALETTE_PHOTOS[p.id];
+          return (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: i * 0.05, duration: 0.5 }}
+              whileHover={{ y: -4 }}
             >
-              <div className="flex h-32">
-                {p.colors.map((c) => (
-                  <div
-                    key={`${p.id}-${c.hex}-${c.role}`}
-                    style={{ background: c.hex }}
-                    className="flex-1 relative transition-all duration-500 group-hover:flex-[1.2]"
-                  >
-                    <span
-                      className={`absolute inset-x-0 bottom-2 text-center text-[10px] font-mono opacity-0 group-hover:opacity-100 transition-opacity ${
-                        isDark(c.hex) ? "text-ink-text" : "text-black"
-                      }`}
-                    >
-                      {c.hex.toUpperCase()}
-                    </span>
+              <Link
+                to="/studio"
+                state={{ paletteId: p.id }}
+                className="group block bg-ink-surface rounded-sm overflow-hidden border border-black/[0.06] hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
+                data-testid={`trending-card-${p.id}`}
+              >
+                {/* Atmospheric photo backdrop */}
+                <div className="relative h-44 overflow-hidden">
+                  {photo && (
+                    <img
+                      src={photo}
+                      alt={p.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                      data-testid={`trending-photo-${p.id}`}
+                    />
+                  )}
+                  {/* Subtle dark gradient for legibility */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                  {/* Style badge */}
+                  <div className="absolute top-3 right-3 text-[9px] tracking-[0.22em] uppercase px-2 py-1 bg-white/85 backdrop-blur-sm text-ink-text rounded-sm">
+                    {p.style}
                   </div>
-                ))}
-              </div>
-              <div className="p-4 flex items-center justify-between">
-                <div>
+                  {/* Color swatches strip overlay */}
+                  <div className="absolute inset-x-0 bottom-0 flex h-10">
+                    {p.colors.map((c) => (
+                      <div
+                        key={`${p.id}-${c.hex}-${c.role}`}
+                        style={{ background: c.hex }}
+                        className="flex-1 relative transition-all duration-500 group-hover:flex-[1.2]"
+                      >
+                        <span
+                          className={`absolute inset-x-0 bottom-1 text-center text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity ${
+                            isDark(c.hex) ? "text-white" : "text-black"
+                          }`}
+                        >
+                          {c.hex.toUpperCase()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-4">
                   <div className="font-display text-lg leading-tight">{p.name}</div>
                   <div className="text-xs text-zinc-600">{p.description}</div>
                 </div>
-                <div className="text-[10px] tracking-[0.2em] uppercase px-2 py-1 border border-gold/30 text-gold rounded-sm">
-                  {p.style}
-                </div>
-              </div>
-            </Link>
-          </motion.div>
-        ))}
+              </Link>
+            </motion.div>
+          );
+        })}
       </div>
     </section>
   );

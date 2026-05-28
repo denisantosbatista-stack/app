@@ -4,6 +4,7 @@ import { usePaletteStore } from "@/store/usePaletteStore";
 import ExportModal from "@/components/ExportModal";
 import LibraryEmpty from "@/components/LibraryEmpty";
 import LibraryCard from "@/components/LibraryCard";
+import LibrarySkeleton from "@/components/LibrarySkeleton";
 
 const FILTERS = [
   { id: "todos", label: "Todas" },
@@ -85,7 +86,7 @@ export default function Library() {
 
 function LibraryContent({ loading, items, onToggleFavorite, onExport, onDelete }) {
   if (loading) {
-    return <div className="text-center py-20 text-zinc-500">Carregando…</div>;
+    return <LibrarySkeleton count={6} />;
   }
   if (items.length === 0) {
     return <LibraryEmpty />;

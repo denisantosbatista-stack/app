@@ -239,3 +239,14 @@ input:focus, textarea:focus, select:focus {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+
+/* Skeleton shimmer sweep (left to right) */
+.shimmer-sweep {
+  animation: shimmerSweep 1.6s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+@keyframes shimmerSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
