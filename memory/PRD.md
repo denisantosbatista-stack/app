@@ -50,7 +50,8 @@ src/
 
 ## Backlog (próximas iterações)
 ### P1
-- [ ] Comparador A vs B de paletas (lado a lado com diferença perceptual)
+- [x] Comparador A vs B de paletas (lado a lado com diferença perceptual) — entregue v1.2
+- [x] Share via URL com paleta serializada (querystring `?c=hex-hex-...&n=Nome`) — entregue v1.2
 - [ ] Calculadora de precificação (custo material + mão de obra + margem)
 - [ ] Calculadora de medidas (peças por molde 3D)
 - [ ] Mais mockups (mesa, jóias close-up) + estilos isolados em galeria
@@ -59,7 +60,6 @@ src/
 - [ ] Atalhos de teclado (G = gerar IA, S = salvar, E = exportar)
 - [ ] Templates prontos por categoria (joalheria, decoração, mesa, geodo)
 - [ ] Misturador físico de cores em tempo real (mistura perceptual LAB)
-- [ ] Share via URL com paleta serializada no hash
 ### P3 (monetização)
 - [ ] Plano Premium (paletas ilimitadas com IA + exportação em alta)
 - [ ] Marketplace de paletas premium criadas pela comunidade
@@ -83,3 +83,8 @@ src/
   5. Imagens reais (CDN) no MockupShowcase (relógio, bandeja, geodo)
   6. Calculadora de proporções funcional (volume/ratio/pigmento + presets + peso)
   7. Imagens atmosféricas reais nas Trending Palettes (PALETTE_PHOTOS)
+- 2026-05-28: v1.2 entregue — Share + Comparador A/B + ajustes mobile
+  - Compartilhamento via URL: botão `Share2` no Studio gera `studio?c=hex-hex-...&n=Nome`, copia para clipboard e exibe toast; ao abrir o link a paleta é importada automaticamente e a query é limpa.
+  - Página `/compare` (A vs B): seleção independente de A e B, swap, métricas WCAG (contraste min) + diversidade ΔE perceptual + temperatura, matriz de contraste 4×4 com pares acessíveis (AA/AAA), share individual de cada lado, copy hex inline.
+  - Mobile bottom-nav reduzido para 4 itens (Início, Studio, Salvos, A/B) com max-w-[180px] para não colidir com o badge fixo da plataforma; itens Custo/Dicas seguem acessíveis pelo header desktop.
+  - Fallback `onError` no `<img>` do `MockupShowcase` (gradiente dourado/preto) para resiliência caso CDN externo falhe.
