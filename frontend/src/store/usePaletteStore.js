@@ -115,12 +115,14 @@ export const usePaletteStore = create(
         }
       },
 
-      generateWithAI: async (prompt, style) => {
+      generateWithAI: async (prompt, style, image_base64 = null) => {
         set({ aiGenerating: true, aiResult: null, lastError: null });
         try {
           // chamarIA: retry 3x com backoff (2s/4s/8s) + AbortController 60s timeout
           // + categorização de erro (limite/saldo/timeout/rede/servidor).
-          const data = await chamarIA("/ai/generate-palette", { prompt, style });
+          const payload = { prompt, style };
+          if (image_base64) payload.image_base64 = image_base64;
+          const data = await chamarIA("/ai/generate-palette", payload);
           set({ aiGenerating: false, aiResult: data });
           return data;
         } catch (e) {

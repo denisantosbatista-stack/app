@@ -15,7 +15,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from emergentintegrations.llm.openai.text_to_speech import OpenAITextToSpeech
 from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
 import base64 as b64
@@ -111,8 +111,9 @@ class PaletteUpdate(BaseModel):
 
 
 class AIPromptRequest(BaseModel):
-    prompt: str
+    prompt: Optional[str] = ""
     style: Optional[str] = None
+    image_base64: Optional[str] = None  # imagem opcional para extração de paleta via visão
 
 
 class VoiceRequest(BaseModel):
@@ -145,9 +146,21 @@ async def generate_palette_ai(req: AIPromptRequest):
     if not EMERGENT_LLM_KEY:
         raise HTTPException(status_code=500, detail="LLM key not configured")
 
+    has_image = bool(req.image_base64)
+    has_prompt = bool((req.prompt or "").strip())
+    if not has_image and not has_prompt:
+        raise HTTPException(status_code=400, detail="Forneça um prompt ou uma imagem de referência.")
+
     system_msg = (
         "Você é uma especialista em cromática e design de joias de resina epóxi de luxo. "
-        "Dado um prompt do usuário (em português ou inglês), retorne EXCLUSIVAMENTE um JSON válido "
+        + (
+            "Dada uma imagem de referência enviada pelo usuário, EXTRAIA as 4 cores dominantes "
+            "mais expressivas e harmoniosas para uma peça de resina, transformando-as em uma "
+            "paleta refinada (não copie cores feias/sujas — refine a paleta para joalheria). "
+            if has_image
+            else "Dado um prompt do usuário (em português ou inglês), "
+        )
+        + "Retorne EXCLUSIVAMENTE um JSON válido "
         "no seguinte formato (sem markdown, sem ```, sem comentários):\n"
         "{\n"
         '  "name": "Nome curto e poético da paleta (3-4 palavras)",\n'
@@ -168,7 +181,15 @@ async def generate_palette_ai(req: AIPromptRequest):
         "- Style deve refletir a estética dominante."
     )
 
-    user_text = f"Prompt: {req.prompt}"
+    if has_image:
+        user_text = (
+            "Analise a imagem anexada e extraia uma paleta de 4 cores refinada inspirada nela. "
+            "Foque nas cores dominantes e em acentos que combinem para resina de luxo."
+        )
+        if has_prompt:
+            user_text += f"\nContexto/orientação adicional do usuário: {req.prompt}"
+    else:
+        user_text = f"Prompt: {req.prompt}"
     if req.style:
         user_text += f"\nEstilo preferido: {req.style}"
 
@@ -178,8 +199,18 @@ async def generate_palette_ai(req: AIPromptRequest):
         system_message=system_msg,
     ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
+    file_contents = None
+    if has_image:
+        # remove cabeçalho data:image/... se vier
+        raw_b64 = req.image_base64
+        if "," in raw_b64 and raw_b64.lstrip().startswith("data:"):
+            raw_b64 = raw_b64.split(",", 1)[1]
+        file_contents = [ImageContent(image_base64=raw_b64)]
+
     try:
-        response = await chat.send_message(UserMessage(text=user_text))
+        response = await chat.send_message(
+            UserMessage(text=user_text, file_contents=file_contents)
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -256,7 +287,11 @@ async def generate_image(req: ImageRequest):
     colors_part = ""
     if req.colors:
         hex_list = ", ".join(c for c in req.colors if isinstance(c, str))
-        colors_part = f" Use estritamente esta paleta de cores: {hex_list}."
+        colors_part = (
+            f" USE EXCLUSIVAMENTE estas cores HEX, sem adicionar outras cores: {hex_list}. "
+            "Cada cor da paleta DEVE aparecer visivelmente na peça. "
+            "É PROIBIDO substituir, suavizar ou misturar com cores fora desta paleta."
+        )
     shape = (req.shape or "gota").lower()
     prompt = (
         f"Fotografia profissional de uma peça artesanal de resina epóxi premium em formato de {shape}. "
