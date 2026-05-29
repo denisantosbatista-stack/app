@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { motion } from "framer-motion";
 import { Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
+import { chamarIA, ApiError } from "@/utils/api";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -156,25 +157,20 @@ export default function Productions3D({ palette }) {
     setLoading(true);
     const tid = toast.loading("Nano Banana renderizando peça…", { icon: "🍌" });
     try {
-      const res = await fetch(`${API_BASE}/api/ai/generate-image`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: `Peça em formato de ${shape}, paleta "${palette.name}" — estilo ${palette.style}`,
-          colors: hexColors,
-          shape,
-        }),
+      const data = await chamarIA("/ai/generate-image", {
+        prompt: `Peça em formato de ${shape}, paleta "${palette.name}" — estilo ${palette.style}`,
+        colors: hexColors,
+        shape,
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
       const dataUrl = `data:${data.mime_type || "image/png"};base64,${data.image_base64}`;
       setTextureUrl(dataUrl);
       toast.success("Render aplicado ao 3D!", { id: tid });
     } catch (e) {
-      toast.error(`Falha render: ${e.message || "erro"}`, { id: tid });
+      const msg =
+        e instanceof ApiError && e.tipo === "saldo"
+          ? "Saldo do Universal Key esgotado. Recarregue para gerar renders."
+          : `Falha render: ${e?.message || "erro"}`;
+      toast.error(msg, { id: tid });
     } finally {
       setLoading(false);
     }

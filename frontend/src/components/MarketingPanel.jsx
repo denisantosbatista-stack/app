@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { copyToClipboard } from "@/utils/color";
+import AIErrorState from "./AIErrorState";
+import { chamarIA, ApiError, abrirUpgradePadrao } from "@/utils/api";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -119,31 +121,30 @@ function CaptionTab({ palette }) {
     setError(null);
     setResult(null);
     try {
-      const res = await fetch(`${API_BASE}/api/ai/generate-caption`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          palette_name: palette?.name,
-          colors: (palette?.colors || []).map((c) =>
-            typeof c === "string" ? c : c.hex
-          ),
-          piece,
-          style: palette?.style,
-          platform,
-          tone,
-          language: "pt-BR",
-        }),
+      const data = await chamarIA("/ai/generate-caption", {
+        palette_name: palette?.name,
+        colors: (palette?.colors || []).map((c) =>
+          typeof c === "string" ? c : c.hex
+        ),
+        piece,
+        style: palette?.style,
+        platform,
+        tone,
+        language: "pt-BR",
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.detail || `Erro ${res.status}`);
-      }
-      const data = await res.json();
       setResult(data);
       toast.success("Legenda gerada!");
     } catch (e) {
-      setError(e.message || "Falha ao gerar legenda");
-      toast.error(e.message || "Falha ao gerar legenda");
+      const erro =
+        e instanceof ApiError
+          ? { message: e.message, tipo: e.tipo, status: e.status, detail: e.detail }
+          : { message: e?.message || "Falha ao gerar legenda", tipo: "servidor" };
+      setError(erro);
+      const msg =
+        erro.tipo === "saldo"
+          ? "Saldo de gerações esgotado. Recarregue o Universal Key para continuar."
+          : erro.message;
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -238,11 +239,8 @@ function CaptionTab({ palette }) {
       </div>
 
       {error && (
-        <div
-          className="px-4 py-3 rounded-sm border border-red-200 bg-red-50 text-sm text-red-700"
-          data-testid="caption-error"
-        >
-          {error}
+        <div data-testid="caption-error">
+          <AIErrorState erro={error} onRetry={generate} onUpgrade={abrirUpgradePadrao} />
         </div>
       )}
 
@@ -310,28 +308,27 @@ function LuxuryTab({ palette }) {
     setError(null);
     setResult(null);
     try {
-      const res = await fetch(`${API_BASE}/api/ai/luxury-score`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          palette_name: palette?.name,
-          colors: (palette?.colors || []).map((c) =>
-            typeof c === "string" ? c : c.hex
-          ),
-          style: palette?.style,
-          description: palette?.description || "",
-        }),
+      const data = await chamarIA("/ai/luxury-score", {
+        palette_name: palette?.name,
+        colors: (palette?.colors || []).map((c) =>
+          typeof c === "string" ? c : c.hex
+        ),
+        style: palette?.style,
+        description: palette?.description || "",
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.detail || `Erro ${res.status}`);
-      }
-      const data = await res.json();
       setResult(data);
       toast.success(`Luxury Score: ${data.score}/100 (${data.tier})`);
     } catch (e) {
-      setError(e.message || "Falha ao calcular");
-      toast.error(e.message || "Falha ao calcular");
+      const erro =
+        e instanceof ApiError
+          ? { message: e.message, tipo: e.tipo, status: e.status, detail: e.detail }
+          : { message: e?.message || "Falha ao calcular", tipo: "servidor" };
+      setError(erro);
+      const msg =
+        erro.tipo === "saldo"
+          ? "Saldo de gerações esgotado. Recarregue o Universal Key para continuar."
+          : erro.message;
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -367,11 +364,8 @@ function LuxuryTab({ palette }) {
       </button>
 
       {error && (
-        <div
-          className="px-4 py-3 rounded-sm border border-red-200 bg-red-50 text-sm text-red-700"
-          data-testid="luxury-error"
-        >
-          {error}
+        <div data-testid="luxury-error">
+          <AIErrorState erro={error} onRetry={compute} onUpgrade={abrirUpgradePadrao} />
         </div>
       )}
 

@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2, Wand2, ImagePlus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import { LOADING_PHRASES } from "@/data/loadingPhrases";
-import { ApiError } from "@/utils/api";
+import { ApiError, abrirUpgradePadrao } from "@/utils/api";
 import AIErrorState from "@/components/AIErrorState";
 
 const SUGGESTIONS = [
@@ -39,7 +38,6 @@ export default function AIGenerator({ onGenerated }) {
   const [imagem, setImagem] = useState(null); // { dataUrl, base64, name }
   const [dragAtivo, setDragAtivo] = useState(false);
   const inputFileRef = useRef(null);
-  const navigate = useNavigate();
   const generateWithAI = usePaletteStore((s) => s.generateWithAI);
   const aiGenerating = usePaletteStore((s) => s.aiGenerating);
 
@@ -118,7 +116,7 @@ export default function AIGenerator({ onGenerated }) {
   };
 
   const handleUpgrade = () => {
-    navigate("/premium");
+    abrirUpgradePadrao();
   };
 
   return (

@@ -18,6 +18,16 @@ export class ApiError extends Error {
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * Callback padrão para o botão "Liberar gerações ilimitadas" do AIErrorState.
+ * Como monetização ainda está pausada, exibimos instruções claras para o usuário
+ * recarregar o Universal Key da Emergent (que alimenta todas as gerações IA).
+ */
+export function abrirUpgradePadrao() {
+  const evt = new CustomEvent("lindart:open-upgrade-info");
+  window.dispatchEvent(evt);
+}
+
+/**
  * Faz POST JSON com retry exponencial + timeout via AbortController.
  * @param {string} path — caminho relativo começando com '/' (ex.: '/ai/generate-palette')
  * @param {object} body — payload JSON

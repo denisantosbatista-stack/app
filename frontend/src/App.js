@@ -12,6 +12,7 @@ import Tips from "@/pages/Tips";
 import PublicDNAPage from "@/pages/PublicDNAPage";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
+import UpgradeInfoModal from "@/components/UpgradeInfoModal";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
 function App() {
@@ -47,12 +48,13 @@ function App() {
           <Route path="/tips" element={<Tips />} />
         </Routes>
       </main>
+      <footer className="border-t border-black/[0.06] py-10 px-6 pb-28 md:pb-10 text-center text-xs tracking-[0.2em] uppercase text-ink-muted">
+        LindArt · Studio de Resina Premium · © 2026
+      </footer>
       <MobileNav />
       <OnboardingFlow />
       <OpeningTour />
-      <footer className="border-t border-black/[0.06] py-10 px-6 text-center text-xs tracking-[0.2em] uppercase text-ink-muted">
-        LindArt · Studio de Resina Premium · © 2026
-      </footer>
+      <UpgradeInfoModal />
     </div>
   );
 }

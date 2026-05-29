@@ -74,6 +74,134 @@ def _map_llm_exception(exc: Exception) -> HTTPException:
     return HTTPException(status_code=502, detail=f"AI generation failed: {msg}")
 
 
+def _parse_llm_json(raw_text: str) -> Optional[dict]:
+    """Parser tolerante para JSON retornado por LLMs.
+
+    LLMs ocasionalmente produzem:
+    - markdown fences (```json ... ```)
+    - texto antes/depois do JSON
+    - aspas não escapadas dentro de strings
+    - vírgulas finais (trailing commas)
+    - aspas tipográficas (curly quotes)
+
+    Retorna dict em caso de sucesso ou None se nenhuma estratégia funcionar.
+    Nunca lança exceção — o caller deve ter fallback determinístico.
+    """
+    if not raw_text:
+        return None
+    text = raw_text.strip()
+    # Remove markdown fences
+    text = re.sub(r"^```(?:json|JSON)?\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+    # Normaliza curly quotes
+    text = (
+        text.replace("\u201c", '"').replace("\u201d", '"')
+            .replace("\u2018", "'").replace("\u2019", "'")
+    )
+    # Extrai bloco {...} principal
+    match = re.search(r"\{[\s\S]*\}", text)
+    if not match:
+        return None
+    candidate = match.group(0)
+
+    # Tentativa 1: parse direto
+    try:
+        return json.loads(candidate)
+    except json.JSONDecodeError:
+        pass
+
+    # Tentativa 2: remove trailing commas
+    repaired = re.sub(r",(\s*[}\]])", r"\1", candidate)
+    try:
+        return json.loads(repaired)
+    except json.JSONDecodeError:
+        pass
+
+    # Tentativa 3: escapa aspas duplas internas dentro de strings JSON.
+    # Heurística: para cada par de aspas que abre/fecha uma string, escapa as
+    # aspas duplas internas que não sejam seguidas de , : } ] (final de valor).
+    def _escape_inner_quotes(src: str) -> str:
+        out = []
+        i = 0
+        in_str = False
+        escape_next = False
+        while i < len(src):
+            ch = src[i]
+            if not in_str:
+                out.append(ch)
+                if ch == '"':
+                    in_str = True
+            else:
+                if escape_next:
+                    out.append(ch)
+                    escape_next = False
+                elif ch == "\\":
+                    out.append(ch)
+                    escape_next = True
+                elif ch == '"':
+                    # Olha próximo caractere não-espaço para decidir se é fim de string
+                    j = i + 1
+                    while j < len(src) and src[j] in " \t\r\n":
+                        j += 1
+                    nxt = src[j] if j < len(src) else ""
+                    if nxt in (",", ":", "}", "]", ""):
+                        out.append(ch)
+                        in_str = False
+                    else:
+                        # Aspa interna não escapada — escapar
+                        out.append("\\\"")
+                else:
+                    out.append(ch)
+            i += 1
+        return "".join(out)
+
+    try:
+        return json.loads(_escape_inner_quotes(repaired))
+    except json.JSONDecodeError:
+        pass
+
+    # Tentativa 4: substituir quebras de linha cruas dentro de strings por \n
+    # (LLMs às vezes deixam newlines literais dentro de strings JSON)
+    def _escape_newlines_in_strings(src: str) -> str:
+        out = []
+        in_str = False
+        escape_next = False
+        for ch in src:
+            if not in_str:
+                out.append(ch)
+                if ch == '"':
+                    in_str = True
+            else:
+                if escape_next:
+                    out.append(ch)
+                    escape_next = False
+                elif ch == "\\":
+                    out.append(ch)
+                    escape_next = True
+                elif ch == '"':
+                    out.append(ch)
+                    in_str = False
+                elif ch == "\n":
+                    out.append("\\n")
+                elif ch == "\r":
+                    out.append("\\r")
+                elif ch == "\t":
+                    out.append("\\t")
+                else:
+                    out.append(ch)
+        return "".join(out)
+
+    try:
+        return json.loads(_escape_newlines_in_strings(repaired))
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        return json.loads(_escape_inner_quotes(_escape_newlines_in_strings(repaired)))
+    except json.JSONDecodeError:
+        return None
+
+
 # ===== Models =====
 class ColorSwatch(BaseModel):
     hex: str
@@ -244,17 +372,10 @@ async def generate_palette_ai(req: AIPromptRequest):
 
     # Extract JSON from response
     raw = response.strip()
-    # Remove markdown code fences if present
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
-    match = re.search(r"\{[\s\S]*\}", raw)
-    if not match:
-        raise HTTPException(status_code=502, detail="AI returned invalid format")
-
-    try:
-        data = json.loads(match.group(0))
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=502, detail=f"AI returned invalid JSON: {e}")
+    data = _parse_llm_json(raw)
+    if not data:
+        logger.error(f"Palette AI: parser falhou. Raw (200ch): {raw[:200]!r}")
+        raise HTTPException(status_code=502, detail="A IA retornou um formato inesperado. Tente novamente.")
 
     # Build Palette
     palette = Palette(
@@ -529,15 +650,29 @@ async def generate_caption(req: CaptionRequest):
         raise _map_llm_exception(e)
 
     raw = (response or "").strip()
-    raw = re.sub(r"^```(?:json)?\s*", "", raw)
-    raw = re.sub(r"\s*```$", "", raw)
-    match = re.search(r"\{[\s\S]*\}", raw)
-    if not match:
-        raise HTTPException(status_code=502, detail="IA retornou formato inválido")
-    try:
-        data = json.loads(match.group(0))
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=502, detail=f"IA retornou JSON inválido: {e}")
+    data = _parse_llm_json(raw)
+    if not data:
+        logger.error(f"Caption AI: parser falhou. Raw (200ch): {raw[:200]!r}")
+        # Fallback: extrai algo razoável do texto cru para não travar a UI
+        # Headline = primeira linha não vazia
+        lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+        headline = (lines[0] if lines else "Inspiração em resina").strip("\"'#* ")[:80]
+        # Caption = texto inteiro (sem chaves JSON tentadas)
+        caption_text = re.sub(r"[{}]", " ", raw).strip()
+        if len(caption_text) > 600:
+            caption_text = caption_text[:600].rsplit(" ", 1)[0] + "…"
+        # Hashtags básicas pela paleta/estilo
+        base_tags = ["#resinaepoxi", "#joalheriaartesanal", "#artesanalbrasil",
+                     "#resinart", "#luxohandmade", "#designautoral"]
+        if style:
+            base_tags.append("#" + re.sub(r"[^\w]", "", style, flags=re.UNICODE).lower())
+        data = {
+            "headline": headline or "Inspiração em resina",
+            "caption": caption_text or f"Uma peça em {piece} com paleta {palette_name}.",
+            "hashtags": base_tags,
+            "alt_text": f"Peça de {piece} em resina com paleta {palette_name}.",
+            "cta": "Garanta a sua peça.",
+        }
 
     # Sanitiza hashtags
     raw_tags = data.get("hashtags") or []
@@ -721,11 +856,8 @@ async def luxury_score(req: LuxuryScoreRequest):
             )
             response = await chat.send_message(UserMessage(text=user_text))
             raw = (response or "").strip()
-            raw = re.sub(r"^```(?:json)?\s*", "", raw)
-            raw = re.sub(r"\s*```$", "", raw)
-            match = re.search(r"\{[\s\S]*\}", raw)
-            if match:
-                data = json.loads(match.group(0))
+            data = _parse_llm_json(raw)
+            if data:
                 verdict = str(data.get("verdict", "")).strip()
                 sg = data.get("suggestions") or []
                 if isinstance(sg, list):
@@ -911,11 +1043,8 @@ async def visual_dna(req: VisualDNARequest):
             )
             response = await chat.send_message(UserMessage(text=user_text))
             raw = (response or "").strip()
-            raw = re.sub(r"^```(?:json)?\s*", "", raw)
-            raw = re.sub(r"\s*```$", "", raw)
-            match = re.search(r"\{[\s\S]*\}", raw)
-            if match:
-                data = json.loads(match.group(0))
+            data = _parse_llm_json(raw)
+            if data:
                 signature = str(data.get("signature", "")).strip()
                 m = data.get("mood") or []
                 if isinstance(m, list):

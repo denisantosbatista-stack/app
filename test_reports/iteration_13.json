@@ -1,0 +1,50 @@
+{
+  "summary": "Iteração 13: Validado parser tolerante _parse_llm_json + 4 endpoints AI (palette/caption/luxury-score/visual-dna) + fluxo DNA share. Backend 11/11 pytest pass. Frontend mobile (390x844): UL tem pr-24 conforme review_request, MAS badge 'Made with Emergent' continua INTERCEPTANDO cliques em mobile-nav-mixer e mobile-nav-calculator (itens sob o badge não recebem clique até o usuário scrollar a nav horizontalmente).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "MobileNav",
+        "issue": "Apesar de pr-24 no UL, os itens 'Mixer' (x=219-283) e 'Proporções' (x=287-383) ficam VISUALMENTE sob o badge 'Made with Emergent' (x=196-374) no estado inicial em 390x844. elementFromPoint no centro desses itens retorna o <p> do badge (não descendente do <a> de nav), confirmando que CLIQUES nesses links são interceptados pelo badge. Workaround: usuário precisa scrollar a navbar horizontalmente para a direita até os itens passarem para a área à esquerda do badge — só aí o clique funciona. Top nav (sticky top-0 z-50) está OK, sem overlap.",
+        "selector": "[data-testid=\"mobile-nav-mixer\"], [data-testid=\"mobile-nav-calculator\"]",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Mobile bottom nav (390x844)",
+        "issues": [
+          "7 itens em scroll horizontal + badge fixo no canto inferior direito = sobreposição visual permanente nos itens 4-5. Sugestão: reduzir set de itens visíveis (manter Studio/Salvos/Mixer/Proporções nos 4 mais usados, Compare/Técnicas/Início em menu '+ More'); OU iniciar com scrollLeft != 0 para puxar primeiros itens para a esquerda; OU mover o badge para o canto superior em mobile."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lindart_ai_robustness.py",
+    "/app/test_reports/pytest/iteration_13.xml"
+  ],
+  "action_items": [
+    "MobileNav: pr-24 não impede overlap visual/click do Emergent badge sobre itens centrais da nav scrollable. Considerar limitar itens visíveis ou ancorar scrollLeft inicial à direita (scrollIntoView no item ativo), ou usar overflow:visible + reservar área blank ANTES dos itens (pl-24 + scrollLeft inicial = 96) — isso garante que primeiros itens não comecem sob o badge."
+  ],
+  "critical_code_review_comments": [
+    "server.py tem 1295 linhas — recomendado quebrar em módulos (ai_routes.py, palette_routes.py, dna_routes.py, utils/llm_parser.py). Acima do guideline de 700 linhas.",
+    "_parse_llm_json tem 4 estratégias de fallback bem desenhadas; cobertura por testes ad-hoc seria útil (unit tests do parser isolado, sem rede).",
+    "_VIDEO_JOBS é dict em memória — não sobrevive a restart do supervisor, e em multi-worker quebra polling. Migrar para Mongo dna_video_jobs ou Redis.",
+    "EMERGENT_LLM_KEY ausente lança 500; OK, mas o frontend não diferencia 500 de 502 nas mensagens — UX pode confundir 'configuração' com 'falha de IA'.",
+    "MobileNav: 7 itens em 390px com items min-w-64px = 448px total + pr-24 = 544px, garantindo scroll horizontal. Considerar reduzir itens ou criar agrupamento."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lindart_ai_robustness.py (novo)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "85% (badge overlap em 2 itens da nav)"},
+  "test_credentials": "N/A — auth pausada",
+  "seed_data_creation": "1 doc em db.dna_shares com handle='TEST_lindart' (não removido — endpoint sem DELETE).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend AI endpoints 100% verdes. Parser tolerante _parse_llm_json (server.py linha 77) está cobrindo todos os formatos problemáticos do LLM — caption nunca retorna 502 (fallback determinístico monta JSON a partir do texto cru). Mobile nav: pr-24 no UL não resolve sozinho a interceptação do badge — o badge cobre items 4-5 (mixer/calculator) no estado inicial. Para testar fluxos profundos: setar localStorage 'lindart-store-v1' -> state.onboardingCompleted=true ANTES do reload.",
+  "rca of the issue": "Bug pr-24 vs badge: pr-24 adiciona 96px de padding DEPOIS do último <li>, criando whitespace no fim do scroll-area. Mas o overflow-x-auto + scrollLeft=0 inicial faz os primeiros itens (1-3) caberem no viewport esquerdo (x=0-215) e itens 4-5 caírem em x=219-383, exatamente sob o badge fixo (x=196-374, position:fixed bottom-0 right-0). O pr-24 só cumpre seu papel quando o usuário scrolla a nav até o final — daí o whitespace evita que o ÚLTIMO item fique permanentemente sob o badge. Fix sugerido: usar pl-0 pr-24 + ref que faça scrollLeft=ul.scrollWidth-ul.clientWidth no mount (alinhar à direita), OU reduzir para 4 itens principais + 'More' menu. Reprodução: viewport 390x844, ir para qualquer rota, observar que cliques em data-testid=mobile-nav-mixer e mobile-nav-calculator são interceptados (elementFromPoint retorna <p> do badge)."
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Play, Sparkles, Video } from "lucide-react";
 import toast from "react-hot-toast";
+import { chamarIA, ApiError } from "@/utils/api";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -163,27 +164,22 @@ export default function MixerSwirl({ colorA, colorB }) {
       icon: "🎬",
     });
     try {
-      const res = await fetch(`${API_BASE}/api/ai/generate-video`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          color_a: colorA,
-          color_b: colorB,
-          duration,
-          size: "1280x720",
-        }),
+      const data = await chamarIA("/ai/generate-video", {
+        color_a: colorA,
+        color_b: colorB,
+        duration,
+        size: "1280x720",
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${res.status}`);
-      }
-      const data = await res.json();
       if (!data.job_id) throw new Error("job_id ausente na resposta");
       // inicia polling em 3s para dar tempo ao background task arrancar
       pollRef.current = setTimeout(() => pollJob(data.job_id, tid, 0), 3000);
     } catch (e) {
       setLoadingVideo(false);
-      toast.error(`Falha Sora 2: ${e.message || "erro"}`, { id: tid });
+      const msg =
+        e instanceof ApiError && e.tipo === "saldo"
+          ? "Saldo do Universal Key esgotado. Recarregue para gerar vídeos."
+          : `Falha Sora 2: ${e?.message || "erro"}`;
+      toast.error(msg, { id: tid });
     }
   };
 

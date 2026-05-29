@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Fingerprint, Loader2, Sparkles, ChevronDown, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import DNAShareModal from "./DNAShareModal";
-
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+import AIErrorState from "./AIErrorState";
+import { chamarIA, ApiError, abrirUpgradePadrao } from "@/utils/api";
 
 export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
   const [open, setOpen] = useState(false);
@@ -32,22 +32,21 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
           favorite: !!p.favorite,
         })),
       };
-      const res = await fetch(`${API_BASE}/api/ai/visual-dna`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.detail || `Erro ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await chamarIA("/ai/visual-dna", body);
       setDna(data);
       setOpen(true);
       toast.success("DNA Visual decifrado");
     } catch (e) {
-      setError(e.message || "Falha ao analisar");
-      toast.error(e.message || "Falha ao analisar");
+      const erro =
+        e instanceof ApiError
+          ? { message: e.message, tipo: e.tipo, status: e.status, detail: e.detail }
+          : { message: e?.message || "Falha ao analisar", tipo: "servidor" };
+      setError(erro);
+      const msg =
+        erro.tipo === "saldo"
+          ? "Saldo de gerações esgotado. Recarregue o Universal Key para continuar."
+          : erro.message;
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -255,7 +254,9 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
       </AnimatePresence>
 
       {error && !dna && (
-        <div className="px-5 md:px-7 pb-4 text-sm text-red-700">{error}</div>
+        <div className="px-5 md:px-7 pb-5" data-testid="visual-dna-error">
+          <AIErrorState erro={error} onRetry={analyze} onUpgrade={abrirUpgradePadrao} />
+        </div>
       )}
 
       <DNAShareModal

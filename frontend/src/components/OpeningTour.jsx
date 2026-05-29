@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Loader2,
 } from "lucide-react";
+import { chamarIA, ApiError } from "@/utils/api";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const SEEN_KEY = "lindart.tour.v1.seen";
@@ -77,6 +78,7 @@ export default function OpeningTour() {
   const [loadingAudio, setLoadingAudio] = useState(false);
   const audioRef = useRef(null);
   const cacheRef = useRef(new Map()); // step.id -> objectURL
+  const ttsDisabledRef = useRef(false); // circuit breaker quando saldo IA esgota
 
   // Abre automaticamente na 1a visita
   useEffect(() => {
@@ -104,16 +106,15 @@ export default function OpeningTour() {
   );
 
   const fetchNarration = async (s) => {
+    if (ttsDisabledRef.current) return null;
     if (cacheRef.current.has(s.id)) return cacheRef.current.get(s.id);
     setLoadingAudio(true);
     try {
-      const res = await fetch(`${API_BASE}/api/ai/generate-voice`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: s.narration, voice: "nova", speed: 1.0 }),
+      const data = await chamarIA("/ai/generate-voice", {
+        text: s.narration,
+        voice: "nova",
+        speed: 1.0,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
       const bin = atob(data.audio_base64);
       const arr = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
@@ -122,6 +123,13 @@ export default function OpeningTour() {
       cacheRef.current.set(s.id, url);
       return url;
     } catch (e) {
+      // Se saldo esgotou ou rate-limit, desliga TTS p/ resto do tour (sem irritar usuário)
+      if (
+        e instanceof ApiError &&
+        (e.tipo === "saldo" || e.tipo === "limite")
+      ) {
+        ttsDisabledRef.current = true;
+      }
       return null;
     } finally {
       setLoadingAudio(false);
