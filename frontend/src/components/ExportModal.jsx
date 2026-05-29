@@ -12,10 +12,10 @@ import {
   downloadPDF,
 } from "@/utils/export";
 
-export default function ExportModal({ palette, captureRef: externalRef, open, onClose }) {
+export default function ExportModal({ palette, open, onClose }) {
   const [format, setFormat] = useState("css");
   const internalRef = useRef(null);
-  const captureRef = externalRef || internalRef;
+  const captureRef = internalRef;
 
   if (!palette) return null;
 

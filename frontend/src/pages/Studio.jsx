@@ -235,7 +235,6 @@ export default function Studio() {
 
       <ExportModal
         palette={activePalette}
-        captureRef={captureRef}
         open={exportOpen}
         onClose={() => setExportOpen(false)}
       />

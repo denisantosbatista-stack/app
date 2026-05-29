@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import ExportModal from "@/components/ExportModal";
@@ -24,7 +24,6 @@ export default function Library() {
   const { saved, loadingSaved, toggleFavorite, deletePalette } = usePaletteStore();
   const [filter, setFilter] = useState("todos");
   const [exportPalette, setExportPalette] = useState(null);
-  const captureRef = useRef(null);
 
   const filtered = useMemo(
     () => saved.filter(FILTER_FNS[filter] || FILTER_FNS.todos),
@@ -76,7 +75,6 @@ export default function Library() {
 
       <ExportModal
         palette={exportPalette}
-        captureRef={captureRef}
         open={!!exportPalette}
         onClose={() => setExportPalette(null)}
       />
