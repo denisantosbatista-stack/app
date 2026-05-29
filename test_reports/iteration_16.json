@@ -1,0 +1,33 @@
+{
+  "summary": "Iteração 16: validação P0 (3 IAs Mentora/Trends/Collections conectadas à navegação) + P1 (placeholder de vídeo no onboarding) + contrato Sora 2. Backend 13/13 pytest passando (10 testes anteriores de Mentora/Trends/Collection/Generate-Image + 3 novos do contrato Sora 2). Frontend: onboarding em primeira visita exibe splash 'Bem-vindo ao LindArt' com data-testid='onboarding-video-placeholder' renderizando 'Vídeo de boas-vindas em breve' (sem REACT_APP_ONBOARDING_VIDEO_URL); CTA 'Começar' avança e o splash some. Navbar desktop e MobileNav (390x844) mostram os 3 links de IA com data-testids corretos. Rotas /mentora, /trends, /collections carregam suas páginas com data-testids esperados (mentora-page, trends-page, collections-page). MobileNav respeita gap inferior de 64px (offset do badge Emergent) — sem sobreposição.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lindart_new_ai.py",
+    "/app/backend/tests/test_sora_contract.py",
+    "/app/test_reports/pytest/iteration_16.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py continua com 1669 linhas — recomendação reiterada de iterações anteriores para split em routers (ai_router/palettes_router/dna_router). Não bloqueante.",
+    "/api/ai/video-status NÃO autentica nem rate-limita por job_id; qualquer cliente que adivinhe UUID pode ler base64 do vídeo. Considerar TTL/cleanup do _VIDEO_JOBS in-memory (atualmente cresce indefinidamente) — adicionar expiração de ~1h por job.",
+    "Bug do trend-save reportado na iteração 15 (Trends.jsx saveAsPalette enviando `title` em vez de `name`, sem await/catch → toast verde falso) NÃO foi re-testado nesta iteração pois fora do escopo do request atual; recomendado validar se foi corrigido."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_sora_contract.py"
+  ],
+  "success_rate": {"backend": "100% (13/13 pytest)", "frontend": "100% — onboarding placeholder, splash CTA, 3 rotas de IA, navbar desktop, mobile-nav e regressão de gap inferior todos OK"},
+  "test_credentials": "N/A — sem auth (auth está mockada conforme handoff)",
+  "seed_data_creation": "Nenhuma",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P0+P1 desta task validados. Sora 2: testes de contrato (POST retorna job_id, GET retorna status, 404 para id inválido) cobertos em /app/backend/tests/test_sora_contract.py — não esperam conclusão da geração (~minutos). Para limpar onboarding: page.evaluate('localStorage.clear(); sessionStorage.clear();') + reload. Placeholder de vídeo aparece pois REACT_APP_ONBOARDING_VIDEO_URL não está definido em frontend/.env — quando definido, OnboardingVideo.jsx exibe iframe play (data-testid='onboarding-video-play'/'onboarding-video-iframe'). Bug pendente da iteração 15 (trend-save Trends.jsx mandando `title` em vez de `name`) ainda precisa retest se main agent corrigiu.",
+  "rca of the issue": "Nenhum bug encontrado nesta iteração."
+}

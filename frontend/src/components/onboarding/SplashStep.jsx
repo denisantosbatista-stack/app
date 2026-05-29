@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import OnboardingVideo from "./OnboardingVideo";
 
 export default function SplashStep({ onNext }) {
   return (
@@ -41,6 +42,8 @@ export default function SplashStep({ onNext }) {
         Vamos preparar seu atelier em <strong className="text-ink-text">menos de um minuto</strong>.
         Paletas inteligentes, peças reais e exportação profissional.
       </motion.p>
+
+      <OnboardingVideo />
 
       <motion.button
         initial={{ opacity: 0, y: 12 }}
