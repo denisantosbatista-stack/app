@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -654,6 +655,89 @@ async def video_status(job_id: str):
         "duration": job.get("duration"),
         "size": job.get("size"),
     }
+
+
+# ===== Onboarding welcome video (Sora 2 swirl branded) =====
+STATIC_DIR = ROOT_DIR / "static_assets"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+WELCOME_VIDEO_PATH = STATIC_DIR / "onboarding-welcome.mp4"
+_WELCOME_JOB: dict = {"status": "idle"}  # status: idle | processing | completed | error
+
+
+def _run_welcome_video_job() -> None:
+    """Gera vídeo institucional Sora 2 para o onboarding e salva em static_assets."""
+    global _WELCOME_JOB
+    try:
+        prompt = (
+            "Macro cinematic shot of luxurious resin art swirling in slow motion on a black "
+            "studio background. Champagne gold, deep emerald and pearl white epoxy resin "
+            "spiraling together with golden mica specks sparkling under soft top light. "
+            "Glossy reflective surface, marbling reveal, premium jewelry aesthetic, ultra "
+            "realistic, shallow depth of field, 4K, elegant brand opener for LindArt resin "
+            "art studio. No text, no logos, pure visual poetry."
+        )
+        video_gen = OpenAIVideoGeneration(api_key=EMERGENT_LLM_KEY)
+        video_bytes = video_gen.text_to_video(prompt, "sora-2", "1280x720", 4, 600)
+        if not video_bytes:
+            _WELCOME_JOB = {"status": "error", "error": "Sora 2 retornou vazio"}
+            return
+        with open(WELCOME_VIDEO_PATH, "wb") as f:
+            f.write(video_bytes)
+        _WELCOME_JOB = {
+            "status": "completed",
+            "size_bytes": len(video_bytes),
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+        }
+        logger.info(f"Welcome video saved: {WELCOME_VIDEO_PATH} ({len(video_bytes)} bytes)")
+    except Exception as e:
+        logger.exception("welcome video generation failed")
+        _WELCOME_JOB = {"status": "error", "error": str(e)[:200]}
+
+
+@api_router.get("/onboarding/welcome-video")
+async def onboarding_welcome_video_status():
+    """Retorna o estado atual do vídeo de boas-vindas.
+
+    - exists=True + url disponível → frontend renderiza <video src>
+    - status=processing → frontend mostra placeholder + opcionalmente texto "gerando…"
+    - exists=False → frontend mostra placeholder estático
+    """
+    exists = WELCOME_VIDEO_PATH.exists() and WELCOME_VIDEO_PATH.stat().st_size > 0
+    return {
+        "exists": exists,
+        "url": "/api/static/onboarding-welcome.mp4" if exists else None,
+        "status": _WELCOME_JOB.get("status", "idle"),
+        "error": _WELCOME_JOB.get("error"),
+    }
+
+
+@api_router.post("/onboarding/generate-welcome-video")
+async def onboarding_generate_welcome_video(background_tasks: BackgroundTasks):
+    """Dispara geração do vídeo institucional Sora 2 em background.
+
+    Idempotente: se um job já está em processamento, retorna o estado atual.
+    Se o vídeo já existe, retorna `already_exists=True`. Para regerar, deletar o arquivo
+    em `/app/backend/static_assets/onboarding-welcome.mp4` antes.
+    """
+    global _WELCOME_JOB
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+
+    if WELCOME_VIDEO_PATH.exists() and WELCOME_VIDEO_PATH.stat().st_size > 0:
+        return {
+            "already_exists": True,
+            "url": "/api/static/onboarding-welcome.mp4",
+        }
+    if _WELCOME_JOB.get("status") == "processing":
+        return {"status": "processing", "started_at": _WELCOME_JOB.get("started_at")}
+
+    _WELCOME_JOB = {
+        "status": "processing",
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    }
+    background_tasks.add_task(_run_welcome_video_job)
+    logger.info("Welcome video generation queued")
+    return {"status": "processing", "started_at": _WELCOME_JOB["started_at"]}
 
 
 @api_router.post("/ai/generate-caption")
@@ -1653,6 +1737,14 @@ async def download_source_code():
 
 
 app.include_router(api_router)
+
+# Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
+# para passar pelo proxy do ingress).
+app.mount(
+    "/api/static",
+    StaticFiles(directory=str(ROOT_DIR / "static_assets")),
+    name="static_assets",
+)
 
 app.add_middleware(
     CORSMiddleware,
