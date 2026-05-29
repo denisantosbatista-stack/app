@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import ExportModal from "@/components/ExportModal";
 import LibraryEmpty from "@/components/LibraryEmpty";
 import LibraryCard from "@/components/LibraryCard";
 import LibrarySkeleton from "@/components/LibrarySkeleton";
+import VisualDNAPanel from "@/components/VisualDNAPanel";
 
 const FILTERS = [
   { id: "todos", label: "Todas" },
@@ -21,14 +24,36 @@ const FILTER_FNS = {
 };
 
 export default function Library() {
-  const { saved, loadingSaved, toggleFavorite, deletePalette } = usePaletteStore();
+  const { saved, loadingSaved, toggleFavorite, deletePalette, savePalette, setActivePalette } =
+    usePaletteStore();
   const [filter, setFilter] = useState("todos");
   const [exportPalette, setExportPalette] = useState(null);
+  const navigate = useNavigate();
 
   const filtered = useMemo(
     () => saved.filter(FILTER_FNS[filter] || FILTER_FNS.todos),
     [saved, filter]
   );
+
+  const handleUseNextPalette = async (colors) => {
+    if (!colors?.length) return;
+    try {
+      const palette = {
+        name: "DNA · Próxima paleta",
+        description: "Sugerida pelo seu DNA Visual",
+        colors: colors.map((hex) => ({ hex, name: hex })),
+        style: "luxo",
+        tags: ["dna", "sugestao"],
+        source: "ai",
+      };
+      const newPal = await savePalette(palette);
+      setActivePalette(newPal.id);
+      toast.success("Paleta salva e ativada no Studio");
+      navigate("/studio");
+    } catch (e) {
+      toast.error("Não foi possível salvar a paleta sugerida");
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-10 py-12" data-testid="library-page">
@@ -64,6 +89,10 @@ export default function Library() {
           ))}
         </div>
       </motion.div>
+
+      {saved.length > 0 && (
+        <VisualDNAPanel palettes={saved} onUseNextPalette={handleUseNextPalette} />
+      )}
 
       <LibraryContent
         loading={loadingSaved}

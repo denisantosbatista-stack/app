@@ -152,6 +152,14 @@ class LuxuryScoreRequest(BaseModel):
     style: Optional[str] = None
 
 
+class VisualDNARequest(BaseModel):
+    """Analisa um conjunto de paletas (geralmente salvas pelo usuário)
+    e retorna a 'linguagem visual' / assinatura estética dele.
+    """
+    palettes: List[dict] = []  # cada item: {name, colors[], style?, tags?, favorite?}
+    handle: Optional[str] = None  # opcional, para futuro perfil público
+
+
 # ===== Routes =====
 @api_router.get("/")
 async def root():
@@ -745,6 +753,227 @@ async def luxury_score(req: LuxuryScoreRequest):
         "metrics": metrics,
         "verdict": verdict,
         "suggestions": suggestions,
+    }
+
+
+# ===== Visual DNA =====
+def _hex_distance(a: tuple, b: tuple) -> float:
+    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2) ** 0.5
+
+
+def _cluster_dominant_colors(hexes: List[str], k: int = 6) -> List[dict]:
+    """K-means-lite (greedy farthest-point) para extrair cores dominantes
+    sem dependência extra. Retorna lista [{hex, weight(0..1)}]."""
+    rgbs = [c for c in (_hex_to_rgb(h) for h in hexes) if c]
+    if not rgbs:
+        return []
+    # seed: a cor mais "no meio"
+    centers = [rgbs[0]]
+    for _ in range(min(k - 1, len(rgbs) - 1)):
+        # adiciona a mais distante das atuais
+        best, best_d = None, -1
+        for c in rgbs:
+            d = min(_hex_distance(c, ctr) for ctr in centers)
+            if d > best_d:
+                best_d, best = d, c
+        if best is not None and best not in centers:
+            centers.append(best)
+        else:
+            break
+    # atribui pesos por contagem de "mais próximo"
+    counts = [0] * len(centers)
+    for c in rgbs:
+        idx = min(range(len(centers)), key=lambda i: _hex_distance(c, centers[i]))
+        counts[idx] += 1
+    total = sum(counts) or 1
+    result = []
+    for ctr, ct in sorted(zip(centers, counts), key=lambda x: -x[1]):
+        hexc = "#{:02x}{:02x}{:02x}".format(*ctr).upper()
+        result.append({"hex": hexc, "weight": round(ct / total, 3)})
+    return result
+
+
+def _compute_dna_metrics(palettes: List[dict]) -> dict:
+    all_colors: List[str] = []
+    styles: dict = {}
+    fav_count = 0
+    for p in palettes:
+        cols = p.get("colors") or []
+        for c in cols:
+            if isinstance(c, str):
+                all_colors.append(c)
+            elif isinstance(c, dict) and isinstance(c.get("hex"), str):
+                all_colors.append(c["hex"])
+        st = p.get("style")
+        if st:
+            styles[st] = styles.get(st, 0) + 1
+        if p.get("favorite"):
+            fav_count += 1
+
+    if not all_colors:
+        return {
+            "dominant": [],
+            "stats": {"palettes": len(palettes), "colors": 0, "favorites": fav_count},
+            "style_breakdown": [],
+            "avg": {"contrast": 0, "harmony": 0, "depth": 0, "sophistication": 0, "luxury": 0},
+        }
+
+    # Médias das métricas heurísticas por paleta
+    per = []
+    for p in palettes:
+        cols = []
+        for c in p.get("colors") or []:
+            if isinstance(c, str):
+                cols.append(c)
+            elif isinstance(c, dict) and isinstance(c.get("hex"), str):
+                cols.append(c["hex"])
+        if cols:
+            per.append(_compute_heuristic_luxury(cols))
+    n = max(1, len(per))
+    avg = {
+        "contrast": round(sum(x["contrast"] for x in per) / n),
+        "harmony": round(sum(x["harmony"] for x in per) / n),
+        "depth": round(sum(x["depth"] for x in per) / n),
+        "sophistication": round(sum(x["sophistication"] for x in per) / n),
+        "luxury": round(sum(x["score"] for x in per) / n),
+    }
+
+    dominant = _cluster_dominant_colors(all_colors, k=6)
+    style_breakdown = [
+        {"style": k, "count": v} for k, v in sorted(styles.items(), key=lambda x: -x[1])
+    ]
+    return {
+        "dominant": dominant,
+        "stats": {
+            "palettes": len(palettes),
+            "colors": len(all_colors),
+            "favorites": fav_count,
+        },
+        "style_breakdown": style_breakdown,
+        "avg": avg,
+    }
+
+
+@api_router.post("/ai/visual-dna")
+async def visual_dna(req: VisualDNARequest):
+    """Analisa as paletas do usuário e retorna a 'linguagem visual' dele.
+
+    Combina:
+    - Métricas determinísticas (cores dominantes, médias de luxo, estilos)
+    - Parecer poético da IA (assinatura, mood, recomendações)
+    """
+    palettes = req.palettes or []
+    if not palettes:
+        raise HTTPException(
+            status_code=400,
+            detail="Envie ao menos 1 paleta para analisar sua linguagem visual",
+        )
+
+    metrics = _compute_dna_metrics(palettes)
+
+    signature = ""
+    mood: List[str] = []
+    recommendations: List[str] = []
+    next_palette: List[str] = []
+
+    if EMERGENT_LLM_KEY and metrics["dominant"]:
+        try:
+            top_hex = ", ".join(d["hex"] for d in metrics["dominant"])
+            styles_str = ", ".join(
+                f"{s['style']} ({s['count']})" for s in metrics["style_breakdown"][:5]
+            ) or "—"
+            system_msg = (
+                "Você é uma diretora criativa que decifra a linguagem visual "
+                "de artistas de joalheria em resina. Retorne EXCLUSIVAMENTE JSON válido:\n"
+                "{\n"
+                '  "signature": "1-2 frases descrevendo a assinatura estética do artista (PT-BR refinado)",\n'
+                '  "mood": ["3-5 adjetivos curtos que definem o universo dele"],\n'
+                '  "recommendations": ["3 sugestões acionáveis para evoluir a linguagem"],\n'
+                '  "next_palette": ["5 hex codes #RRGGBB de uma próxima paleta coerente com o DNA"]\n'
+                "}\n"
+                "Sem markdown, sem cercas de código."
+            )
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"dna-{uuid.uuid4()}",
+                system_message=system_msg,
+            ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+            user_text = (
+                f"Artista tem {metrics['stats']['palettes']} paletas "
+                f"({metrics['stats']['favorites']} favoritas). "
+                f"Cores dominantes: {top_hex}. "
+                f"Estilos preferidos: {styles_str}. "
+                f"Médias — luxo {metrics['avg']['luxury']}/100, "
+                f"contraste {metrics['avg']['contrast']}, "
+                f"harmonia {metrics['avg']['harmony']}, "
+                f"profundidade {metrics['avg']['depth']}, "
+                f"sofisticação {metrics['avg']['sophistication']}."
+            )
+            response = await chat.send_message(UserMessage(text=user_text))
+            raw = (response or "").strip()
+            raw = re.sub(r"^```(?:json)?\s*", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+            match = re.search(r"\{[\s\S]*\}", raw)
+            if match:
+                data = json.loads(match.group(0))
+                signature = str(data.get("signature", "")).strip()
+                m = data.get("mood") or []
+                if isinstance(m, list):
+                    mood = [str(x).strip() for x in m if str(x).strip()][:6]
+                rc = data.get("recommendations") or []
+                if isinstance(rc, list):
+                    recommendations = [str(x).strip() for x in rc if str(x).strip()][:5]
+                np_ = data.get("next_palette") or []
+                if isinstance(np_, list):
+                    next_palette = [
+                        s.strip()
+                        for s in np_
+                        if isinstance(s, str)
+                        and re.match(r"^#?[0-9A-Fa-f]{6}$", s.strip())
+                    ][:6]
+                    next_palette = [
+                        ("#" + c.lstrip("#")).upper() for c in next_palette
+                    ]
+        except Exception as e:
+            logger.warning(f"Visual DNA fallback: {e!r}")
+
+    if not signature:
+        avg_lux = metrics["avg"]["luxury"]
+        if avg_lux >= 75:
+            signature = (
+                "Sua linguagem visual respira luxo silencioso — paletas "
+                "profundas, contraste intencional e refinamento consistente."
+            )
+        elif avg_lux >= 55:
+            signature = (
+                "Você transita entre o sofisticado e o autoral, com uma "
+                "paleta pessoal em construção e bom senso cromático."
+            )
+        else:
+            signature = (
+                "Sua linguagem é vibrante e experimental — há espaço para "
+                "amadurecer o contraste e ganhar mais profundidade."
+            )
+    if not mood:
+        mood = ["refinado", "autoral", "intencional"]
+    if not recommendations:
+        recommendations = [
+            "Crie 3 paletas seguidas com a mesma cor escura âncora",
+            "Experimente acabamentos metálicos para reforçar a assinatura",
+            "Documente as paletas favoritas em uma série temática",
+        ]
+    if not next_palette:
+        next_palette = [d["hex"] for d in metrics["dominant"][:5]]
+
+    return {
+        "signature": signature,
+        "mood": mood,
+        "recommendations": recommendations,
+        "next_palette": next_palette,
+        "dominant": metrics["dominant"],
+        "stats": metrics["stats"],
+        "style_breakdown": metrics["style_breakdown"],
+        "avg": metrics["avg"],
     }
 
 

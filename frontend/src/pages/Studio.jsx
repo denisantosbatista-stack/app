@@ -11,6 +11,7 @@ import AIGenerator from "@/components/AIGenerator";
 import ExportModal from "@/components/ExportModal";
 import { StyleSelector, PieceSelector } from "@/components/PieceSelectors";
 import Productions3D from "@/components/Productions3D";
+import MarketingPanel from "@/components/MarketingPanel";
 import { copyToClipboard, isDark } from "@/utils/color";
 import { encodePaletteToUrl, decodePaletteFromSearch } from "@/utils/share";
 
@@ -231,6 +232,10 @@ export default function Studio() {
 
           <Productions3D palette={activePalette} />
         </div>
+      </div>
+
+      <div className="mt-10">
+        <MarketingPanel palette={activePalette} />
       </div>
 
       <ExportModal
