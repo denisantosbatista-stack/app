@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import axios from "axios";
 import { PRESET_PALETTES, STYLES, PIECES } from "@/data/palettes";
+import { chamarIA, ApiError } from "@/utils/api";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -96,11 +97,18 @@ export const usePaletteStore = create(
       generateWithAI: async (prompt, style) => {
         set({ aiGenerating: true, aiResult: null, lastError: null });
         try {
-          const res = await axios.post(`${API}/ai/generate-palette`, { prompt, style });
-          set({ aiGenerating: false, aiResult: res.data });
-          return res.data;
+          // chamarIA: retry 3x com backoff (2s/4s/8s) + AbortController 60s timeout
+          // + categorização de erro (limite/saldo/timeout/rede/servidor).
+          const data = await chamarIA("/ai/generate-palette", { prompt, style });
+          set({ aiGenerating: false, aiResult: data });
+          return data;
         } catch (e) {
-          set({ aiGenerating: false, lastError: e?.response?.data?.detail || e.message });
+          // Mantém ApiError com .tipo preservado para a UI distinguir o motivo.
+          const lastError =
+            e instanceof ApiError
+              ? { message: e.message, tipo: e.tipo, status: e.status, detail: e.detail }
+              : { message: e?.message || "Falha desconhecida", tipo: "servidor" };
+          set({ aiGenerating: false, lastError });
           throw e;
         }
       },

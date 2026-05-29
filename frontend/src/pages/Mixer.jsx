@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Beaker, Copy, ArrowLeftRight, Check, Sparkles } from "lucide-react";
+import { Beaker, Copy, ArrowLeftRight, Check, Sparkles, Wand2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { mixOklab, mixRgbLinear, deltaEOk } from "@/utils/lab";
 import { copyToClipboard, isDark } from "@/utils/color";
+import { usePaletteStore } from "@/store/usePaletteStore";
 
 const SUGGESTIONS = [
   { a: "#D4AF37", b: "#0B0B0F", label: "Dourado × Onyx" },
@@ -17,6 +19,10 @@ export default function Mixer() {
   const [colorA, setColorA] = useState("#D4AF37");
   const [colorB, setColorB] = useState("#0B0B0F");
   const [ratio, setRatio] = useState(50);
+  const [applying, setApplying] = useState(false);
+  const navigate = useNavigate();
+  const savePalette = usePaletteStore((s) => s.savePalette);
+  const setActivePalette = usePaletteStore((s) => s.setActivePalette);
 
   const t = ratio / 100;
   const mixedPerceptual = useMemo(() => mixOklab(colorA, colorB, t), [colorA, colorB, t]);
@@ -41,6 +47,42 @@ export default function Mixer() {
   const copyHex = (hex) => {
     copyToClipboard(hex);
     toast.success(`${hex} copiado`, { icon: "✦" });
+  };
+
+  // Aplica a mistura como paleta no Studio: 4 stops perceptuais (A, A→B 33%, A→B 67%, B)
+  // Persiste via backend e marca como ativa, então navega para /studio.
+  const applyMixToStudio = async () => {
+    if (applying) return;
+    setApplying(true);
+    const id = toast.loading("Aplicando no Studio…", { icon: "✨" });
+    try {
+      const c0 = colorA.toUpperCase();
+      const c1 = mixOklab(colorA, colorB, 1 / 3).toUpperCase();
+      const c2 = mixOklab(colorA, colorB, 2 / 3).toUpperCase();
+      const c3 = colorB.toUpperCase();
+      const payload = {
+        name: `Mistura ${c0} × ${c3}`,
+        description: "Paleta criada no Misturador perceptual (OKLab)",
+        colors: [
+          { hex: c0, name: "Cor A", role: "principal" },
+          { hex: c1, name: "Mistura 33%", role: "acento" },
+          { hex: c2, name: "Mistura 67%", role: "detalhe" },
+          { hex: c3, name: "Cor B", role: "veios" },
+        ],
+        style: "luxo",
+        tags: ["mistura", "oklab"],
+        favorite: false,
+        source: "user",
+      };
+      const saved = await savePalette(payload);
+      if (saved?.id) setActivePalette(saved.id);
+      toast.success("Mistura aplicada", { id });
+      navigate("/studio");
+    } catch (e) {
+      toast.error("Não foi possível aplicar. Tente novamente.", { id });
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -139,6 +181,21 @@ export default function Mixer() {
               onCopy={() => copyHex(mixedLinear)}
               testid="mixer-result-rgb"
             />
+
+            <button
+              type="button"
+              onClick={applyMixToStudio}
+              disabled={applying}
+              className="btn-gold w-full px-5 py-3 rounded-sm text-xs tracking-[0.18em] uppercase inline-flex items-center justify-center gap-2 disabled:opacity-60"
+              data-testid="mixer-apply-studio-btn"
+            >
+              {applying ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Wand2 className="w-4 h-4" />
+              )}
+              {applying ? "Aplicando…" : "Aplicar mistura no Studio"}
+            </button>
 
             <div className="p-3 rounded-sm bg-ink-surface/60 border border-black/[0.06] text-[11px] text-zinc-600 leading-relaxed">
               <Sparkles className="w-3 h-3 inline text-gold mr-1" />

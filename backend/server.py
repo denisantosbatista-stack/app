@@ -26,6 +26,46 @@ EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
 app = FastAPI(title="LindArt API")
 api_router = APIRouter(prefix="/api")
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+
+def _map_llm_exception(exc: Exception) -> HTTPException:
+    """Mapeia exceções do emergentintegrations / upstream LLM para HTTP semânticos.
+
+    - 429: rate-limit detectado por palavras-chave ou status no texto do erro.
+    - 402: saldo / quota esgotada (sem créditos no Universal Key).
+    - 502: outros erros upstream.
+    """
+    msg = str(exc) or ""
+    low = msg.lower()
+    # Rate limit
+    if "429" in msg or "rate limit" in low or "too many requests" in low or "ratelimit" in low:
+        return HTTPException(
+            status_code=429,
+            detail="A IA atingiu o limite de requisições. Tente novamente em alguns segundos.",
+        )
+    # Saldo / quota
+    saldo_keys = (
+        "402", "insufficient", "quota", "credit", "balance",
+        "out of credits", "no credits", "billing", "payment required",
+    )
+    if any(k in low for k in saldo_keys):
+        return HTTPException(
+            status_code=402,
+            detail="Saldo de gerações esgotado. Recarregue o Universal Key ou faça upgrade.",
+        )
+    # Autorização
+    if "401" in msg or "unauthorized" in low or "invalid api key" in low or "forbidden" in low:
+        return HTTPException(
+            status_code=402,
+            detail="Chave de IA inválida ou expirada.",
+        )
+    return HTTPException(status_code=502, detail=f"AI generation failed: {msg}")
+
 
 # ===== Models =====
 class ColorSwatch(BaseModel):
@@ -114,9 +154,11 @@ async def generate_palette_ai(req: AIPromptRequest):
 
     try:
         response = await chat.send_message(UserMessage(text=user_text))
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"AI error: {e}")
-        raise HTTPException(status_code=502, detail=f"AI generation failed: {str(e)}")
+        logger.error(f"AI error: {e!r}")
+        raise _map_llm_exception(e)
 
     # Extract JSON from response
     raw = response.strip()
@@ -190,12 +232,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 
 @app.on_event("shutdown")
