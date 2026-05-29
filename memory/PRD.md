@@ -137,6 +137,16 @@ src/
   - **Wiring**: `VisualDNAPanel.jsx` agora exibe CTA "Compartilhar cartão" (`data-testid='dna-share-open'`) que abre o modal com o DNA gerado.
   - **testing_agent_v3_fork iteração 12**: backend 100% (6/6 pytest) + frontend 100% E2E (seed → DNA → modal → handle → link → PNG → rota pública → 404). Zero bugs.
 
+- 2026-05-29: v1.8.1 — Hardening de parsing JSON da IA + MobileNav anti-overlap (correção crítica)
+  - **Backend** (`/app/backend/server.py`):
+    - Nova função `_parse_llm_json(raw_text)` — parser tolerante para JSON de LLM. Lida com: aspas tipográficas (curly), markdown fences, vírgulas finais, aspas duplas internas não escapadas, quebras de linha literais dentro de strings. Tenta 5 estratégias progressivas; retorna `None` (jamais lança) para que o caller use fallback determinístico.
+    - 4 endpoints AI passaram a usar `_parse_llm_json`: `/api/ai/generate-palette`, `/api/ai/generate-caption`, `/api/ai/luxury-score`, `/api/ai/visual-dna`.
+    - `generate-caption` agora possui **fallback determinístico**: se o LLM produzir saída irrecuperável, constrói `{headline, caption, hashtags, alt_text, cta}` a partir do texto cru — **jamais 502 ao usuário final**. Mata definitivamente o "loader infinito" reportado pelo usuário.
+  - **Frontend** (`/app/frontend/src/components/MobileNav.jsx` + `/app/frontend/src/App.js`):
+    - `MobileNav` levantada acima do badge "Made with Emergent" via `style.bottom = calc(env(safe-area-inset-bottom,0px) + 56px)`. Itens 4-7 (Mixer, Proporções, A/B, Técnicas) já não são interceptados pelo badge — elementsFromPoint no centro retorna NavLink em 7/7 itens.
+    - `main` `pb-36 md:pb-8`, `footer` `pb-40 md:pb-10` compensam a nova altura ocupada.
+  - **testing_agent_v3_fork iter 13 + 14**: backend 100% (4/4 endpoints AI 200, parser robusto contra payloads "venenosos") + frontend mobile 100% (7/7 itens da MobileNav clicáveis, sem overlap). Zero bugs bloqueantes remanescentes.
+
 
 ## Roadmap Experiencial (em andamento — pivot do usuário, monetização PAUSADA)
 ### P0 (próximos)
@@ -144,9 +154,18 @@ src/
 - [x] Tour de Abertura autoexplicativo (4 steps + voz IA via OpenAI TTS) na primeira visita. (v1.6)
 - [x] Mixer realista: swirl Canvas 2D + Sora 2 (`/api/ai/generate-video`) com polling. (v1.6)
 - [x] Galeria 3D: viewer react-three-fiber + Nano Banana (`/api/ai/generate-image`) como textura PBR. (v1.6)
+- [x] Hardening de parsing JSON da IA + MobileNav anti-overlap (v1.8.1).
 - [ ] Animações Framer Motion adicionais em Hero, MockupShowcase e TrendingPalettes (refino).
 ### P1
 - [x] Download do código-fonte (v1.5).
+- [ ] OG tags dinâmicas para `/dna/:id` (server-side render para preview no IG/WhatsApp/X).
+- [ ] Backend hardening de `/api/dna/share` (payload size limits, unique index em id).
+### P2
+- [ ] Refator: extrair `downloadDnaPng` para utilitário compartilhado entre modal e página pública.
+- [ ] Split de `server.py` (1295 linhas) em `routes/` + `models/`.
+- [ ] Custom property `--emergent-badge-offset` injetada para tornar layout robusto a mudanças do badge.
+- [ ] Public Profile `/u/{handle}` com favoritos + sharing.
 ### Pausado
 - [ ] Monetização (Auth + Stripe) — explicitamente pausado pelo usuário.
 - [ ] Templates prontos por categoria.
+
