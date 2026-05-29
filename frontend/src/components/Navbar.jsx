@@ -6,6 +6,9 @@ import { toast } from "react-hot-toast";
 const links = [
   { to: "/", label: "Início", end: true },
   { to: "/studio", label: "Studio" },
+  { to: "/mentora", label: "Mentora", ai: true },
+  { to: "/trends", label: "Tendências", ai: true },
+  { to: "/collections", label: "Coleções", ai: true },
   { to: "/library", label: "Biblioteca" },
   { to: "/mixer", label: "Mixer" },
   { to: "/calculator", label: "Proporções" },
@@ -62,14 +65,14 @@ export default function Navbar() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-5 lg:gap-7">
           {links.map((l) => (
             <NavLink
               key={l.to}
               to={l.to}
               end={l.end}
               className={({ isActive }) =>
-                `text-sm tracking-wide transition-colors duration-300 relative ${
+                `text-sm tracking-wide transition-colors duration-300 relative inline-flex items-center gap-1.5 ${
                   isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
                 }`
               }
@@ -77,6 +80,12 @@ export default function Navbar() {
             >
               {({ isActive }) => (
                 <>
+                  {l.ai && (
+                    <span
+                      aria-hidden
+                      className="inline-block w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_6px_rgba(212,178,96,0.7)]"
+                    />
+                  )}
                   {l.label}
                   {isActive && (
                     <motion.span

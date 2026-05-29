@@ -9,6 +9,9 @@ import Calculator from "@/pages/Calculator";
 import Compare from "@/pages/Compare";
 import Mixer from "@/pages/Mixer";
 import Tips from "@/pages/Tips";
+import Mentora from "@/pages/Mentora";
+import Trends from "@/pages/Trends";
+import Collections from "@/pages/Collections";
 import PublicDNAPage from "@/pages/PublicDNAPage";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
@@ -46,6 +49,9 @@ function App() {
           <Route path="/compare" element={<Compare />} />
           <Route path="/mixer" element={<Mixer />} />
           <Route path="/tips" element={<Tips />} />
+          <Route path="/mentora" element={<Mentora />} />
+          <Route path="/trends" element={<Trends />} />
+          <Route path="/collections" element={<Collections />} />
         </Routes>
       </main>
       <footer className="border-t border-black/[0.06] py-6 md:py-10 px-6 pb-36 md:pb-10 text-center text-[10px] md:text-xs tracking-[0.2em] uppercase text-ink-muted">

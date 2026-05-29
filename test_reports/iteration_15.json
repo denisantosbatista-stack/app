@@ -1,0 +1,46 @@
+{
+  "summary": "Iteração 15: testes backend + frontend das 3 novas features de IA (Mentora, Trends, Coleções). Backend pytest 10/10 passando após ajuste de campo timestamp. Frontend: Navbar desktop + MobileNav listam os 3 novos links com data-testid corretos; /mentora envia prompt e recebe resposta do Claude; /trends renderiza 5 cards com paletas válidas; /collections gera 4 peças e o mockup da peça 0 (Bandeja Maré Alta) foi renderizado via Nano Banana. Regressão das 7 páginas existentes OK em mobile 390x844.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/ai/trends", "issue": "Spec do problema pede campo `cached_at` mas backend retorna `generated_at`. Considerar renomear ou adicionar alias para consistência com a spec/frontend (Trends.jsx armazena seu próprio cached_at localmente)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "/trends → clicar trend-save",
+        "issue": "Toast verde 'X salva na biblioteca' aparece, mas chamada para POST /api/palettes retorna 422 (Unprocessable Entity) e gera unhandled AxiosError no console. Causa raiz: Trends.jsx envia objeto com chave `title` para savePalette({...title: t.name}) enquanto usePaletteStore.savePalette monta payload com `name: palette.name` (undefined) → backend rejeita por validação Pydantic. Além disso, em Trends.jsx saveAsPalette() não usa await/then, então a rejeição do POST nunca cai no catch e o toast.success dispara mesmo no insucesso. Resultado: paleta da tendência NÃO persiste no backend, fica apenas em estado local até refresh.",
+        "affected_selectors": ["[data-testid='trend-save']"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lindart_new_ai.py",
+    "/app/test_reports/pytest/iteration_15.xml"
+  ],
+  "action_items": [
+    "Corrigir Trends.jsx saveAsPalette: usar `name: t.name` (não `title`) e `await savePalette(...)` dentro de try/catch para detectar erro real. Também passar `description`/`source` se relevante. Após fix: POST /api/palettes deve retornar 200/201 e paleta persiste.",
+    "Opcional: padronizar usePaletteStore.savePalette para aceitar `title` como alias de `name` para evitar regressões similares.",
+    "Considerar renomear campo `generated_at` para `cached_at` em /api/ai/trends OU atualizar a spec — apenas para consistência com o problema; não é bloqueante (frontend usa cache próprio)."
+  ],
+  "critical_code_review_comments": [
+    "Trends.jsx saveAsPalette: função não-async invocando promise sem await → swallow de erro + mensagem de sucesso enganosa. Padrão preocupante para outras integrações; auditar usos de savePalette no codebase.",
+    "usePaletteStore.savePalette espera `palette.name` mas as várias chamadas no app podem passar `title` ou `name` inconsistentemente. Centralizar shape no store ou validar no entry-point.",
+    "server.py: 1669 linhas — split em routers (ai_router, palettes_router, dna_router) já era recomendado em iterações anteriores; segue acumulando endpoints.",
+    "/api/ai/mentora aceita imagem base64 mas não há limite explícito de tamanho do base64 (apenas msg≤4000). Adicionar guard p/ payloads >5MB.",
+    "/api/ai/collection: alinhamento entre pieces de input e output depende do LLM; idealmente fazer pós-processamento server-side garantindo type/title=input quando vier divergente (atualmente ainda passou nos testes mas é frágil)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_lindart_new_ai.py"
+  ],
+  "success_rate": {"backend": "100% (10/10 pytest)", "frontend": "95% — fluxo principal das 3 novas páginas + navbar + mobile-nav + regressão 7 páginas existentes OK; única falha é integração de salvar tendência (toast mente sobre persistência)."},
+  "test_credentials": "N/A — sem auth",
+  "seed_data_creation": "Nenhuma",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Para pular onboarding em testes: localStorage 'lindart.onboarding.v1.completed'='1' + 'lindart.tour.v1.seen'='1' + patch em lindart-store-v1.state {onboardingCompleted:true, tourSeen:true}. Backend /api/ai/trends usa cache em memória 24h; usar refresh:true para forçar regeneração. Mentora/Trends/Collection podem levar 10-30s cada — timeouts ≥60s. Mockup via /api/ai/generate-image leva ~15-40s; chegou a render em <120s no teste. Bug a re-testar: trend-save deve persistir no GET /api/palettes após fix.",
+  "rca of the issue": "Bug trend-save: Trends.jsx (linha ~76-90) chama savePalette({id, title: t.name, colors, style, tags, ...}) — porém usePaletteStore.savePalette (linhas 73-91 do store) monta payload {name: palette.name, ...} para POST /api/palettes. Como a chamada usa `title` em vez de `name`, palette.name é undefined → backend devolve 422 por validation. Além disso, em Trends.jsx, saveAsPalette não é async e chama savePalette sem await — a Promise rejeitada vira unhandled rejection (vista como PAGEERROR AxiosError no console). O toast.success roda síncrono antes da rejeição, dando falsa sensação de sucesso. Reprodução: abrir /trends → clicar primeiro botão 'Salvar' → DevTools Network mostra 422 em POST /api/palettes; toast verde aparece; GET /api/palettes não inclui a tendência. Mitigação: (a) em Trends.jsx trocar `title: t.name` → `name: t.name` e tornar saveAsPalette async com `await savePalette(...)` dentro de try/catch; (b) defensivamente, em usePaletteStore.savePalette aceitar palette.title como fallback para name."
+}

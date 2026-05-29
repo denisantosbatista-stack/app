@@ -7,6 +7,9 @@ import {
   Beaker,
   Ruler,
   Sparkles,
+  Brain,
+  TrendingUp,
+  Layers,
 } from "lucide-react";
 
 // Mobile mostra TODAS as abas em scroll horizontal com fade lateral indicando
@@ -15,6 +18,9 @@ import {
 const items = [
   { to: "/", icon: Home, label: "Início", end: true },
   { to: "/studio", icon: Palette, label: "Studio" },
+  { to: "/mentora", icon: Brain, label: "Mentora", ai: true },
+  { to: "/trends", icon: TrendingUp, label: "Tendências", ai: true },
+  { to: "/collections", icon: Layers, label: "Coleções", ai: true },
   { to: "/library", icon: Heart, label: "Salvos" },
   { to: "/mixer", icon: Beaker, label: "Mixer" },
   { to: "/calculator", icon: Ruler, label: "Proporções" },
@@ -41,13 +47,13 @@ export default function MobileNav() {
         className="flex items-stretch gap-0.5 px-2 overflow-x-auto no-scrollbar snap-x snap-mandatory"
         style={{ scrollbarWidth: "none" }}
       >
-        {items.map(({ to, icon: Icon, label, end }) => (
+        {items.map(({ to, icon: Icon, label, end, ai }) => (
           <li key={to} className="shrink-0 snap-start">
             <NavLink
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-sm transition-colors min-w-[52px] ${
+                `relative flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-sm transition-colors min-w-[52px] ${
                   isActive
                     ? "text-gold bg-gold/5"
                     : "text-zinc-600 hover:text-ink-text"
@@ -55,6 +61,12 @@ export default function MobileNav() {
               }
               data-testid={`mobile-nav-${to.replace("/", "") || "home"}`}
             >
+              {ai && (
+                <span
+                  aria-hidden
+                  className="absolute top-0.5 right-1 w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_5px_rgba(212,178,96,0.8)]"
+                />
+              )}
               <Icon className="w-[18px] h-[18px]" />
               <span className="text-[9px] tracking-[0.08em] uppercase whitespace-nowrap leading-tight">
                 {label}
