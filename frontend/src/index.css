@@ -30,6 +30,8 @@
 html, body, #root {
   background: #F4EFE6;
   color: #141414;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {

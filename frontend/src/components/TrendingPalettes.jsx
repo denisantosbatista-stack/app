@@ -8,13 +8,13 @@ export default function TrendingPalettes() {
   const featured = PRESET_PALETTES.slice(0, 6);
 
   return (
-    <section className="py-20 px-6 md:px-10 max-w-7xl mx-auto" data-testid="trending-palettes">
+    <section className="py-12 md:py-20 px-6 md:px-10 max-w-7xl mx-auto" data-testid="trending-palettes">
       <motion.div
         initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        className="flex items-end justify-between mb-10"
+        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 md:mb-10"
       >
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -27,7 +27,7 @@ export default function TrendingPalettes() {
             </motion.span>
             <span className="label-eyebrow text-gold">Em alta</span>
           </div>
-          <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-none">
+          <h2 className="font-display text-3xl md:text-5xl tracking-tight leading-[1.05]">
             Paletas <span className="italic gold-shimmer">trending</span>
           </h2>
           <p className="text-zinc-600 mt-3 max-w-lg text-sm">

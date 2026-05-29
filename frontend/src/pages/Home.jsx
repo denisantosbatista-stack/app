@@ -31,29 +31,29 @@ export default function Home() {
       <ToolsGrid />
 
       {/* Final CTA */}
-      <section className="py-24 px-6 md:px-10 max-w-7xl mx-auto">
+      <section className="py-16 md:py-24 px-6 md:px-10 max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="relative glass-strong rounded-sm overflow-hidden p-10 md:p-16 text-center"
+          className="relative glass-strong rounded-sm overflow-hidden p-8 md:p-16 text-center"
         >
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold/10 blur-3xl rounded-full pointer-events-none" />
           <div className="relative">
             <Sparkles className="w-6 h-6 text-gold mx-auto mb-5" />
-            <h2 className="font-display text-4xl md:text-6xl tracking-tight leading-none mb-5">
+            <h2 className="font-display text-3xl sm:text-4xl md:text-6xl tracking-tight leading-[1.05] mb-5">
               Comece a criar
               <br />
               <span className="italic gold-shimmer">em segundos</span>
             </h2>
-            <p className="text-zinc-700 max-w-xl mx-auto mb-8 text-base md:text-lg">
+            <p className="text-zinc-700 max-w-xl mx-auto mb-8 text-sm md:text-lg">
               Escreva um sentimento. Veja a IA materializar a paleta perfeita
               em peças reais de resina.
             </p>
             <Link
               to="/studio"
-              className="btn-gold px-8 py-4 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center gap-2"
+              className="btn-gold px-7 md:px-8 py-3.5 md:py-4 rounded-sm text-[11px] md:text-xs tracking-[0.22em] uppercase inline-flex items-center gap-2"
               data-testid="home-final-cta"
             >
               Abrir Studio

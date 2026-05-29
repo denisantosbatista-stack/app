@@ -30,7 +30,7 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-[92vh] flex items-center overflow-hidden noise text-white"
+      className="relative min-h-[88vh] md:min-h-[92vh] flex items-center overflow-hidden noise text-white"
       data-testid="hero-section"
     >
       <motion.div style={{ y, opacity }} className="absolute inset-0 z-0">
@@ -56,7 +56,7 @@ export default function Hero() {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 py-20 grid md:grid-cols-12 gap-10 items-center w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 pt-14 pb-32 md:py-20 grid md:grid-cols-12 gap-10 items-center w-full">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -91,11 +91,11 @@ export default function Hero() {
               hidden: { opacity: 0, y: 28, filter: "blur(12px)" },
               visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] } },
             }}
-            className="font-display font-light text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[1.02] mb-6 text-white"
+            className="font-display font-light text-[2rem] leading-[1.08] sm:text-5xl md:text-6xl lg:text-7xl sm:leading-[1.05] tracking-tight mb-5 md:mb-6 text-white"
           >
             Transforme cores em
             <br />
-            <span className="italic gold-shimmer">arte com resina epóxi</span>
+            <span className="italic gold-shimmer">arte com resina</span>
           </motion.h1>
 
           <motion.p
@@ -103,7 +103,7 @@ export default function Hero() {
               hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
               visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
             }}
-            className="text-zinc-200 text-base md:text-lg max-w-xl leading-relaxed mb-8"
+            className="text-zinc-200 text-sm md:text-lg max-w-xl leading-relaxed mb-7 md:mb-8"
           >
             Visualize paletas em peças reais, gere combinações com IA, calcule
             proporções com precisão e exporte em qualquer formato — tudo em um
@@ -152,7 +152,7 @@ export default function Hero() {
               hidden: {},
               visible: { transition: { delayChildren: 0.95, staggerChildren: 0.14 } },
             }}
-            className="mt-12 grid grid-cols-3 gap-6 max-w-md"
+            className="mt-10 md:mt-12 grid grid-cols-3 gap-3 md:gap-6 max-w-md"
             data-testid="hero-stats"
           >
             {STATS.map((s) => (
@@ -171,8 +171,8 @@ export default function Hero() {
                 transition={{ type: "spring", stiffness: 280, damping: 20 }}
                 className="border-l border-gold-hover/40 pl-3 cursor-default"
               >
-                <div className="font-display text-3xl gold-text">{s.v}</div>
-                <div className="text-[10px] tracking-[0.2em] uppercase text-zinc-300 mt-1">
+                <div className="font-display text-2xl md:text-3xl gold-text">{s.v}</div>
+                <div className="text-[9px] md:text-[10px] tracking-[0.2em] uppercase text-zinc-300 mt-1 leading-tight">
                   {s.l}
                 </div>
               </motion.div>

@@ -196,3 +196,24 @@ Integrações ativas via **Emergent LLM Key** (sem custo extra ao usuário):
 - `POST /api/ai/generate-voice` (TTS)
 - `POST /api/ai/transcribe` (Whisper) ← **novo**
 
+
+
+## 📱 P0 Mobile UI/UX Overhaul — Concluído (Fev/2026)
+
+**Problema**: MobileNav sobrepunha conteúdo do Hero (estatísticas escondidas), seções com `py-20` muito agressivas em mobile, H1 com texto truncado em telas pequenas.
+
+**Correções aplicadas**:
+- `App.js`: removido `pb-48` excessivo do `<main>`; footer reduzido para `py-6 md:py-10 pb-36 md:pb-10` com tipografia `text-[10px] md:text-xs`.
+- `MobileNav.jsx`: bottom reduzido de `88px` para `64px` (encosta no badge "Made with Emergent" sem sobrepor).
+- `Hero.jsx`:
+  - `min-h-[92vh]` → `min-h-[88vh] md:min-h-[92vh]` (hero mais curto em mobile)
+  - Container interno: `py-20` → `pt-14 pb-32 md:py-20` (reserva espaço para nav inferior)
+  - H1: `text-5xl md:text-6xl lg:text-7xl` → `text-[2rem] sm:text-5xl md:text-6xl lg:text-7xl` com `leading-[1.08]`
+  - Copy do título encurtado: "arte com resina epóxi" → "arte com resina" (evita truncamento)
+  - Stats: `text-3xl` → `text-2xl md:text-3xl`, gap `gap-6` → `gap-3 md:gap-6`, label `text-[10px]` → `text-[9px] md:text-[10px]`
+- `ToolsGrid.jsx`, `TrendingPalettes.jsx`, `MockupShowcase.jsx`: `py-20` → `py-12 md:py-20`; H2 `text-4xl md:text-5xl` → `text-3xl md:text-5xl` com `leading-[1.05]`.
+- `ToolsGrid.jsx`: grid mobile-first `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` (era `md:grid-cols-2`, agora 1 coluna real em 390px).
+- `Home.jsx`: CTA final responsivo `py-16 md:py-24`, padding `p-8 md:p-16`, H2 `text-3xl sm:text-4xl md:text-6xl`.
+- `index.css`: `html, body, #root { max-width: 100%; overflow-x: hidden; }` para garantir zero overflow horizontal em qualquer rota.
+
+**Validação**: Screenshots em 390x844 em `/`, `/studio`, `/library`, `/tips`, `/calculator`, `/mixer` — todas sem overflow horizontal, stats do hero claramente acima do MobileNav, MobileNav não sobrepõe o badge da plataforma.

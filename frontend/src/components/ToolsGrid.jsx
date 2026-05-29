@@ -11,21 +11,21 @@ const tools = [
 
 export default function ToolsGrid() {
   return (
-    <section className="py-20 px-6 md:px-10 max-w-7xl mx-auto relative" data-testid="tools-grid">
+    <section className="py-12 md:py-20 px-6 md:px-10 max-w-7xl mx-auto relative" data-testid="tools-grid">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="mb-12"
+        className="mb-8 md:mb-12"
       >
         <div className="label-eyebrow text-gold mb-3">Ferramentas</div>
-        <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-[1.05] pb-1">
+        <h2 className="font-display text-3xl md:text-5xl tracking-tight leading-[1.05] pb-1">
           Tudo que você <span className="italic gold-shimmer">precisa</span>
         </h2>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {tools.map((t, i) => (
           <motion.div
             key={t.title}
