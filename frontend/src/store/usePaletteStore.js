@@ -23,6 +23,27 @@ export const usePaletteStore = create(
       aiGenerating: false,
       aiResult: null,
 
+      // Onboarding state (persisted)
+      onboardingCompleted: false,
+      userSegment: null, // hobby | iniciante | profissional | empreendedor
+      userName: "",
+      userEmail: "",
+
+      setOnboardingCompleted: (v) => set({ onboardingCompleted: !!v }),
+      setUserSegment: (segment) => set({ userSegment: segment }),
+      setUserIdentity: ({ name, email }) =>
+        set((s) => ({
+          userName: name ?? s.userName,
+          userEmail: email ?? s.userEmail,
+        })),
+      resetOnboarding: () =>
+        set({
+          onboardingCompleted: false,
+          userSegment: null,
+          userName: "",
+          userEmail: "",
+        }),
+
       // Selectors
       getActivePalette: () => {
         const { activePaletteId, saved } = get();
@@ -119,6 +140,10 @@ export const usePaletteStore = create(
         activePaletteId: s.activePaletteId,
         activeStyleId: s.activeStyleId,
         activePieceId: s.activePieceId,
+        onboardingCompleted: s.onboardingCompleted,
+        userSegment: s.userSegment,
+        userName: s.userName,
+        userEmail: s.userEmail,
       }),
     }
   )
