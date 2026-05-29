@@ -1,11 +1,61 @@
-import { Suspense, useMemo, useRef, useState } from "react";
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, ContactShadows, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
-import { Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
+import { Image as ImageIcon, Loader2, Sparkles, Box as BoxIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { chamarIA, ApiError } from "@/utils/api";
+
+// Detecta suporte a WebGL no device. Em mobile antigo o Canvas pode falhar silenciosamente.
+function detectWebGL() {
+  try {
+    const canvas = document.createElement("canvas");
+    return !!(window.WebGLRenderingContext && (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")));
+  } catch {
+    return false;
+  }
+}
+
+// Error boundary para conter qualquer crash do react-three-fiber e mostrar fallback elegante.
+class ThreeErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err) {
+    // Falha silenciosa — fallback visual já cobre o usuário.
+    if (typeof console !== "undefined") console.warn("[Productions3D] WebGL fallback:", err?.message);
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
+function CanvasFallback({ palette, message }) {
+  const colors = (palette?.colors || []).slice(0, 4);
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center px-6">
+      <div className="flex gap-1.5">
+        {colors.map((c) => (
+          <span
+            key={c.hex}
+            className="w-3 h-3 rounded-full border border-white/20"
+            style={{ background: c.hex }}
+          />
+        ))}
+      </div>
+      <BoxIcon className="w-5 h-5 text-gold-hover/70" />
+      <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-400">
+        {message || "Preparando cena 3D…"}
+      </div>
+    </div>
+  );
+}
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 

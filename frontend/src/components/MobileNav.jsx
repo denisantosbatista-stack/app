@@ -9,8 +9,9 @@ import {
   Sparkles,
 } from "lucide-react";
 
-// Mobile mostra TODAS as abas em scroll horizontal — mantém paridade com desktop
-// e ainda deixa espaço (à direita) para o badge fixo "Made with Emergent".
+// Mobile mostra TODAS as abas em scroll horizontal com fade lateral indicando
+// que há mais conteúdo. Levantado acima do badge "Made with Emergent" (~64px)
+// para evitar sobreposição visual com a barra de navegação.
 const items = [
   { to: "/", icon: Home, label: "Início", end: true },
   { to: "/studio", icon: Palette, label: "Studio" },
@@ -24,23 +25,29 @@ const items = [
 export default function MobileNav() {
   return (
     <nav
-      // Levantado acima da área do badge "Made with Emergent" (fixed bottom-right ~56px),
-      // garantindo que itens da nav nunca sejam interceptados pelo badge.
-      className="md:hidden fixed inset-x-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-3"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
+      className="md:hidden fixed inset-x-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-2"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 64px)" }}
       data-testid="mobile-nav"
     >
+      {/* Fade indicador de scroll na direita */}
+      <div
+        className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10"
+        style={{
+          background:
+            "linear-gradient(to left, rgba(255,255,255,0.85), rgba(255,255,255,0))",
+        }}
+      />
       <ul
-        className="flex items-center gap-1 px-3 overflow-x-auto no-scrollbar"
+        className="flex items-stretch gap-0.5 px-2 overflow-x-auto no-scrollbar snap-x snap-mandatory"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map(({ to, icon: Icon, label, end }) => (
-          <li key={to} className="shrink-0">
+          <li key={to} className="shrink-0 snap-start">
             <NavLink
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex flex-col items-center gap-1 px-3 py-1.5 rounded-sm transition-colors min-w-[64px] ${
+                `flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-sm transition-colors min-w-[52px] ${
                   isActive
                     ? "text-gold bg-gold/5"
                     : "text-zinc-600 hover:text-ink-text"
@@ -48,8 +55,8 @@ export default function MobileNav() {
               }
               data-testid={`mobile-nav-${to.replace("/", "") || "home"}`}
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] tracking-wider uppercase whitespace-nowrap">
+              <Icon className="w-[18px] h-[18px]" />
+              <span className="text-[9px] tracking-[0.08em] uppercase whitespace-nowrap leading-tight">
                 {label}
               </span>
             </NavLink>
