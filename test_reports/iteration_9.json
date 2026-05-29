@@ -1,0 +1,60 @@
+{
+  "summary": "Targeted verification of 4 legacy bugs + landing/studio regression. Backend pytest 10/10 PASS. Frontend: 3 of 4 legacy bugs FIXED, Export-as-PNG STILL BROKEN due to captureRef never attached to DOM in Library.jsx.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "ExportModal (PNG path) / Library.jsx",
+        "issue": "BUG #4 STILL BROKEN — Clicking 'Exportar PNG' (data-testid=export-tab-png) does NOT download a PNG. RCA: /app/frontend/src/pages/Library.jsx declares `const captureRef = useRef(null)` and passes it to <ExportModal captureRef={captureRef} /> but the ref is NEVER attached to any rendered DOM element (no <div ref={captureRef}> anywhere in Library.jsx). When user clicks PNG, ExportModal.handlePNG sees captureRef.current === null and toasts 'Preview não disponível'. Even if that guard were removed, downloadPNG() in /app/frontend/src/utils/export.js line 50 has `if (!element) return;` so it silently returns. Verified via Playwright: PNG download event never fires; PDF (5140 bytes) and JSON (517 bytes) downloads succeed.",
+        "selector": "[data-testid=\"export-tab-png\"]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Mixer page",
+        "issues": [
+          "Review request mentions 'swirl intensity' slider, but MixerSwirl.jsx only has a self-running time-based canvas animation with no user-controllable intensity/proportion slider. The Mixer 'Proporção' slider only updates the OKLab/RGB MixCard, NOT the swirl canvas. If a swirl-intensity control was intended, it is missing — currently the canvas animates autonomously regardless of slider values."
+        ]
+      }
+    ]
+  },
+  "bug_verification_results": {
+    "bug_1_collections_token_error": "FIXED — GET /api/palettes returns 200 OK on /library load; no auth/token error in console or network. (Note: codebase uses /api/palettes, not /api/library as mentioned in request.)",
+    "bug_2_ai_ignores_user_palette": "FIXED — POST /api/ai/generate-palette with prompt 'Use exatamente estas cores: #FF0000, #00FF00, #0000FF, #FFFF00' returned all 4 hex codes exactly preserved in the response (Rubis Profundo #FF0000, Émeraude Vive #00FF00, Saphir Royal #0000FF, Or Solaire #FFFF00).",
+    "bug_3_mixer_slider_realtime": "FIXED — Mixer ratio slider produces 3 distinct OKLab mix outputs (ratio=50→#66562A, ratio=10→#BD9C36, ratio=90→#1B1916). Real-time updates confirmed via React-aware value setter dispatching 'input' event.",
+    "bug_4_export_png_broken": "STILL BROKEN — Root cause identified above. captureRef declared but never attached to DOM; PNG download event never fires. PDF + JSON exports work."
+  },
+  "regression_checks": {
+    "landing_page": "PASS — title 'LindArt — Studio Premium de Resina', LindArt visible, no pageerrors, no 4xx/5xx. After bypassing OpeningTour via localStorage, page renders cleanly.",
+    "studio_r3f": "PASS — prod3d-canvas mounts; only benign 'THREE.Clock deprecated' and GPU stall on ReadPixels warnings; no errors.",
+    "backend_pytest": "10/10 PASS (test_lindart_api.py): health, palette CRUD, favorites filter, PATCH, DELETE, 404 handling, AI palette generation."
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lindart_api.py",
+    "/app/test_reports/pytest/iteration_9.xml"
+  ],
+  "action_items": [
+    "FIX BUG #4 (Export PNG): In /app/frontend/src/pages/Library.jsx, attach captureRef to a DOM element that visually represents the palette being exported. Recommended pattern: render a hidden/visible preview <div ref={captureRef}> in the ExportModal itself (or within Library when modal opens) bound to the currently selected palette (state `exporting`), styled to look like the export artwork. Alternatively, move captureRef inside ExportModal and have it wrap an internal preview block of `palette` swatches.",
+    "(Optional UX) Either add a real user-controllable 'swirl intensity' / 'proportion' slider to MixerSwirl canvas, OR update review/spec to drop the expectation. Currently canvas is decorative/autonomous."
+  ],
+  "critical_code_review_comments": [
+    "Library.jsx captureRef is dead code path — ref is created and forwarded but never attached. Static analysis or React 19 strict mode would catch this. Add a unit/E2E assertion that the ref's current is non-null when ExportModal opens.",
+    "/app/frontend/src/utils/export.js downloadPNG silently returns on null element; should toast/throw so failures are surfaced to UI/devs rather than silently no-op.",
+    "Backend /api/ai/generate-palette correctly honors explicit hex tokens — good. Consider hardening with a unit test that asserts hex preservation when prompt contains hex codes (regression guard for bug #2)."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "75% (3 of 4 legacy bugs verified fixed; PNG export still broken)"
+  },
+  "seed_data_creation": "Used existing 'Rosê Suave' palette (already in DB) for export tests; no new test data created.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "PNG export is the only outstanding legacy bug. After main agent attaches captureRef to a real DOM node in Library.jsx (or refactors ref ownership into ExportModal), retest by: 1) navigate /library, 2) click [data-testid^=lib-export-], 3) click [data-testid=export-tab-png], 4) expect a downloaded file with PNG magic bytes 89 50 4E 47 0D 0A 1A 0A. PDF and JSON downloads already work. Mixer/Library/Studio/Landing all healthy. To bypass OpeningTour: page.add_init_script(\"localStorage.setItem('lindart.tour.v1.seen', '1')\") AND/OR page.evaluate same after goto, then Escape key. React controlled inputs require using HTMLInputElement.prototype value setter for slider tests (see iteration_9 playwright script).",
+  "rca_of_the_issue": "Export PNG: captureRef = useRef(null) in /app/frontend/src/pages/Library.jsx line 27 is passed to ExportModal but never spread onto any JSX element (no `ref={captureRef}` exists anywhere in Library.jsx). Consequently captureRef.current stays null forever. ExportModal.handlePNG (line 40) bails out with toast.error('Preview não disponível') and the html2canvas-based downloadPNG never runs. Reproduction: /library → click any card's export icon → modal opens → click 'Exportar PNG' → no browser download event fires (verified via Playwright expect_download timeout). Mitigation: wrap a visible or off-screen palette preview block in Library.jsx with ref={captureRef}, OR move the ref+preview render entirely into ExportModal so it is always present when the modal mounts."
+}

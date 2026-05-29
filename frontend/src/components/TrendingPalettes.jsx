@@ -10,15 +10,21 @@ export default function TrendingPalettes() {
   return (
     <section className="py-20 px-6 md:px-10 max-w-7xl mx-auto" data-testid="trending-palettes">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         className="flex items-end justify-between mb-10"
       >
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Flame className="w-3.5 h-3.5 text-gold" />
+            <motion.span
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 8, -6, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              className="inline-flex"
+            >
+              <Flame className="w-3.5 h-3.5 text-gold" />
+            </motion.span>
             <span className="label-eyebrow text-gold">Em alta</span>
           </div>
           <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-none">
@@ -30,23 +36,46 @@ export default function TrendingPalettes() {
         </div>
         <Link
           to="/studio"
-          className="text-xs tracking-[0.22em] uppercase text-gold hover:text-gold-hover hidden md:inline-flex items-center gap-2"
+          className="group text-xs tracking-[0.22em] uppercase text-gold hover:text-gold-hover hidden md:inline-flex items-center gap-2 transition-colors duration-300"
         >
-          Ver todas →
+          Ver todas
+          <motion.span
+            animate={{ x: [0, 4, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            className="inline-block"
+          >
+            →
+          </motion.span>
         </Link>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {featured.map((p, i) => {
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-60px" }}
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+        }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
+        {featured.map((p) => {
           const photo = PALETTE_PHOTOS[p.id];
           return (
             <motion.div
               key={p.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: i * 0.05, duration: 0.5 }}
-              whileHover={{ y: -4 }}
+              variants={{
+                hidden: { opacity: 0, y: 28, scale: 0.96, filter: "blur(8px)" },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  filter: "blur(0px)",
+                  transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
+              whileHover={{ y: -8, scale: 1.015 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
             >
               <Link
                 to="/studio"
@@ -104,7 +133,7 @@ export default function TrendingPalettes() {
             </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </section>
   );
 }

@@ -58,27 +58,39 @@ export default function Hero() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 py-20 grid md:grid-cols-12 gap-10 items-center w-full">
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {},
+            visible: { transition: { delayChildren: 0.15, staggerChildren: 0.14 } },
+          }}
           className="md:col-span-7"
         >
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.6 }}
+            variants={{
+              hidden: { opacity: 0, y: 12, filter: "blur(8px)" },
+              visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+            }}
+            whileHover={{ scale: 1.03 }}
             className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full border border-gold-hover/40 bg-black/30 backdrop-blur-md"
           >
-            <Sparkles className="w-3 h-3 text-gold-hover" />
+            <motion.span
+              animate={{ rotate: [0, 12, -8, 0], scale: [1, 1.15, 1] }}
+              transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
+              className="inline-flex"
+            >
+              <Sparkles className="w-3 h-3 text-gold-hover" />
+            </motion.span>
             <span className="text-[11px] tracking-[0.32em] uppercase font-semibold text-gold-hover">
               Studio Visual de Cores para Resina
             </span>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            variants={{
+              hidden: { opacity: 0, y: 28, filter: "blur(12px)" },
+              visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] } },
+            }}
             className="font-display font-light text-5xl md:text-6xl lg:text-7xl tracking-tight leading-[1.02] mb-6 text-white"
           >
             Transforme cores em
@@ -87,9 +99,10 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.7 }}
+            variants={{
+              hidden: { opacity: 0, y: 18, filter: "blur(6px)" },
+              visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
+            }}
             className="text-zinc-200 text-base md:text-lg max-w-xl leading-relaxed mb-8"
           >
             Visualize paletas em peças reais, gere combinações com IA, calcule
@@ -98,62 +111,104 @@ export default function Hero() {
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
+            variants={{
+              hidden: { opacity: 0, y: 16 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+            }}
             className="flex flex-col sm:flex-row gap-3"
           >
-            <Link
-              to="/studio"
-              className="btn-gold px-6 py-3.5 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center justify-center gap-2"
-              data-testid="hero-cta-studio"
-            >
-              ✦ Criar paleta com IA
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/calculator"
-              className="px-6 py-3.5 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center justify-center gap-2 border border-gold-hover/50 text-gold-hover bg-black/30 backdrop-blur-md hover:bg-black/40 transition"
-              data-testid="hero-cta-calc"
-            >
-              <CalcIcon className="w-4 h-4" />
-              Calcular proporções
-            </Link>
+            <motion.div whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 320, damping: 22 }}>
+              <Link
+                to="/studio"
+                className="btn-gold px-6 py-3.5 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center justify-center gap-2"
+                data-testid="hero-cta-studio"
+              >
+                ✦ Criar paleta com IA
+                <motion.span
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  className="inline-flex"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </motion.span>
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 320, damping: 22 }}>
+              <Link
+                to="/calculator"
+                className="px-6 py-3.5 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center justify-center gap-2 border border-gold-hover/50 text-gold-hover bg-black/30 backdrop-blur-md hover:bg-black/40 transition-colors duration-500"
+                data-testid="hero-cta-calc"
+              >
+                <CalcIcon className="w-4 h-4" />
+                Calcular proporções
+              </Link>
+            </motion.div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.8 }}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { delayChildren: 0.95, staggerChildren: 0.14 } },
+            }}
             className="mt-12 grid grid-cols-3 gap-6 max-w-md"
+            data-testid="hero-stats"
           >
             {STATS.map((s) => (
-              <div key={s.l} className="border-l border-gold-hover/40 pl-3">
+              <motion.div
+                key={s.l}
+                variants={{
+                  hidden: { opacity: 0, y: 20, filter: "blur(8px)" },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    filter: "blur(0px)",
+                    transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
+                  },
+                }}
+                whileHover={{ x: 4, scale: 1.04 }}
+                transition={{ type: "spring", stiffness: 280, damping: 20 }}
+                className="border-l border-gold-hover/40 pl-3 cursor-default"
+              >
                 <div className="font-display text-3xl gold-text">{s.v}</div>
                 <div className="text-[10px] tracking-[0.2em] uppercase text-zinc-300 mt-1">
                   {s.l}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, x: 30 }}
-          animate={{ opacity: 1, scale: 1, x: 0 }}
-          transition={{ delay: 0.4, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, scale: 0.85, x: 40, filter: "blur(12px)" }}
+          animate={{ opacity: 1, scale: 1, x: 0, filter: "blur(0px)" }}
+          transition={{ delay: 0.5, duration: 1.3, ease: [0.22, 1, 0.36, 1] }}
           className="md:col-span-5 relative hidden md:flex justify-center"
         >
-          <div className="relative animate-floaty">
-            <div className="absolute inset-0 bg-gold-hover/20 blur-[80px] rounded-full" />
+          <motion.div
+            className="relative animate-floaty"
+            whileHover={{ scale: 1.03, rotate: 0.5 }}
+            transition={{ type: "spring", stiffness: 200, damping: 18 }}
+          >
+            <motion.div
+              animate={{ opacity: [0.5, 0.85, 0.5], scale: [1, 1.08, 1] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 bg-gold-hover/20 blur-[80px] rounded-full"
+            />
             <div className="relative rounded-sm overflow-hidden shadow-gold-lg gradient-border-gold p-1">
               <ResinVisualizer palette={showcase} size={420} animated intensity={1.2} />
             </div>
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 glass-dark px-4 py-2 rounded-sm text-center min-w-[180px]">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute -bottom-5 left-1/2 -translate-x-1/2 glass-dark px-4 py-2 rounded-sm text-center min-w-[180px]"
+            >
               <div className="text-[10px] tracking-[0.2em] uppercase text-zinc-300">Em destaque</div>
               <div className="font-display text-base gold-shimmer">{showcase.name}</div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </motion.div>
       </div>
 
