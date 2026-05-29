@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Wand2, ImagePlus, X } from "lucide-react";
+import { Sparkles, Loader2, Wand2, ImagePlus, X, Mic, MicOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import { LOADING_PHRASES } from "@/data/loadingPhrases";
@@ -40,6 +40,104 @@ export default function AIGenerator({ onGenerated }) {
   const inputFileRef = useRef(null);
   const generateWithAI = usePaletteStore((s) => s.generateWithAI);
   const aiGenerating = usePaletteStore((s) => s.aiGenerating);
+
+  // Whisper STT — gravação de voz para preencher o prompt.
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      try { mediaRecorderRef.current?.stream?.getTracks()?.forEach((t) => t.stop()); } catch {}
+      if (recordTimeoutRef.current) clearTimeout(recordTimeoutRef.current);
+    };
+  }, []);
+
+  const pickAudioMime = () => {
+    const cands = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+    for (const m of cands) {
+      if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(m)) return m;
+    }
+    return "";
+  };
+
+  const stopRecording = () => {
+    try { mediaRecorderRef.current?.stop(); } catch {}
+    if (recordTimeoutRef.current) {
+      clearTimeout(recordTimeoutRef.current);
+      recordTimeoutRef.current = null;
+    }
+  };
+
+  const sendAudioToWhisper = async (blob, mime) => {
+    setTranscribing(true);
+    const tid = toast.loading("Transcrevendo voz…", { icon: "🎙️" });
+    try {
+      const ext = mime?.includes("mp4") ? "m4a" : mime?.includes("ogg") ? "ogg" : "webm";
+      const form = new FormData();
+      form.append("file", blob, `voz.${ext}`);
+      form.append("language", "pt");
+      const url = `${process.env.REACT_APP_BACKEND_URL}/api/ai/transcribe`;
+      const res = await fetch(url, { method: "POST", body: form });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || `Falha (${res.status})`);
+      }
+      const data = await res.json();
+      const text = (data.text || "").trim();
+      if (!text) {
+        toast.error("Não captei áudio. Tente falar mais perto do microfone.", { id: tid });
+        return;
+      }
+      setPrompt((prev) => (prev ? `${prev} ${text}` : text));
+      toast.success("Voz transcrita", { id: tid, icon: "✨" });
+    } catch (e) {
+      toast.error(e.message || "Falha ao transcrever", { id: tid });
+    } finally {
+      setTranscribing(false);
+    }
+  };
+
+  const handleMicClick = async () => {
+    if (recording) {
+      stopRecording();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("Microfone indisponível neste navegador");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = pickAudioMime();
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      audioChunksRef.current = [];
+      mr.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) audioChunksRef.current.push(ev.data);
+      };
+      mr.onstop = async () => {
+        const finalMime = mr.mimeType || mime || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: finalMime });
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        if (blob.size < 800) {
+          toast.error("Gravação muito curta. Segure e fale por pelo menos 1s.");
+          return;
+        }
+        await sendAudioToWhisper(blob, finalMime);
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setRecording(true);
+      // Auto-stop em 30s (Whisper barato + UX)
+      recordTimeoutRef.current = setTimeout(stopRecording, 30000);
+    } catch (e) {
+      const denied = (e && (e.name === "NotAllowedError" || e.name === "PermissionDeniedError"));
+      toast.error(denied ? "Permissão de microfone negada" : "Não foi possível acessar o microfone");
+    }
+  };
 
   // Cycle motivational phrases enquanto loading.
   useEffect(() => {
@@ -212,19 +310,42 @@ export default function AIGenerator({ onGenerated }) {
             )}
 
             <div className="flex flex-col md:flex-row gap-2">
-              <input
-                type="text"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-                placeholder={
-                  imagem
-                    ? 'Opcional: contexto adicional (ex: "tons mais quentes")'
-                    : 'Ex: "oceano cristalino com toques dourados"'
-                }
-                className="flex-1 text-sm"
-                data-testid="ai-prompt-input"
-              />
+              <div className="flex-1 flex items-center gap-2 relative">
+                <input
+                  type="text"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+                  placeholder={
+                    imagem
+                      ? 'Opcional: contexto adicional (ex: "tons mais quentes")'
+                      : 'Ex: "oceano cristalino com toques dourados"'
+                  }
+                  className="flex-1 text-sm pr-12"
+                  data-testid="ai-prompt-input"
+                />
+                <button
+                  type="button"
+                  onClick={handleMicClick}
+                  disabled={transcribing || estado === "loading" || aiGenerating}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
+                    recording
+                      ? "bg-red-500 border-red-500 text-white animate-pulse"
+                      : "bg-white border-black/15 text-zinc-700 hover:border-gold hover:text-gold-deep"
+                  } disabled:opacity-50`}
+                  aria-label={recording ? "Parar gravação" : "Falar prompt"}
+                  title={recording ? "Tocar para parar (até 30s)" : "Falar com a IA"}
+                  data-testid="ai-mic-btn"
+                >
+                  {transcribing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : recording ? (
+                    <MicOff className="w-4 h-4" />
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => handleGenerate()}
@@ -244,6 +365,16 @@ export default function AIGenerator({ onGenerated }) {
                   : "Gerar paleta"}
               </button>
             </div>
+
+            {recording && (
+              <div
+                className="mt-2 text-xs text-red-600 flex items-center gap-2"
+                data-testid="ai-mic-recording"
+              >
+                <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                Gravando… toque no microfone para parar
+              </div>
+            )}
 
             {/* Loading phrase ticker */}
             <AnimatePresence mode="wait">

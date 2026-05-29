@@ -175,3 +175,24 @@ src/
 - [ ] Monetização (Auth + Stripe) — explicitamente pausado pelo usuário.
 - [ ] Templates prontos por categoria.
 
+---
+
+## 🎙️ AI Stack atualizada (Fev/2026)
+
+Integrações ativas via **Emergent LLM Key** (sem custo extra ao usuário):
+- **Claude Sonnet 4.5** — Geração de paletas, captions, DNA Visual, score
+- **Gemini 3 Flash (Nano Banana)** — Geração de imagens fotorrealistas
+- **OpenAI Sora 2** — Geração de vídeo (Mixer, swirl animado)
+- **OpenAI TTS** — Narração de voz (tour autoexplicativo)
+- **OpenAI Whisper-1** — `POST /api/ai/transcribe` — STT em PT-BR, aceita webm/mp3/mp4/m4a/wav (até 25MB)
+  - Frontend: botão de microfone no `AIGenerator` (Studio) com MediaRecorder, auto-stop em 30s, prompt preenchido por voz.
+
+### Endpoints AI consolidados
+- `POST /api/ai/generate-palette` (Claude)
+- `POST /api/ai/generate-caption` (Claude)
+- `POST /api/ai/visual-dna` (Claude)
+- `POST /api/ai/generate-image` (Nano Banana)
+- `POST /api/ai/generate-video` + `/api/ai/video-status` (Sora 2)
+- `POST /api/ai/generate-voice` (TTS)
+- `POST /api/ai/transcribe` (Whisper) ← **novo**
+

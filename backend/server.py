@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
 from emergentintegrations.llm.openai.text_to_speech import OpenAITextToSpeech
 from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
+from emergentintegrations.llm.openai import OpenAISpeechToText
 import base64 as b64
 import asyncio
 
@@ -422,6 +423,85 @@ async def generate_voice(req: VoiceRequest):
         "voice": voice,
         "speed": speed,
     }
+
+
+# Whisper STT — transcrição de áudio do navegador (voz → texto).
+# Aceita arquivo de áudio em webm/mp3/wav/m4a. Limite 25MB (limite do Whisper).
+_MAX_AUDIO_BYTES = 25 * 1024 * 1024
+_AUDIO_EXTS_MAP = {
+    "audio/webm": "webm",
+    "audio/ogg": "webm",  # alguns navegadores rotulam webm/opus como ogg
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/mp4": "mp4",
+    "audio/x-m4a": "m4a",
+    "audio/m4a": "m4a",
+    "audio/wav": "wav",
+    "audio/x-wav": "wav",
+    "audio/wave": "wav",
+}
+
+
+@api_router.post("/ai/transcribe")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    language: Optional[str] = Form(default="pt"),
+):
+    """Transcreve áudio enviado pelo navegador (Whisper-1).
+
+    Recebe multipart `file` (audio/webm, audio/mp3, audio/wav, audio/m4a).
+    Retorna `{ text }` em PT-BR por padrão. Limite 25MB.
+    """
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+
+    content_type = (file.content_type or "").lower()
+    ext = _AUDIO_EXTS_MAP.get(content_type)
+    if not ext:
+        # tenta inferir pela extensão do filename
+        fname = (file.filename or "").lower()
+        for e in ("webm", "mp3", "mp4", "m4a", "wav"):
+            if fname.endswith("." + e):
+                ext = e
+                break
+    if not ext:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato de áudio não suportado. Use webm, mp3, mp4, m4a ou wav.",
+        )
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Áudio vazio")
+    if len(raw) > _MAX_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Áudio excede 25MB")
+
+    # Whisper SDK espera um file-like com nome (extensão é usada para detecção do formato).
+    buf = io.BytesIO(raw)
+    buf.name = f"audio.{ext}"
+
+    lang = (language or "pt").strip().lower()[:5] or "pt"
+    try:
+        stt = OpenAISpeechToText(api_key=EMERGENT_LLM_KEY)
+        response = await stt.transcribe(
+            file=buf,
+            model="whisper-1",
+            response_format="json",
+            language=lang,
+            temperature=0.0,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Whisper error: {e!r}")
+        raise _map_llm_exception(e)
+
+    text = getattr(response, "text", None) or ""
+    if isinstance(response, dict):
+        text = response.get("text", "") or text
+    text = (text or "").strip()
+    logger.info(f"Whisper ok: lang={lang} bytes={len(raw)} chars={len(text)}")
+    return {"text": text, "language": lang, "bytes": len(raw)}
 
 
 @api_router.post("/ai/generate-image")
