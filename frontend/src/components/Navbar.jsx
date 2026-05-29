@@ -1,6 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Download } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const links = [
   { to: "/", label: "Início", end: true },
@@ -11,6 +12,33 @@ const links = [
   { to: "/compare", label: "Comparar" },
   { to: "/tips", label: "Técnicas" },
 ];
+
+const API_BASE = process.env.REACT_APP_BACKEND_URL;
+
+async function handleDownloadSource() {
+  const url = `${API_BASE}/api/download/source`;
+  const t = toast.loading("Empacotando código-fonte…");
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const dispo = res.headers.get("content-disposition") || "";
+    const match = /filename="?([^"]+)"?/i.exec(dispo);
+    const filename = match ? match[1] : "lindart-source.zip";
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+    toast.success("Download iniciado!", { id: t });
+  } catch (e) {
+    toast.error("Falha ao baixar o código.", { id: t });
+    console.error("download error", e);
+  }
+}
 
 export default function Navbar() {
   return (
@@ -69,6 +97,18 @@ export default function Navbar() {
         >
           ✦ Criar Paleta
         </Link>
+
+        <button
+          type="button"
+          onClick={handleDownloadSource}
+          title="Baixar código-fonte (.zip)"
+          aria-label="Baixar código-fonte do LindArt em ZIP"
+          className="hidden md:inline-flex items-center gap-2 ml-3 px-3 py-2 rounded-sm border border-zinc-300/70 text-zinc-700 hover:text-ink-text hover:border-gold hover:bg-gold/5 transition-colors text-[10px] tracking-[0.22em] uppercase"
+          data-testid="download-source-btn"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Código
+        </button>
       </div>
     </motion.header>
   );

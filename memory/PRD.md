@@ -100,3 +100,21 @@ src/
   - URLs Unsplash 404 do MockupShowcase / TrendingPalettes / palettes.js substituídas por imagens válidas (regressão de imagens: 0 quebradas).
   - HTML `<title>` corrigido para “LindArt — Studio Premium de Resina” + meta description otimizada.
   - testing_agent_v3_fork iteração 5: **backend 100% + frontend 100%**, PDF export Studio gera 5140 bytes válidos, PNG 64KB, sem bugs críticos.
+
+- 2026-05-29: v1.5 entregue — Download do código-fonte (P1 do roadmap experiencial)
+  - Backend: novo endpoint `GET /api/download/source` que gera dinamicamente um ZIP do código (`backend/` + `frontend/`) com `StreamingResponse`. Exclui automaticamente diretórios e arquivos sensíveis: `node_modules`, `.git`, `.env*`, `__pycache__`, `build`, `dist`, `.venv`, `.emergent`, `.DS_Store`, `*.pyc`, `*.log`. Inclui `README.md` + `design_guidelines.json` do topo e gera `LINDART_README.md` com instruções de setup (uvicorn + yarn) dentro do ZIP. Filename com timestamp UTC: `lindart-source-YYYYMMDD-HHMMSS.zip`.
+  - Frontend: botão `Código` (Lucide `Download`) adicionado no `Navbar.jsx` (data-testid `download-source-btn`) que faz `fetch` no endpoint, captura o `Content-Disposition`, cria `Blob` + objectURL e dispara o download com toast de feedback (`react-hot-toast`).
+  - Validação: ZIP gerado tem 320KB, 104 arquivos, sem `.env` e sem `node_modules`. Backend pytest 10/10 ainda passando. Smoke screenshot OK.
+
+## Roadmap Experiencial (em andamento — pivot do usuário, monetização PAUSADA)
+### P0 (próximos)
+- [ ] Rebrand & PT-BR: substituir resquícios "Diretora" → "LindArt" e traduzir textos em inglês remanescentes em Studio/Mixer/Library.
+- [ ] Tour de Abertura autoexplicativo (HTML/CSS + voz IA via OpenAI TTS) na primeira visita.
+- [ ] Mixer realista: swirl Canvas 2D + endpoint `/api/ai/generate-video` (Sora 2) para vídeo realista de mistura.
+- [ ] Galeria 3D: viewer Three.js (react-three-fiber/drei) + endpoint `/api/ai/generate-image` (Nano Banana) para render fotorrealista das peças.
+- [ ] Animações Framer Motion adicionais em Hero, MockupShowcase e TrendingPalettes.
+### P1
+- [x] Download do código-fonte (v1.5).
+### Pausado
+- [ ] Monetização (Auth + Stripe) — explicitamente pausado pelo usuário.
+- [ ] Templates prontos por categoria.
