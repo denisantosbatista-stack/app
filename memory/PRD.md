@@ -243,3 +243,47 @@ Integrações ativas via **Emergent LLM Key** (sem custo extra ao usuário):
 - Backend: testing_agent v3 — 4/4 endpoints AI passando (mentora, trends, collection, generate-image).
 - Frontend: testing_agent v3 — Mentora, Trends e Collections renderizam, geram e salvam OK. Navbar/MobileNav exibem e navegam para as 3 novas rotas. Regressão das páginas antigas OK.
 - Verificação manual pós-fix: Trends "Salvar" persiste no MongoDB (confirmado via fetch de `/api/palettes` antes/depois).
+
+
+## 🎥 P1 — Vídeo Instrucional no Onboarding (Fev/2026)
+
+**Entregue nesta sessão**: componente plug-and-play que exibe um vídeo de boas-vindas opcional no primeiro passo do onboarding.
+
+### Frontend
+- **`components/onboarding/OnboardingVideo.jsx`** (novo) — Lê `process.env.REACT_APP_ONBOARDING_VIDEO_URL`:
+  - **Sem URL definida**: exibe placeholder elegante com "Vídeo de boas-vindas em breve" + gradiente dourado (`data-testid="onboarding-video-placeholder"`).
+  - **Com URL definida**: thumbnail com play button + lazy-load do `<iframe>` (autoplay no clique). Suporta YouTube/Vimeo embed URLs. Data-testids: `onboarding-video`, `onboarding-video-play`, `onboarding-video-iframe`.
+- **`components/onboarding/SplashStep.jsx`**: importa e renderiza `<OnboardingVideo />` entre o subtítulo e o CTA "Começar".
+
+### Como configurar a URL do vídeo
+Adicionar em `/app/frontend/.env`:
+```
+REACT_APP_ONBOARDING_VIDEO_URL=https://www.youtube.com/embed/SEU_VIDEO_ID
+```
+Reiniciar o frontend (`sudo supervisorctl restart frontend`).
+
+### Testes
+- testing_agent_v3_fork (iteração 16) — 100% frontend: placeholder aparece após `localStorage.clear()` + reload na rota `/`, CTA "Começar" avança sem regressão. Layout do MobileNav preservado (gap inferior intacto).
+
+
+## 🎬 Sora 2 (vídeo) — status já implementado
+- Backend: `POST /api/ai/generate-video` (job assíncrono em background) + `GET /api/ai/video-status/{job_id}` (polling).
+- Frontend: `components/MixerSwirl.jsx` consome a API e exibe o vídeo gerado.
+- Testes de contrato Sora 2: `/app/backend/tests/test_sora_contract.py` — 3/3 passando.
+
+### ⚠️ Observações de segurança (não bloqueante, deixar para futuro)
+- `/api/ai/video-status/{job_id}` é público — qualquer cliente que adivinhe o UUID pode baixar o base64. Considerar TTL/cleanup de `_VIDEO_JOBS` (atualmente cresce em memória indefinidamente).
+- `server.py` tem ~1669 linhas — split sugerido em `routes/ai.py`, `routes/palettes.py`, `routes/dna.py`.
+
+
+## ✅ P2 — Botões expostos de Telegram/WhatsApp/SMS
+Verificado: **não existem mais botões expostos** no frontend. Issue considerada resolvida.
+
+
+## 📋 Backlog priorizado
+- **P1**: TTL/cleanup do `_VIDEO_JOBS` Sora 2 + autenticação no `/video-status`.
+- **P2**: Feed estilo Pinterest (`/feed`) com paletas + peças geradas pela comunidade.
+- **P2**: Marketplace interno (`/marketplace`) — moldes, cursos, presets.
+- **P2**: Perfil público de artista (`/u/{handle}`) + OG tags dinâmicos para `/dna/:id`.
+- **P2**: Sistema de Desafios semanais.
+- **P3 (refactor)**: Split de `server.py` em routers; PRD.md → CHANGELOG.md + ROADMAP.md quando passar de ~700 linhas.
