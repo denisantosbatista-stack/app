@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Droplet, Sparkles, AlertCircle, DollarSign, Calculator as CalcIcon, TrendingUp } from "lucide-react";
+import { Droplet, Sparkles, AlertCircle, DollarSign, Calculator as CalcIcon, TrendingUp, Ruler, Box } from "lucide-react";
 
 const PRESETS = [
   { label: "Pingente", volume: 8 },
@@ -31,12 +31,15 @@ export default function Calculator() {
         </p>
       </motion.div>
 
-      <div className="flex gap-2 mb-6" role="tablist">
+      <div className="flex gap-2 mb-6 flex-wrap" role="tablist">
         <TabBtn active={mode === "volume"} onClick={() => setMode("volume")} icon={CalcIcon} label="Proporções" testid="calc-tab-volume" />
         <TabBtn active={mode === "pricing"} onClick={() => setMode("pricing")} icon={DollarSign} label="Precificação" testid="calc-tab-pricing" />
+        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="Medidas (3D)" testid="calc-tab-measure" />
       </div>
 
-      {mode === "volume" ? <VolumeMode /> : <PricingMode />}
+      {mode === "volume" && <VolumeMode />}
+      {mode === "pricing" && <PricingMode />}
+      {mode === "measure" && <MeasureMode />}
     </div>
   );
 }
@@ -339,6 +342,184 @@ function Tip({ title, desc }) {
     <div className="text-xs">
       <div className="text-gold tracking-wider uppercase text-[10px] mb-1">{title}</div>
       <div className="text-zinc-700">{desc}</div>
+    </div>
+  );
+}
+
+// ─── Calculadora de Medidas (peças por molde 3D) ───
+const SHAPES = [
+  { id: "cylinder", label: "Cilindro", fields: ["d", "h"], hint: "Pingente, vela, geodo" },
+  { id: "sphere", label: "Esfera", fields: ["d"], hint: "Bola, gemstone" },
+  { id: "hemisphere", label: "Semiesfera", fields: ["d"], hint: "Cabochão, brincos" },
+  { id: "box", label: "Retângulo", fields: ["l", "w", "h"], hint: "Bandeja, quadro" },
+  { id: "cube", label: "Cubo", fields: ["l"], hint: "Cubo cristal, peso de papel" },
+  { id: "torus", label: "Anel (toro)", fields: ["d", "tube"], hint: "Anel, argola" },
+];
+
+const FIELD_LABELS = {
+  d: "Diâmetro (cm)",
+  l: "Comprimento (cm)",
+  w: "Largura (cm)",
+  h: "Altura (cm)",
+  tube: "Espessura do tubo (cm)",
+};
+
+function pieceVolumeMl(shape, dims) {
+  const { d = 0, l = 0, w = 0, h = 0, tube = 0 } = dims;
+  // cm³ = ml para resina líquida
+  switch (shape) {
+    case "cylinder": return Math.PI * Math.pow(d / 2, 2) * h;
+    case "sphere": return (4 / 3) * Math.PI * Math.pow(d / 2, 3);
+    case "hemisphere": return (2 / 3) * Math.PI * Math.pow(d / 2, 3);
+    case "box": return l * w * h;
+    case "cube": return Math.pow(l, 3);
+    case "torus": return 2 * Math.pow(Math.PI, 2) * (d / 2) * Math.pow(tube / 2, 2);
+    default: return 0;
+  }
+}
+
+function MeasureMode() {
+  const [shape, setShape] = useState("cylinder");
+  const [dims, setDims] = useState({ d: 4, l: 10, w: 6, h: 1.5, tube: 0.8 });
+  const [cavities, setCavities] = useState(1);
+  const [batchMl, setBatchMl] = useState(100);
+  const [wastePct, setWastePct] = useState(10); // % de perda em mistura/derramamento
+
+  const current = SHAPES.find((s) => s.id === shape);
+  const volMl = useMemo(() => pieceVolumeMl(shape, dims), [shape, dims]);
+  const volPerMold = volMl * cavities;
+  const wasteFactor = 1 + wastePct / 100;
+  const resinNeeded = volPerMold * wasteFactor;
+  const piecesFromBatch = volMl > 0 ? Math.floor((batchMl / wasteFactor) / volMl) : 0;
+  const moldsFromBatch = volPerMold > 0 ? Math.floor((batchMl / wasteFactor) / volPerMold) : 0;
+  const weightG = volPerMold * 1.1; // densidade típica resina epóxi ~1.1g/ml
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-6" data-testid="calc-measure-panel">
+      <div className="glass rounded-sm p-6 space-y-5">
+        <div>
+          <label className="label-eyebrow block mb-3">Formato do molde</label>
+          <div className="grid grid-cols-3 gap-2">
+            {SHAPES.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setShape(s.id)}
+                data-testid={`measure-shape-${s.id}`}
+                className={`px-2.5 py-2 rounded-sm text-[11px] uppercase tracking-wider transition-all ${
+                  shape === s.id
+                    ? "bg-gold text-ink shadow-gold"
+                    : "border border-black/10 text-zinc-700 hover:border-gold/40"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 flex gap-1.5 items-start">
+            <AlertCircle className="w-3 h-3 text-gold mt-0.5 shrink-0" />
+            {current?.hint}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {current.fields.map((f) => (
+            <div key={f}>
+              <label className="label-eyebrow block mb-2">{FIELD_LABELS[f]}</label>
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                value={dims[f]}
+                onChange={(e) => setDims((d) => ({ ...d, [f]: Math.max(0, Number(e.target.value) || 0) }))}
+                className="w-full"
+                data-testid={`measure-dim-${f}`}
+              />
+            </div>
+          ))}
+        </div>
+
+        <NumberField label="Cavidades por molde" value={cavities} setValue={setCavities} min={1} step={1} testid="measure-cavities" />
+        <NumberField label="Volume da batelada (ml)" value={batchMl} setValue={setBatchMl} min={1} step={10} testid="measure-batch" />
+
+        <div>
+          <label className="label-eyebrow block mb-3">Margem de perda (%)</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min="0"
+              max="50"
+              step="1"
+              value={wastePct}
+              onChange={(e) => setWastePct(Math.min(50, Math.max(0, Number(e.target.value) || 0)))}
+              className="w-24"
+              data-testid="measure-waste-input"
+            />
+            <input
+              type="range"
+              min="0"
+              max="30"
+              step="1"
+              value={wastePct}
+              onChange={(e) => setWastePct(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-sm text-zinc-600">%</span>
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 flex gap-1.5 items-start">
+            <AlertCircle className="w-3 h-3 text-gold mt-0.5 shrink-0" />
+            10–15% cobre mistura, derramamento e bolhas removidas.
+          </p>
+        </div>
+      </div>
+
+      <div className="glass-strong rounded-sm p-6 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-60 h-60 bg-gold/10 blur-3xl rounded-full pointer-events-none" />
+        <div className="relative space-y-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="label-eyebrow text-gold">Resultado das medidas</span>
+            <span className="text-[10px] text-zinc-500 tracking-wider uppercase">{current.label}</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <MeasureCard icon={Box} label="Volume da peça" value={`${volMl.toFixed(2)} ml`} testid="result-piece-vol" />
+            <MeasureCard icon={Droplet} label="Volume do molde" value={`${volPerMold.toFixed(2)} ml`} testid="result-mold-vol" />
+            <MeasureCard icon={Sparkles} label="Resina necessária" value={`${resinNeeded.toFixed(2)} ml`} subtitle={`+${wastePct}% perda`} testid="result-resin-needed" />
+            <MeasureCard icon={Ruler} label="Peso estimado" value={`${weightG.toFixed(1)} g`} subtitle="densidade ~1.1g/ml" testid="result-weight" />
+          </div>
+
+          <div className="p-4 rounded-sm bg-gradient-to-br from-gold-soft/40 to-gold/30 border border-gold/30 mt-1" data-testid="result-pieces-batch">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-700 inline-flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3" /> Rendimento da batelada
+              </span>
+              <span className="font-display text-3xl gold-text">
+                {piecesFromBatch}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-2 text-[11px] text-zinc-600">
+              <span>peças com <b>{batchMl} ml</b></span>
+              <span>{moldsFromBatch} molde{moldsFromBatch === 1 ? "" : "s"} completo{moldsFromBatch === 1 ? "" : "s"}</span>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-black/[0.06] grid grid-cols-2 gap-3">
+            <Tip title="Dica de molde" desc="Use silicone platina para detalhes finos." />
+            <Tip title="Encolhimento" desc="Epóxi encolhe ~1–3% após cura." />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MeasureCard({ icon: Icon, label, value, subtitle, testid }) {
+  return (
+    <div className="p-4 rounded-sm border border-black/[0.06] bg-ink-surface/50" data-testid={testid}>
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+        <Icon className="w-3 h-3 text-gold" /> {label}
+      </div>
+      <div className="font-display text-xl gold-text mt-1">{value}</div>
+      {subtitle && <div className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</div>}
     </div>
   );
 }

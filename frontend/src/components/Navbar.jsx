@@ -6,6 +6,7 @@ const links = [
   { to: "/", label: "Início", end: true },
   { to: "/studio", label: "Studio" },
   { to: "/library", label: "Biblioteca" },
+  { to: "/mixer", label: "Mixer" },
   { to: "/calculator", label: "Proporções" },
   { to: "/compare", label: "Comparar" },
   { to: "/tips", label: "Técnicas" },

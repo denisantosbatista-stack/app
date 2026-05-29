@@ -7,6 +7,7 @@ import Studio from "@/pages/Studio";
 import Library from "@/pages/Library";
 import Calculator from "@/pages/Calculator";
 import Compare from "@/pages/Compare";
+import Mixer from "@/pages/Mixer";
 import Tips from "@/pages/Tips";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
@@ -27,6 +28,7 @@ function App() {
           <Route path="/library" element={<Library />} />
           <Route path="/calculator" element={<Calculator />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/mixer" element={<Mixer />} />
           <Route path="/tips" element={<Tips />} />
         </Routes>
       </main>

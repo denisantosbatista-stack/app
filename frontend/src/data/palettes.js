@@ -236,7 +236,7 @@ export const MOCKUPS = [
   {
     id: "coaster",
     label: "Porta-copos Artesanal",
-    url: "https://images.unsplash.com/photo-1606293459209-7f3636ed24fa?w=800&q=80",
+    url: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=800&q=80",
   },
   {
     id: "pendant",
@@ -264,7 +264,7 @@ export const PALETTE_PHOTOS = {
   "branco-cristal": "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=800&q=80",
   "pessego-aurora": "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800&q=80",
   "menta-pastel": "https://images.unsplash.com/photo-1502810190503-8303352d0dd1?w=800&q=80",
-  "ametista-pastel": "https://images.unsplash.com/photo-1551776235-c89bd961a40c?w=800&q=80",
+  "ametista-pastel": "https://images.unsplash.com/photo-1551018612-9715965c6742?w=800&q=80",
   "azul-celeste": "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=800&q=80",
   "marmore-preto": "https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=800&q=80",
   "oceano-profundo": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80",

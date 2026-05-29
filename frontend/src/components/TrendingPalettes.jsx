@@ -63,6 +63,12 @@ export default function TrendingPalettes() {
                       loading="lazy"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                       data-testid={`trending-photo-${p.id}`}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        const grad = `linear-gradient(135deg, ${p.colors.map((c) => c.hex).join(", ")})`;
+                        e.currentTarget.style.background = grad;
+                        e.currentTarget.removeAttribute("src");
+                      }}
                     />
                   )}
                   {/* Subtle dark gradient for legibility */}
