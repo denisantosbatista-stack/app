@@ -1,6 +1,6 @@
 import { Suspense, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, ContactShadows, Environment, useTexture } from "@react-three/drei";
+import { OrbitControls, ContactShadows, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { motion } from "framer-motion";
 import { Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
@@ -222,18 +222,21 @@ export default function Productions3D({ palette }) {
           </div>
         </div>
 
-        <div className="aspect-[16/10] rounded-sm overflow-hidden bg-black border border-black/10">
+        <div
+          className="aspect-[16/10] rounded-sm overflow-hidden bg-black border border-black/10"
+          data-testid="prod3d-canvas"
+        >
           <Canvas
             dpr={[1, 2]}
             camera={{ position: [0, 0.6, 3.4], fov: 38 }}
-            data-testid="prod3d-canvas"
           >
             <color attach="background" args={["#0a0a0c"]} />
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[2, 3, 2]} intensity={1.2} />
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[2, 3, 2]} intensity={1.4} />
+            <directionalLight position={[-3, 2, -1]} intensity={0.6} color="#D4AF37" />
+            <pointLight position={[0, 2, 2]} intensity={0.8} />
             <Suspense fallback={null}>
               <Piece shape={shape} palette={palette} textureUrl={textureUrl} />
-              <Environment preset="studio" />
             </Suspense>
             <ContactShadows
               position={[0, -1.2, 0]}
