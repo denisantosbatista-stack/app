@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Fingerprint, Loader2, Sparkles, ChevronDown } from "lucide-react";
+import { Fingerprint, Loader2, Sparkles, ChevronDown, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
+import DNAShareModal from "./DNAShareModal";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -10,6 +11,7 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
   const [loading, setLoading] = useState(false);
   const [dna, setDna] = useState(null);
   const [error, setError] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const analyze = async () => {
     if (!palettes?.length) {
@@ -231,6 +233,22 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
                   </div>
                 </div>
               )}
+
+              <div className="pt-4 border-t border-black/[0.06] flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-zinc-500 max-w-md">
+                  Transforme seu DNA num cartão para o Instagram, TikTok ou
+                  Etsy. PNG quadrado pronto para post.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(true)}
+                  className="btn-gold inline-flex items-center gap-2 px-5 py-2.5 rounded-sm text-[10px] tracking-[0.22em] uppercase"
+                  data-testid="dna-share-open"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  Compartilhar cartão
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -239,6 +257,12 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
       {error && !dna && (
         <div className="px-5 md:px-7 pb-4 text-sm text-red-700">{error}</div>
       )}
+
+      <DNAShareModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        dna={dna}
+      />
     </div>
   );
 }

@@ -977,6 +977,35 @@ async def visual_dna(req: VisualDNARequest):
     }
 
 
+class DNAShareIn(BaseModel):
+    payload: dict
+    handle: Optional[str] = None
+
+
+@api_router.post("/dna/share")
+async def create_dna_share(req: DNAShareIn):
+    """Salva um snapshot do DNA Visual para compartilhamento público."""
+    if not req.payload or not isinstance(req.payload, dict):
+        raise HTTPException(status_code=400, detail="payload inválido")
+    share_id = uuid.uuid4().hex[:10]
+    doc = {
+        "id": share_id,
+        "payload": req.payload,
+        "handle": (req.handle or "").strip()[:40] or None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.dna_shares.insert_one(doc)
+    return {"id": share_id, "path": f"/dna/{share_id}"}
+
+
+@api_router.get("/dna/share/{share_id}")
+async def get_dna_share(share_id: str):
+    doc = await db.dna_shares.find_one({"id": share_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="DNA não encontrado")
+    return doc
+
+
 @api_router.get("/palettes", response_model=List[Palette])
 async def list_palettes(favorite: Optional[bool] = None):
     query = {}

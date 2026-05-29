@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import MobileNav from "@/components/MobileNav";
@@ -9,16 +9,29 @@ import Calculator from "@/pages/Calculator";
 import Compare from "@/pages/Compare";
 import Mixer from "@/pages/Mixer";
 import Tips from "@/pages/Tips";
+import PublicDNAPage from "@/pages/PublicDNAPage";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
 function App() {
   const loadSaved = usePaletteStore((s) => s.loadSaved);
+  const location = useLocation();
+  const isPublic = location.pathname.startsWith("/dna/");
 
   useEffect(() => {
     loadSaved();
   }, [loadSaved]);
+
+  if (isPublic) {
+    return (
+      <div className="min-h-screen bg-bone text-ink-text" data-testid="app-public">
+        <Routes>
+          <Route path="/dna/:id" element={<PublicDNAPage />} />
+        </Routes>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-ink text-ink-text relative overflow-x-hidden" data-testid="app-root">
