@@ -26,7 +26,7 @@ export default function MobileNav() {
   return (
     <nav
       className="md:hidden fixed inset-x-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-2"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 64px)" }}
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
       data-testid="mobile-nav"
     >
       {/* Fade indicador de scroll na direita */}

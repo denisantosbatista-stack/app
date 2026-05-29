@@ -37,7 +37,7 @@ function App() {
   return (
     <div className="min-h-screen bg-ink text-ink-text relative overflow-x-hidden" data-testid="app-root">
       <Navbar />
-      <main className="pb-36 md:pb-8">
+      <main className="pb-48 md:pb-8">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/studio" element={<Studio />} />
@@ -48,7 +48,7 @@ function App() {
           <Route path="/tips" element={<Tips />} />
         </Routes>
       </main>
-      <footer className="border-t border-black/[0.06] py-10 px-6 pb-40 md:pb-10 text-center text-xs tracking-[0.2em] uppercase text-ink-muted">
+      <footer className="border-t border-black/[0.06] py-10 px-6 pb-52 md:pb-10 text-center text-xs tracking-[0.2em] uppercase text-ink-muted">
         LindArt · Studio de Resina Premium · © 2026
       </footer>
       <MobileNav />

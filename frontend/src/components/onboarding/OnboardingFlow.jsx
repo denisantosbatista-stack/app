@@ -133,19 +133,25 @@ export default function OnboardingFlow() {
             </button>
           )}
 
-          {/* Progress bar */}
-          {step > 0 && (
-            <div className="mb-8 flex items-center gap-1.5" data-testid="onboarding-progress">
-              {STEPS.slice(1).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1 rounded-full flex-1 transition-all ${
-                    i + 1 <= step ? "bg-gold" : "bg-black/[0.08]"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+          {/* Progress bar (sempre visível para a usuária saber quantos passos faltam) */}
+          <div
+            className="mb-8 flex items-center gap-1.5"
+            data-testid="onboarding-progress"
+          >
+            {STEPS.slice(1).map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full flex-1 transition-all ${
+                  i + 1 <= step ? "bg-gold" : "bg-black/[0.08]"
+                }`}
+              />
+            ))}
+            <span className="ml-3 text-[10px] tracking-[0.22em] uppercase text-ink-muted whitespace-nowrap">
+              {step === 0
+                ? `${STEPS.length - 1} passos`
+                : `${step} / ${STEPS.length - 1}`}
+            </span>
+          </div>
 
           <div className="glass-strong rounded-sm p-8 md:p-12 relative overflow-hidden">
             {/* Glow decorativo */}

@@ -155,6 +155,12 @@ src/
 - [x] Mixer realista: swirl Canvas 2D + Sora 2 (`/api/ai/generate-video`) com polling. (v1.6)
 - [x] Galeria 3D: viewer react-three-fiber + Nano Banana (`/api/ai/generate-image`) como textura PBR. (v1.6)
 - [x] Hardening de parsing JSON da IA + MobileNav anti-overlap (v1.8.1).
+- [x] **v1.8.2 (Feb 2026)** — Reparos visuais mobile:
+  - Productions3D: detecção de WebGL + skeleton/fallback elimina retângulo preto no Studio.
+  - MobileNav: offset bottom 64→88px + padding do main 36→48 / footer 40→52 para separar do badge "Made with Emergent".
+  - ToolsGrid: `leading-none` → `leading-[1.05] pb-1` corrige clipping de diacrítico em "você".
+  - OnboardingFlow: barra de progresso visível desde o splash com label "5 passos".
+  - GenerationStep: preview da paleta refeito como geodo circular realista (núcleo cristalino, múltiplos veios dourados, cristais brilhantes, highlight de verniz, shimmer animado).
 - [ ] Animações Framer Motion adicionais em Hero, MockupShowcase e TrendingPalettes (refino).
 ### P1
 - [x] Download do código-fonte (v1.5).

@@ -20,7 +20,7 @@ export default function ToolsGrid() {
         className="mb-12"
       >
         <div className="label-eyebrow text-gold mb-3">Ferramentas</div>
-        <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-none">
+        <h2 className="font-display text-4xl md:text-5xl tracking-tight leading-[1.05] pb-1">
           Tudo que você <span className="italic gold-shimmer">precisa</span>
         </h2>
       </motion.div>

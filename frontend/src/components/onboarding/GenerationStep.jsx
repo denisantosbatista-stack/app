@@ -46,50 +46,117 @@ export default function GenerationStep({ paletteId, onNext, onBack }) {
         </p>
       </div>
 
-      <div className="relative max-w-md mx-auto aspect-square rounded-sm overflow-hidden border border-black/[0.08] shadow-[0_12px_48px_rgba(60,50,30,0.12)]">
-        {/* Fundo gradiente da paleta */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(circle at 30% 30%, ${detail} 0%, ${main} 35%, ${accent} 70%, ${vein} 100%)`,
-          }}
-        />
-        {/* Veios dourados */}
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="ob-vein" x1="0" y1="0" x2="100" y2="100">
-              <stop offset="0%" stopColor={vein} stopOpacity="0.0" />
-              <stop offset="50%" stopColor={vein} stopOpacity="0.85" />
-              <stop offset="100%" stopColor={vein} stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-          <motion.path
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2.2, ease: [0.22, 1, 0.36, 1] }}
-            d="M5,80 C30,40 70,90 95,30"
-            stroke="url(#ob-vein)"
-            strokeWidth="0.7"
-            fill="none"
-          />
-          <motion.path
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            d="M10,15 C40,55 65,20 90,75"
-            stroke="url(#ob-vein)"
-            strokeWidth="0.5"
-            fill="none"
-          />
-        </svg>
+      <div className="relative max-w-md mx-auto aspect-square">
+        {/* Sombra no chão */}
+        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[78%] h-6 rounded-full bg-black/30 blur-xl opacity-50" />
 
-        {/* Glow shimmer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.6, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent"
-        />
+        {/* Geodo circular com veios dourados e profundidade */}
+        <div
+          className="absolute inset-2 rounded-full overflow-hidden border border-black/10 shadow-[inset_0_8px_24px_rgba(255,255,255,0.18),inset_0_-12px_36px_rgba(0,0,0,0.45),0_24px_60px_rgba(60,50,30,0.28)]"
+          style={{
+            background: `radial-gradient(circle at 32% 28%, ${detail} 0%, ${main} 28%, ${accent} 62%, ${vein} 100%)`,
+          }}
+        >
+          {/* Camada de minerais cristalinos */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <defs>
+              <radialGradient id="ob-crystal-core" cx="35%" cy="32%" r="55%">
+                <stop offset="0%" stopColor={detail} stopOpacity="0.9" />
+                <stop offset="55%" stopColor={main} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={accent} stopOpacity="0" />
+              </radialGradient>
+              <linearGradient id="ob-vein-gold" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor="#D4AF37" stopOpacity="0" />
+                <stop offset="50%" stopColor="#F5D27A" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#8B6F2F" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="ob-vein-soft" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stopColor={vein} stopOpacity="0" />
+                <stop offset="50%" stopColor={vein} stopOpacity="0.8" />
+                <stop offset="100%" stopColor={vein} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Núcleo cristalino */}
+            <ellipse cx="35" cy="32" rx="28" ry="20" fill="url(#ob-crystal-core)" />
+
+            {/* Veios dourados animados */}
+            <motion.path
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 2.2, ease: [0.22, 1, 0.36, 1] }}
+              d="M5,72 C28,38 58,82 95,28"
+              stroke="url(#ob-vein-gold)"
+              strokeWidth="0.9"
+              fill="none"
+            />
+            <motion.path
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.85 }}
+              transition={{ duration: 2.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              d="M12,18 C42,52 68,22 92,78"
+              stroke="url(#ob-vein-gold)"
+              strokeWidth="0.55"
+              fill="none"
+            />
+            <motion.path
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.7 }}
+              transition={{ duration: 2.4, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              d="M2,42 C24,28 52,58 72,38 C82,30 92,48 98,55"
+              stroke="url(#ob-vein-soft)"
+              strokeWidth="0.4"
+              fill="none"
+            />
+            <motion.path
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.6 }}
+              transition={{ duration: 2.8, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              d="M20,90 C38,62 62,72 88,55"
+              stroke="url(#ob-vein-gold)"
+              strokeWidth="0.35"
+              fill="none"
+            />
+
+            {/* Pontos brilhantes (cristais) */}
+            <motion.g
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.4, duration: 0.8 }}
+            >
+              <circle cx="28" cy="38" r="0.6" fill="#FFF6D9" />
+              <circle cx="62" cy="48" r="0.4" fill="#FFF6D9" />
+              <circle cx="48" cy="72" r="0.5" fill="#FFF6D9" />
+              <circle cx="75" cy="30" r="0.35" fill="#FFF6D9" />
+              <circle cx="22" cy="60" r="0.3" fill="#FFF6D9" />
+            </motion.g>
+          </svg>
+
+          {/* Highlight superior (reflexo de verniz) */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse 60% 35% at 38% 18%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0) 70%)",
+            }}
+          />
+
+          {/* Shimmer animado */}
+          <motion.div
+            initial={{ x: "-120%" }}
+            animate={{ x: "120%" }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.6 }}
+            className="absolute inset-y-0 w-1/2 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%)",
+            }}
+          />
+        </div>
 
         {/* Loader overlay */}
         <AnimatePresence>
@@ -99,7 +166,7 @@ export default function GenerationStep({ paletteId, onNext, onBack }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="absolute inset-0 bg-white/55 backdrop-blur-[3px] flex items-center justify-center"
+              className="absolute inset-2 rounded-full bg-white/55 backdrop-blur-[3px] flex items-center justify-center"
               data-testid="onboarding-generation-loader"
             >
               <div className="text-center px-6">
