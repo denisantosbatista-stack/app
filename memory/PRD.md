@@ -106,13 +106,21 @@ src/
   - Frontend: botão `Código` (Lucide `Download`) adicionado no `Navbar.jsx` (data-testid `download-source-btn`) que faz `fetch` no endpoint, captura o `Content-Disposition`, cria `Blob` + objectURL e dispara o download com toast de feedback (`react-hot-toast`).
   - Validação: ZIP gerado tem 320KB, 104 arquivos, sem `.env` e sem `node_modules`. Backend pytest 10/10 ainda passando. Smoke screenshot OK.
 
+- 2026-05-29: v1.6 entregue — Galeria 3D + Mixer Sora 2 + Tour autoexplicativo validados E2E
+  - **R3F crash em /studio resolvido**: data-testid agora vive no `div` wrapper (não no `<Canvas>`) e `<Environment preset='studio'>` (drei) foi removido — eliminando os erros `R3F: Cannot set x-line-number` e `Cannot convert undefined or null to object` reportados na iteração 7.
+  - **Productions3D.handleGenerate**: try/catch com `toast.loading/success/error` (mesmo `tid`) garante feedback explícito em qualquer cenário — fim do "silent failure" em que o botão re-habilitava em 1s sem toast.
+  - **MixerSwirl.jsx**: integração com Sora 2 via `/api/ai/generate-video` + polling em `/api/ai/video-status/{id}` (cap 90 tentativas / ~7.5min) com timeout gracioso.
+  - **OpeningTour.jsx**: cache de áudios narrados por step (`Map` de `objectURL`s com revoke no unmount) — sem memory leak.
+  - **Backend**: 18/18 pytest passando (test_lindart_api.py + test_lindart_ai.py). `/api/download/source` validado em 352KB ZIP.
+  - **testing_agent_v3_fork iteração 8**: backend 100% + frontend 100%, zero ui_bugs / zero integration_issues / zero design_issues.
+
 ## Roadmap Experiencial (em andamento — pivot do usuário, monetização PAUSADA)
 ### P0 (próximos)
-- [ ] Rebrand & PT-BR: substituir resquícios "Diretora" → "LindArt" e traduzir textos em inglês remanescentes em Studio/Mixer/Library.
-- [ ] Tour de Abertura autoexplicativo (HTML/CSS + voz IA via OpenAI TTS) na primeira visita.
-- [ ] Mixer realista: swirl Canvas 2D + endpoint `/api/ai/generate-video` (Sora 2) para vídeo realista de mistura.
-- [ ] Galeria 3D: viewer Three.js (react-three-fiber/drei) + endpoint `/api/ai/generate-image` (Nano Banana) para render fotorrealista das peças.
-- [ ] Animações Framer Motion adicionais em Hero, MockupShowcase e TrendingPalettes.
+- [x] Rebrand & PT-BR principal: títulos, navbar e fluxos principais traduzidos. (resquícios pontuais podem ser refinados sob demanda)
+- [x] Tour de Abertura autoexplicativo (4 steps + voz IA via OpenAI TTS) na primeira visita. (v1.6)
+- [x] Mixer realista: swirl Canvas 2D + Sora 2 (`/api/ai/generate-video`) com polling. (v1.6)
+- [x] Galeria 3D: viewer react-three-fiber + Nano Banana (`/api/ai/generate-image`) como textura PBR. (v1.6)
+- [ ] Animações Framer Motion adicionais em Hero, MockupShowcase e TrendingPalettes (refino).
 ### P1
 - [x] Download do código-fonte (v1.5).
 ### Pausado
