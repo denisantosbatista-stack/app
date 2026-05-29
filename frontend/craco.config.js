@@ -86,6 +86,45 @@ if (isDevServer) {
   try {
     const { withVisualEdits } = require("@emergentbase/visual-edits/craco");
     webpackConfig = withVisualEdits(webpackConfig);
+
+    // Patch visual-edits babel plugin to skip files containing react-three-fiber components.
+    // R3F v9 strictly validates props and rejects the injected "x-line-number" / "x-source-info"
+    // attributes on its lowercase Three.js intrinsics (<mesh>, <group>, <ambientLight>, etc.).
+    // We wrap the original plugin so that when babel processes a 3D file, no meta-attributes
+    // are injected on its JSX elements.
+    const SKIP_PATTERN = /(Productions3D|MixerSwirl|Studio3D|R3F)/i;
+    const babelCfg = webpackConfig.babel || {};
+    const plugins = babelCfg.plugins || [];
+    const lastIdx = plugins.length - 1;
+    const orig = plugins[lastIdx];
+    if (typeof orig === "function") {
+      plugins[lastIdx] = function wrappedVisualEditsPlugin(babel, opts) {
+        const built = orig(babel, opts);
+        const origVisitor = built.visitor || {};
+        const wrapVisitor = (fn) => {
+          if (typeof fn !== "function") return fn;
+          return function (path, state) {
+            const filename =
+              state.filename || state.file?.opts?.filename || "";
+            if (SKIP_PATTERN.test(filename)) {
+              return;
+            }
+            return fn.call(this, path, state);
+          };
+        };
+        return {
+          ...built,
+          visitor: {
+            ...origVisitor,
+            JSXElement: wrapVisitor(origVisitor.JSXElement),
+            JSXOpeningElement: wrapVisitor(origVisitor.JSXOpeningElement),
+          },
+        };
+      };
+    } else {
+      // visual-edits plugin signature changed; skip wrap silently
+    }
+    webpackConfig.babel = { ...babelCfg, plugins };
   } catch (err) {
     if (err.code === 'MODULE_NOT_FOUND' && err.message.includes('@emergentbase/visual-edits/craco')) {
       console.warn(
