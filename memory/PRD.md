@@ -54,12 +54,12 @@ src/
 - [x] Share via URL com paleta serializada (querystring `?c=hex-hex-...&n=Nome`) — entregue v1.2
 - [x] Calculadora de precificação (custo material + mão de obra + margem) — entregue v1.2
 - [x] Mais mockups (mesa, jóias close-up) + estilos isolados em galeria — 9 mockups disponíveis (v1.1+)
-- [ ] Calculadora de medidas (peças por molde 3D)
+- [x] Calculadora de medidas (peças por molde 3D) — entregue v1.4
 ### P2
 - [ ] Onboarding tour com tooltips (Joyride/Shepherd)
 - [x] Atalhos de teclado (G = gerar IA, S = salvar, E = exportar, F = favoritar, ? = ajuda) — entregue v1.3
 - [ ] Templates prontos por categoria (joalheria, decoração, mesa, geodo)
-- [ ] Misturador físico de cores em tempo real (mistura perceptual LAB)
+- [x] Misturador físico de cores em tempo real (mistura perceptual OKLab) — entregue v1.4
 ### P3 (monetização)
 - [ ] Plano Premium (paletas ilimitadas com IA + exportação em alta)
 - [ ] Marketplace de paletas premium criadas pela comunidade
@@ -93,3 +93,10 @@ src/
   - Hint visual com `<kbd>` no header do Studio (data-testid `keyboard-shortcuts-hint`).
   - testing_agent_v3_fork iteração 4: **8/8 cenários v1.2 PASSED** + 6/6 rotas sem erro de console.
   - Calculadora de precificação validada (R$ 226.25 → 451.25 com price-hourly de 40 → 100; lucro/margem atualizam dinâmicos).
+
+- 2026-05-29: v1.4 entregue — Mixer OKLab + Calculadora de Medidas 3D + correções de imagens
+  - **/mixer** (nova rota + link no Navbar desktop e MobileNav): mistura perceptual OKLab/RGB entre Cor A e Cor B com 11 stops (10 incrementos), ΔE (deltaE76) e par sugerido. Inputs `mixer-color-a-hex` / `mixer-color-b-hex`, stops `mixer-stop-{0..10}`, copy `mixer-result-oklab-copy` / `mixer-result-rgb-copy`, sugestões `mixer-suggestion-{i}`.
+  - **Calculator → aba Medidas (3D)** (`calc-tab-measure` → `calc-measure-panel`): 6 formatos (cilindro/esfera/semiesfera/retângulo/cubo/anel) com dimensões dinâmicas, % perda configurável, resultado em `result-piece-vol` / `result-resin-needed` / `result-pieces-per-batch`.
+  - URLs Unsplash 404 do MockupShowcase / TrendingPalettes / palettes.js substituídas por imagens válidas (regressão de imagens: 0 quebradas).
+  - HTML `<title>` corrigido para “LindArt — Studio Premium de Resina” + meta description otimizada.
+  - testing_agent_v3_fork iteração 5: **backend 100% + frontend 100%**, PDF export Studio gera 5140 bytes válidos, PNG 64KB, sem bugs críticos.
