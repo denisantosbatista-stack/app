@@ -114,6 +114,21 @@ src/
   - **Backend**: 18/18 pytest passando (test_lindart_api.py + test_lindart_ai.py). `/api/download/source` validado em 352KB ZIP.
   - **testing_agent_v3_fork iteração 8**: backend 100% + frontend 100%, zero ui_bugs / zero integration_issues / zero design_issues.
 
+- 2026-05-29: v1.7 entregue — Marketing & Avaliação (Studio) + DNA Visual (Library) + Mobile Nav 7 abas
+  - **Studio · Marketing & Avaliação** (`/app/frontend/src/components/MarketingPanel.jsx`):
+    - Aba "Legenda IA": gera headline + legenda + hashtags + alt_text via `POST /api/ai/generate-caption`. Toggles Plataforma (Instagram/TikTok/Etsy) e Tom (Luxuoso/Poético/Divertido/Minimalista) + input livre de tipo de peça.
+    - Aba "Luxury Score": `POST /api/ai/luxury-score` retorna score 0-100, tier, métricas (contraste/harmonia/profundidade/sofisticação), parecer e 3 sugestões.
+    - Renderizado em `Studio.jsx` recebendo `palette={activePalette}` (disabled gracioso quando sem cores).
+  - **Library · DNA Visual** (`/app/frontend/src/components/VisualDNAPanel.jsx`):
+    - Painel accordion no topo de `/library` (só monta quando `saved.length>0`).
+    - `POST /api/ai/visual-dna` (Claude Sonnet 4.5) com clustering determinístico de cores dominantes + heurística de luxo (`_compute_dna_metrics`), combinado com parecer poético da IA.
+    - Sections: Assinatura, Mood (chips), Cores Dominantes (6 swatches), Médias do Acervo (5 barras animadas), Estilos Recorrentes, Recomendações, Próxima Paleta Sugerida + CTA "Usar no Studio".
+    - Pluralização PT-BR ajustada ("1 paleta analisada" / "N paletas analisadas").
+  - **MobileNav 7 abas**: `overflow-x-auto` + `shrink-0` + `pr-24` reservando espaço para badge Emergent — todas as 7 abas (Início, Studio, Salvos, Mixer, Proporções, A/B, Técnicas) acessíveis via swipe horizontal.
+  - **Backend novos endpoints**: `/api/ai/visual-dna` (linha 857), `/api/ai/luxury-score` (linha 669), `/api/ai/generate-caption` (linha 457).
+  - **testing_agent_v3_fork iteração 11**: frontend 5/5 críticos PASS, zero bugs bloqueantes.
+
+
 ## Roadmap Experiencial (em andamento — pivot do usuário, monetização PAUSADA)
 ### P0 (próximos)
 - [x] Rebrand & PT-BR principal: títulos, navbar e fluxos principais traduzidos. (resquícios pontuais podem ser refinados sob demanda)

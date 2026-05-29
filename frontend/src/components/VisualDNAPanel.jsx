@@ -73,7 +73,7 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
             </h3>
             <p className="text-xs text-zinc-600 mt-0.5">
               {dna
-                ? `${dna.stats?.palettes || 0} paletas analisadas · luxo médio ${dna.avg?.luxury || 0}/100`
+                ? `${dna.stats?.palettes || 0} ${(dna.stats?.palettes || 0) === 1 ? "paleta analisada" : "paletas analisadas"} · luxo médio ${dna.avg?.luxury || 0}/100`
                 : "Analisamos suas paletas salvas e revelamos sua assinatura cromática com IA."}
             </p>
           </div>
