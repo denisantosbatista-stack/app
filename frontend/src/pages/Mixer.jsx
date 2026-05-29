@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { mixOklab, mixRgbLinear, deltaEOk } from "@/utils/lab";
 import { copyToClipboard, isDark } from "@/utils/color";
 import { usePaletteStore } from "@/store/usePaletteStore";
+import MixerSwirl from "@/components/MixerSwirl";
 
 const SUGGESTIONS = [
   { a: "#D4AF37", b: "#0B0B0F", label: "Dourado × Onyx" },
@@ -206,11 +207,14 @@ export default function Mixer() {
         </div>
       </div>
 
+      <div className="mb-8">
+        <MixerSwirl colorA={colorA} colorB={colorB} />
+      </div>
+
       {/* Gradiente de stops */}
       <div className="glass rounded-sm p-6">
         <div className="label-eyebrow mb-4">Espectro 0 → 100% (perceptual)</div>
-        <div className="grid grid-cols-11 gap-px rounded-sm overflow-hidden" data-testid="mixer-spectrum">
-          {stops.map((s) => (
+        <div className="grid grid-cols-11 gap-px rounded-sm overflow-hidden" data-testid="mixer-spectrum">          {stops.map((s) => (
             <button
               key={s.pct}
               onClick={() => copyHex(s.hex)}

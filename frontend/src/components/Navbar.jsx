@@ -1,6 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, Download } from "lucide-react";
+import { Sparkles, Download, Play } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 const links = [
@@ -108,6 +108,18 @@ export default function Navbar() {
         >
           <Download className="w-3.5 h-3.5" />
           Código
+        </button>
+
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("lindart:open-tour"))}
+          title="Ver tour interativo"
+          aria-label="Abrir tour interativo do LindArt"
+          className="hidden md:inline-flex items-center gap-2 ml-2 px-3 py-2 rounded-sm border border-zinc-300/70 text-zinc-700 hover:text-ink-text hover:border-gold hover:bg-gold/5 transition-colors text-[10px] tracking-[0.22em] uppercase"
+          data-testid="open-tour-btn"
+        >
+          <Play className="w-3.5 h-3.5" />
+          Tour
         </button>
       </div>
     </motion.header>

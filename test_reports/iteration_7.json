@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend E2E validation via Playwright. OpeningTour (auto-open, 4 steps, mute/skip/next/prev/progress, Começar closes, Navbar TOUR re-opens) PASS. MixerSwirl card+canvas+loading state ('Gerando vídeo…' disabled after 15s) PASS. Productions3D card+canvas+shape switching (bandeja/colar) PASS, but generate flow has issues. CRITICAL: 13 runtime page errors on /studio related to React Three Fiber: 'R3F: Cannot set x-line-number' (3x) and 'Cannot convert undefined or null to object' (10x). React error overlay is visible to user on /studio page. Generate button re-enables in ~1s with NO success toast — Nano Banana flow appears to fail silently or component crashes before fetch.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Productions3D / Canvas (R3F)", "issue": "Uncaught runtime errors flooding /studio page: 'R3F: Cannot set \"x-line-number\". Ensure it is an object before setting \"line-number\".' followed by multiple 'Cannot convert undefined or null to object' (removeChild/removeChildFromContainer in R3F reconciler). React error overlay (CRA) appears in dev mode. Errors repeat on every Studio mount/unmount.", "selector": "[data-testid=\"prod3d-canvas\"]", "priority": "CRITICAL"},
+      {"component": "Productions3D - generate flow", "issue": "After clicking [data-testid=\"prod3d-generate-btn\"], button re-enables after ~1s and NO success toast appears. Expected: Nano Banana takes ~10-25s and toast shows on completion. Likely the R3F crash interrupts state OR the request errors out silently (no error toast shown either).", "selector": "[data-testid=\"prod3d-generate-btn\"]", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Studio /studio page render with Productions3D", "issue": "R3F reconciler errors during mount cause Cannot convert undefined or null to object on removeChild. Visible to dev/preview users via error overlay. Likely caused by Babel JSX __source plugin injecting fileName/lineNumber that R3F tries to apply to Three.js objects (known R3F issue with non-Three children, JSX whitespace, or babel-plugin-transform-react-jsx-source). Also could be caused by drei <Environment preset='studio'> failing to load HDRI without proper Suspense fallback, or by passing data-testid on <Canvas>.", "affected_selectors": ["[data-testid=\"productions-3d-card\"]", "[data-testid=\"prod3d-canvas\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_7.json"],
+  "action_items": [
+    "Fix R3F runtime errors on /studio (Productions3D.jsx). Investigate: (1) remove data-testid from <Canvas> and place it on a wrapping div, (2) ensure no stray whitespace/text/comments inside <Canvas>, (3) verify @react-three/drei <Environment preset='studio'> works in this environment - try removing it as a quick test, (4) check @react-three/fiber version vs React 18 compatibility, (5) check for babel-plugin-transform-react-jsx-source interference.",
+    "Add error handling + toast to Productions3D handleGenerate so failures surface to user instead of silently re-enabling the button.",
+    "Verify Nano Banana endpoint is actually being hit during generate (currently no network confirmation since button releases in 1s)."
+  ],
+  "critical_code_review_comments": [
+    "Productions3D.jsx line 229: data-testid on <Canvas> — R3F forwards extra props to the wrapper but this combined with __source can collide. Move data-testid to outer div for safety.",
+    "Productions3D.jsx generate flow: no try/catch toast surfacing when Nano Banana fails — silent failure UX.",
+    "Productions3D.jsx <Environment preset='studio' /> requires external HDR; can throw if network fails. Wrap in error boundary or use simpler lighting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not tested)", "frontend": "70%"},
+  "seed_data_creation": "None. Cleared localStorage('lindart.tour.v1.seen') to force tour auto-open.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "OpeningTour & MixerSwirl flows fully validated PASS. Focus next iteration on /studio R3F errors and Productions3D generate→toast flow. Use localStorage.removeItem('lindart.tour.v1.seen') before testing tour. Use REACT_APP_BACKEND_URL from frontend/.env.",
+  "rca_of_the_issue": "ROOT CAUSE (Productions3D R3F errors): React Three Fiber reconciler is attempting to apply props/__source metadata to a non-Three.js child within <Canvas>. The error 'Cannot set x-line-number' is R3F internal handling of `line-number` (from React's __source debug info) on an object that isn't a Three.js instance. Cascading 'Cannot convert undefined or null to object' errors on removeChild indicate the Three scene graph is in an inconsistent state on unmount. REPRODUCTION: Navigate to /studio in dev mode — runtime error overlay appears. MITIGATION OPTIONS: (a) Move data-testid off <Canvas> to wrapper div; (b) Remove <Environment preset='studio'> temporarily to isolate; (c) Pin @react-three/fiber and @react-three/drei to known-good versions; (d) Add an ErrorBoundary around <Canvas>."
+}

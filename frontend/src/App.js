@@ -9,6 +9,7 @@ import Calculator from "@/pages/Calculator";
 import Compare from "@/pages/Compare";
 import Mixer from "@/pages/Mixer";
 import Tips from "@/pages/Tips";
+import OpeningTour from "@/components/OpeningTour";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
         </Routes>
       </main>
       <MobileNav />
+      <OpeningTour />
       <footer className="border-t border-black/[0.06] py-10 px-6 text-center text-xs tracking-[0.2em] uppercase text-ink-muted">
         LindArt · Studio de Resina Premium · © 2026
       </footer>

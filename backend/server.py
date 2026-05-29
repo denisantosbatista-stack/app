@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -16,6 +16,10 @@ import uuid
 from datetime import datetime, timezone
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.openai.text_to_speech import OpenAITextToSpeech
+from emergentintegrations.llm.openai.video_generation import OpenAIVideoGeneration
+import base64 as b64
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -111,6 +115,25 @@ class AIPromptRequest(BaseModel):
     style: Optional[str] = None
 
 
+class VoiceRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "nova"  # alloy|ash|coral|echo|fable|nova|onyx|sage|shimmer
+    speed: Optional[float] = 1.0
+
+
+class ImageRequest(BaseModel):
+    prompt: str
+    colors: Optional[List[str]] = None  # hex strings to guide the palette
+    shape: Optional[str] = "gota"  # gota | bandeja | geodo | colar | anel
+
+
+class VideoRequest(BaseModel):
+    color_a: str
+    color_b: str
+    duration: Optional[int] = 4  # 4 | 8 | 12
+    size: Optional[str] = "1280x720"
+
+
 # ===== Routes =====
 @api_router.get("/")
 async def root():
@@ -187,6 +210,188 @@ async def generate_palette_ai(req: AIPromptRequest):
         source="ai",
     )
     return palette
+
+
+@api_router.post("/ai/generate-voice")
+async def generate_voice(req: VoiceRequest):
+    """Gera narração TTS (OpenAI). Retorna áudio MP3 em base64."""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+    text = (req.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Texto vazio")
+    if len(text) > 1200:
+        text = text[:1200]
+    voice = req.voice if req.voice in OpenAITextToSpeech.VOICES else "nova"
+    speed = max(0.5, min(2.0, float(req.speed or 1.0)))
+    try:
+        tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
+        # generate_speech is async coroutine
+        audio_bytes = await tts.generate_speech(
+            text=text, model="tts-1", voice=voice, speed=speed, response_format="mp3"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"TTS error: {e!r}")
+        raise _map_llm_exception(e)
+    if not audio_bytes:
+        raise HTTPException(status_code=502, detail="TTS retornou vazio")
+    audio_b64 = b64.b64encode(audio_bytes).decode("ascii")
+    logger.info(f"TTS ok: voice={voice} len={len(text)} bytes={len(audio_bytes)}")
+    return {
+        "audio_base64": audio_b64,
+        "mime_type": "audio/mpeg",
+        "voice": voice,
+        "speed": speed,
+    }
+
+
+@api_router.post("/ai/generate-image")
+async def generate_image(req: ImageRequest):
+    """Gera imagem fotorrealista (Gemini Nano Banana) de peça de resina com a paleta dada."""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+
+    colors_part = ""
+    if req.colors:
+        hex_list = ", ".join(c for c in req.colors if isinstance(c, str))
+        colors_part = f" Use estritamente esta paleta de cores: {hex_list}."
+    shape = (req.shape or "gota").lower()
+    prompt = (
+        f"Fotografia profissional de uma peça artesanal de resina epóxi premium em formato de {shape}. "
+        f"{req.prompt}.{colors_part} "
+        "Iluminação de estúdio suave, fundo neutro escuro, alto contraste, "
+        "reflexos dourados sutis, profundidade de campo rasa, hiper-realista, 4k, joalheria de luxo."
+    )
+
+    chat = (
+        LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"image-{uuid.uuid4()}",
+            system_message="Você gera imagens fotorrealistas de peças de resina epóxi em estilo joalheria de luxo.",
+        )
+        .with_model("gemini", "gemini-3.1-flash-image-preview")
+        .with_params(modalities=["image", "text"])
+    )
+    try:
+        text, images = await chat.send_message_multimodal_response(UserMessage(text=prompt))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"NanoBanana error: {e!r}")
+        raise _map_llm_exception(e)
+
+    if not images:
+        raise HTTPException(status_code=502, detail="Nenhuma imagem gerada")
+    img = images[0]
+    logger.info(f"Nano Banana ok: shape={shape} bytes_b64={len(img.get('data',''))}")
+    return {
+        "image_base64": img.get("data"),
+        "mime_type": img.get("mime_type", "image/png"),
+        "caption": (text or "")[:240],
+        "shape": shape,
+    }
+
+
+# ===== Sora 2 video — background job store (in-memory) =====
+# Evita 502/proxy timeout: o endpoint retorna job_id imediatamente
+# e o cliente faz polling em /api/ai/video-status/{job_id}.
+_VIDEO_JOBS: dict[str, dict] = {}
+
+
+def _run_sora_job(job_id: str, prompt: str, size: str, duration: int) -> None:
+    """Roda Sora 2 em thread separada e atualiza _VIDEO_JOBS."""
+    try:
+        video_gen = OpenAIVideoGeneration(api_key=EMERGENT_LLM_KEY)
+        video_bytes = video_gen.text_to_video(prompt, "sora-2", size, duration, 600)
+        if not video_bytes:
+            _VIDEO_JOBS[job_id] = {
+                **_VIDEO_JOBS.get(job_id, {}),
+                "status": "error",
+                "error": "Sora 2 retornou vazio",
+            }
+            return
+        video_b64 = b64.b64encode(video_bytes).decode("ascii")
+        _VIDEO_JOBS[job_id] = {
+            **_VIDEO_JOBS.get(job_id, {}),
+            "status": "completed",
+            "video_base64": video_b64,
+            "mime_type": "video/mp4",
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+        }
+        logger.info(f"Sora2 job {job_id} ok: bytes={len(video_bytes)}")
+    except Exception as e:
+        logger.error(f"Sora2 job {job_id} error: {e!r}")
+        mapped = _map_llm_exception(e)
+        _VIDEO_JOBS[job_id] = {
+            **_VIDEO_JOBS.get(job_id, {}),
+            "status": "error",
+            "error": mapped.detail,
+            "http_status": mapped.status_code,
+        }
+
+
+@api_router.post("/ai/generate-video")
+async def generate_video(req: VideoRequest, background_tasks: BackgroundTasks):
+    """Dispara geração Sora 2 em background. Retorna {job_id} imediatamente.
+
+    O cliente deve fazer polling em GET /api/ai/video-status/{job_id}
+    a cada ~5s até receber status == 'completed' (com video_base64) ou 'error'.
+    """
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+
+    duration = req.duration if req.duration in OpenAIVideoGeneration.DURATIONS else 4
+    size = req.size if req.size in OpenAIVideoGeneration.SIZES else "1280x720"
+    prompt = (
+        f"Macro cinematic shot of two glossy paint colors swirling together on a black studio "
+        f"background. Color A is {req.color_a} and color B is {req.color_b}. Slow elegant swirl "
+        "with golden specks of mica, creamy paint texture, ultra realistic, shallow depth of "
+        "field, soft top lighting, marbling reveal, premium resin art aesthetic."
+    )
+
+    job_id = str(uuid.uuid4())
+    _VIDEO_JOBS[job_id] = {
+        "status": "processing",
+        "color_a": req.color_a,
+        "color_b": req.color_b,
+        "duration": duration,
+        "size": size,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+    }
+    background_tasks.add_task(_run_sora_job, job_id, prompt, size, duration)
+    logger.info(f"Sora2 job {job_id} queued: dur={duration} size={size}")
+    return {"job_id": job_id, "status": "processing"}
+
+
+@api_router.get("/ai/video-status/{job_id}")
+async def video_status(job_id: str):
+    """Retorna o status do job Sora 2 e, quando completo, o vídeo em base64."""
+    job = _VIDEO_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job não encontrado")
+    status = job.get("status", "processing")
+    if status == "completed":
+        return {
+            "status": "completed",
+            "video_base64": job.get("video_base64"),
+            "mime_type": job.get("mime_type", "video/mp4"),
+            "duration": job.get("duration"),
+            "size": job.get("size"),
+        }
+    if status == "error":
+        return {
+            "status": "error",
+            "detail": job.get("error", "Falha desconhecida"),
+            "http_status": job.get("http_status", 502),
+        }
+    return {
+        "status": "processing",
+        "started_at": job.get("started_at"),
+        "duration": job.get("duration"),
+        "size": job.get("size"),
+    }
 
 
 @api_router.get("/palettes", response_model=List[Palette])
