@@ -217,3 +217,29 @@ Integrações ativas via **Emergent LLM Key** (sem custo extra ao usuário):
 - `index.css`: `html, body, #root { max-width: 100%; overflow-x: hidden; }` para garantir zero overflow horizontal em qualquer rota.
 
 **Validação**: Screenshots em 390x844 em `/`, `/studio`, `/library`, `/tips`, `/calculator`, `/mixer` — todas sem overflow horizontal, stats do hero claramente acima do MobileNav, MobileNav não sobrepõe o badge da plataforma.
+
+
+## 🧠 P0 — Mentora IA + Tendências + Coleções (Fev/2026)
+
+**Entregue nesta sessão**: 3 features de IA conectadas às rotas e à navegação principal.
+
+### Backend (já existia, validado nesta sessão — 100% nos testes)
+- `POST /api/ai/mentora` — Chat conversacional (Claude Sonnet 4.5). Aceita `{message, history?, image_base64?, image_mime?, system?}` → `{reply}`. Suporta histórico multi-turn e análise de imagem (mentoria visual).
+- `POST /api/ai/trends` — Curadoria semanal (Claude). Aceita `{focus?, refresh?}` → `{trends:[{name,tagline,colors[],style,tags[],viral_score}], week_theme, generated_at}`. Cache de 24h por foco em `ai_trends_cache`.
+- `POST /api/ai/collection` — Gerador de coleções coesas. Aceita `{theme, pieces[]}` → `{collection_name, concept, palette{name, colors:[{hex,name,role}]}, pieces:[{type,title,description,finish,highlights[],mockup_prompt}]}`.
+
+### Frontend
+- Rotas `/mentora`, `/trends`, `/collections` registradas em `App.js`.
+- Navbar (desktop) + MobileNav: 3 novos itens com bolinha dourada de destaque (data-testids `nav-link-mentora|trends|collections` + `mobile-nav-...`).
+- `pages/Mentora.jsx` (já existia) — chat full-screen com quick-prompts, upload de imagem, histórico.
+- `pages/Trends.jsx` (já existia) — abas de foco (geral/joalheria/decoração/verão/minimalista), botão "atualizar curadoria" (refresh=true), salvar como paleta.
+- `pages/Collections.jsx` — **criada nesta sessão**. Fluxo: descrever tema → selecionar até 6 peças (10 presets + add custom) → gerar → exibe nome, conceito, paleta de 4 cores e cards de peça (com botão "Gerar mockup" via `/api/ai/generate-image` e download).
+
+### Bugfix no caminho
+- `store/usePaletteStore.js`: `savePalette` agora normaliza `colors` aceitando tanto array de HEX (`["#abc"]`) quanto array de objetos (`[{hex,name,role}]`) — antes, salvar uma tendência (hex strings) gerava 422 silencioso, mas o toast verde mentia.
+- `pages/Trends.jsx`: `saveAsPalette` agora é `async`, com `try/catch` real e payload correto (`name`, não `title`). Validado: clique no botão "Salvar" persiste a paleta (4 → 5 em produção).
+
+### Testes
+- Backend: testing_agent v3 — 4/4 endpoints AI passando (mentora, trends, collection, generate-image).
+- Frontend: testing_agent v3 — Mentora, Trends e Collections renderizam, geram e salvam OK. Navbar/MobileNav exibem e navegam para as 3 novas rotas. Regressão das páginas antigas OK.
+- Verificação manual pós-fix: Trends "Salvar" persiste no MongoDB (confirmado via fetch de `/api/palettes` antes/depois).

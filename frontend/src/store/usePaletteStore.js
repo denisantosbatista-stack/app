@@ -72,10 +72,28 @@ export const usePaletteStore = create(
 
       savePalette: async (palette) => {
         try {
+          // Normaliza colors: aceita ["#hex", ...] OU [{hex,name,role}, ...]
+          const rawColors = palette.colors || [];
+          const colors = rawColors
+            .map((c, i) => {
+              if (!c) return null;
+              if (typeof c === "string") {
+                return { hex: c, name: `Cor ${i + 1}`, role: "detalhe" };
+              }
+              if (typeof c === "object" && c.hex) {
+                return {
+                  hex: c.hex,
+                  name: c.name || `Cor ${i + 1}`,
+                  role: c.role || "detalhe",
+                };
+              }
+              return null;
+            })
+            .filter(Boolean);
           const payload = {
-            name: palette.name,
+            name: palette.name || palette.title || "Paleta sem nome",
             description: palette.description || "",
-            colors: palette.colors,
+            colors,
             style: palette.style || "luxo",
             tags: palette.tags || [],
             favorite: palette.favorite || false,

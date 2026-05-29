@@ -155,7 +155,7 @@ export default function Collections() {
       await savePalette({
         name: collection.collection_name,
         description: collection.concept || "",
-        colors: (collection.palette?.colors || []).map((c) => c.hex).filter(Boolean),
+        colors: collection.palette?.colors || [],
         style: "luxo",
         tags: ["coleção", "ai"],
         favorite: false,

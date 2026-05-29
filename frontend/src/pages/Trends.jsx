@@ -73,19 +73,20 @@ export default function Trends() {
     toast.success("Paleta copiada!");
   }
 
-  function saveAsPalette(t) {
+  async function saveAsPalette(t) {
     try {
-      savePalette({
-        id: `trend-${Date.now()}`,
-        title: t.name,
+      await savePalette({
+        name: t.name,
+        description: t.tagline || "",
         colors: t.colors,
         style: t.style || "luxo",
         tags: t.tags || [],
-        createdAt: new Date().toISOString(),
         favorite: false,
+        source: "ai_trend",
       });
       toast.success(`"${t.name}" salva na biblioteca`);
     } catch (e) {
+      console.error(e);
       toast.error("Erro ao salvar");
     }
   }
