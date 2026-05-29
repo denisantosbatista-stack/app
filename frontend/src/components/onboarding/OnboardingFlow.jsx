@@ -29,18 +29,32 @@ export default function OnboardingFlow() {
   const setUserSegment = usePaletteStore((s) => s.setUserSegment);
   const setUserIdentity = usePaletteStore((s) => s.setUserIdentity);
 
-  // Auto-open na primeira visita
+  const onboardingCompletedStore = usePaletteStore((s) => s.onboardingCompleted);
+  const hasHydrated = usePaletteStore((s) => s._hasHydrated);
+
+  // Auto-open na primeira visita — só decide DEPOIS da hidratação do Zustand
+  // persist, senão o estado inicial (false) sobrepõe o Studio mesmo para
+  // usuários que já concluíram o onboarding.
   useEffect(() => {
+    if (!hasHydrated) return;
     try {
       const done = localStorage.getItem(DONE_KEY);
-      if (!done) {
-        // Marca o tour antigo como visto (evita conflito com OpeningTour)
-        localStorage.setItem(TOUR_SEEN_KEY, "1");
-        setOpen(true);
+      if (onboardingCompletedStore || done) {
+        if (!done) {
+          try { localStorage.setItem(DONE_KEY, "1"); } catch {}
+        }
+        return;
       }
-    } catch {
+      // Primeira visita: marca o tour antigo como visto (evita conflito com OpeningTour)
+      localStorage.setItem(TOUR_SEEN_KEY, "1");
       setOpen(true);
+    } catch {
+      if (!onboardingCompletedStore) setOpen(true);
     }
+  }, [hasHydrated, onboardingCompletedStore]);
+
+  // Listener para reabrir manualmente (ex: via UI de configurações)
+  useEffect(() => {
     const handler = () => {
       setStep(0);
       setOpen(true);

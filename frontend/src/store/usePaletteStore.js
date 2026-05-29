@@ -29,6 +29,10 @@ export const usePaletteStore = create(
       userName: "",
       userEmail: "",
 
+      // Hidratação do Zustand persist (resolve race com OnboardingFlow)
+      _hasHydrated: false,
+      setHasHydrated: (v) => set({ _hasHydrated: !!v }),
+
       setOnboardingCompleted: (v) => set({ onboardingCompleted: !!v }),
       setUserSegment: (segment) => set({ userSegment: segment }),
       setUserIdentity: ({ name, email }) =>
@@ -147,6 +151,14 @@ export const usePaletteStore = create(
         userName: s.userName,
         userEmail: s.userEmail,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Marca hidratação concluída para os componentes que dependem do
+        // estado persistido (ex: OnboardingFlow não pode abrir antes da
+        // hidratação senão sobrepõe o Studio mesmo já tendo sido concluído).
+        try {
+          state?.setHasHydrated(true);
+        } catch {}
+      },
     }
   )
 );

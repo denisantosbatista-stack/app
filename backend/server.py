@@ -135,6 +135,23 @@ class VideoRequest(BaseModel):
     size: Optional[str] = "1280x720"
 
 
+class CaptionRequest(BaseModel):
+    palette_name: Optional[str] = None
+    colors: List[str] = []  # hex
+    piece: Optional[str] = "joia de resina"
+    style: Optional[str] = None
+    platform: Optional[str] = "instagram"  # instagram | tiktok | etsy
+    tone: Optional[str] = "luxuoso"  # luxuoso | poetico | divertido | minimalista
+    language: Optional[str] = "pt-BR"
+
+
+class LuxuryScoreRequest(BaseModel):
+    palette_name: Optional[str] = None
+    colors: List[str] = []  # hex
+    description: Optional[str] = ""
+    style: Optional[str] = None
+
+
 # ===== Routes =====
 @api_router.get("/")
 async def root():
@@ -426,6 +443,308 @@ async def video_status(job_id: str):
         "started_at": job.get("started_at"),
         "duration": job.get("duration"),
         "size": job.get("size"),
+    }
+
+
+@api_router.post("/ai/generate-caption")
+async def generate_caption(req: CaptionRequest):
+    """Gera legenda + hashtags prontas para redes sociais usando Claude.
+
+    Retorna JSON estruturado:
+    {
+      "headline": "...",
+      "caption": "...",
+      "hashtags": ["#...", ...],
+      "alt_text": "...",
+      "cta": "..."
+    }
+    """
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+    if not req.colors:
+        raise HTTPException(status_code=400, detail="Informe ao menos uma cor da paleta")
+
+    platform = (req.platform or "instagram").lower()
+    tone = (req.tone or "luxuoso").lower()
+    piece = req.piece or "joia de resina"
+    palette_name = req.palette_name or "paleta personalizada"
+    style = req.style or "luxo"
+
+    platform_specs = {
+        "instagram": "Instagram (caption envolvente, 2-4 parágrafos curtos, emojis sutis e elegantes, CTA suave)",
+        "tiktok": "TikTok (hook forte na primeira linha, copy curta e direta, energia, hashtags virais)",
+        "etsy": "Etsy (descrição de produto vendedora, foco em material/dimensão sugerida/ocasião, sem emojis)",
+    }
+    platform_brief = platform_specs.get(platform, platform_specs["instagram"])
+
+    system_msg = (
+        "Você é uma copywriter especialista em moda de luxo e joalheria artesanal, "
+        "com domínio em redes sociais. Sua função é criar copy que vende sem soar comercial: "
+        "poético, sensorial, sofisticado. Tom: " + tone + ". "
+        "Plataforma: " + platform_brief + ". "
+        "Idioma de saída: " + (req.language or "pt-BR") + ". "
+        "Retorne EXCLUSIVAMENTE um JSON válido (sem markdown, sem ```), no formato:\n"
+        "{\n"
+        '  "headline": "Frase de impacto curta (até 8 palavras)",\n'
+        '  "caption": "Copy principal pronta para postar",\n'
+        '  "hashtags": ["#tag1", "#tag2", ...],\n'
+        '  "alt_text": "Descrição acessível da imagem (até 140 caracteres)",\n'
+        '  "cta": "Call to action curto"\n'
+        "}\n"
+        "Regras:\n"
+        "- 10 a 18 hashtags relevantes para resina, joalheria artesanal, decor e o estilo da peça.\n"
+        "- Sem hashtags genéricas demais (ex: #love, #instagood).\n"
+        "- Caption entre 250 e 600 caracteres.\n"
+        "- Não invente preços nem prazos."
+    )
+
+    color_list = ", ".join([c for c in req.colors if isinstance(c, str)])
+    user_text = (
+        f"Crie copy para uma peça de {piece} feita em resina epóxi, "
+        f"usando a paleta \"{palette_name}\" (estilo {style}). "
+        f"Cores em HEX: {color_list}. "
+        "Descreva a sensação que essas cores transmitem e venda a peça."
+    )
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"caption-{uuid.uuid4()}",
+        system_message=system_msg,
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+
+    try:
+        response = await chat.send_message(UserMessage(text=user_text))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Caption AI error: {e!r}")
+        raise _map_llm_exception(e)
+
+    raw = (response or "").strip()
+    raw = re.sub(r"^```(?:json)?\s*", "", raw)
+    raw = re.sub(r"\s*```$", "", raw)
+    match = re.search(r"\{[\s\S]*\}", raw)
+    if not match:
+        raise HTTPException(status_code=502, detail="IA retornou formato inválido")
+    try:
+        data = json.loads(match.group(0))
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=502, detail=f"IA retornou JSON inválido: {e}")
+
+    # Sanitiza hashtags
+    raw_tags = data.get("hashtags") or []
+    if isinstance(raw_tags, str):
+        raw_tags = [t for t in re.split(r"[\s,]+", raw_tags) if t]
+    hashtags = []
+    seen = set()
+    for t in raw_tags:
+        if not isinstance(t, str):
+            continue
+        tag = t.strip()
+        if not tag:
+            continue
+        if not tag.startswith("#"):
+            tag = "#" + re.sub(r"[^\w]", "", tag, flags=re.UNICODE)
+        if len(tag) <= 1:
+            continue
+        key = tag.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        hashtags.append(tag)
+
+    return {
+        "headline": str(data.get("headline", "")).strip(),
+        "caption": str(data.get("caption", "")).strip(),
+        "hashtags": hashtags[:20],
+        "alt_text": str(data.get("alt_text", "")).strip()[:200],
+        "cta": str(data.get("cta", "")).strip(),
+        "platform": platform,
+        "tone": tone,
+    }
+
+
+# ===== Luxury Score helpers =====
+def _hex_to_rgb(h: str) -> Optional[tuple]:
+    if not isinstance(h, str):
+        return None
+    s = h.strip().lstrip("#")
+    if len(s) != 6:
+        return None
+    try:
+        return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16))
+    except ValueError:
+        return None
+
+
+def _rgb_to_hsl(r: int, g: int, b: int) -> tuple:
+    rf, gf, bf = r / 255.0, g / 255.0, b / 255.0
+    mx, mn = max(rf, gf, bf), min(rf, gf, bf)
+    l = (mx + mn) / 2.0
+    if mx == mn:
+        return (0.0, 0.0, l)
+    d = mx - mn
+    s = d / (2 - mx - mn) if l > 0.5 else d / (mx + mn)
+    if mx == rf:
+        h = ((gf - bf) / d) + (6 if gf < bf else 0)
+    elif mx == gf:
+        h = (bf - rf) / d + 2
+    else:
+        h = (rf - gf) / d + 4
+    return (h * 60.0, s, l)
+
+
+def _compute_heuristic_luxury(colors: List[str]) -> dict:
+    """Heurística determinística (0-100) baseada em harmonia / contraste / sofisticação."""
+    rgbs = [c for c in (_hex_to_rgb(h) for h in colors) if c]
+    if not rgbs:
+        return {
+            "score": 50,
+            "contrast": 50,
+            "harmony": 50,
+            "depth": 50,
+            "sophistication": 50,
+        }
+
+    hsls = [_rgb_to_hsl(*c) for c in rgbs]
+    ls = [x[2] for x in hsls]
+    ss = [x[1] for x in hsls]
+
+    # Contraste: amplitude de luminâncias (alto contraste = mais drama)
+    contrast = (max(ls) - min(ls)) * 100  # 0..100
+
+    # Profundidade: presença de pelo menos uma cor escura (L < 0.18)
+    has_dark = any(l < 0.20 for l in ls)
+    has_light = any(l > 0.80 for l in ls)
+    depth = 60 + (20 if has_dark else 0) + (10 if has_light else 0)
+    depth = min(100, depth)
+
+    # Sofisticação: penaliza saturação extrema média (cores fluo = menos luxo)
+    avg_sat = sum(ss) / len(ss)
+    sophistication = 100 - max(0, (avg_sat - 0.55)) * 120
+    sophistication = max(20, min(100, sophistication))
+
+    # Harmonia: distância angular mediana dos matizes (queremos espaçamento, não caos)
+    hues = sorted([x[0] for x in hsls])
+    diffs = [hues[i + 1] - hues[i] for i in range(len(hues) - 1)] if len(hues) > 1 else [0]
+    # Idealmente diferenças não muito pequenas (<15) nem muito grandes (>180)
+    def harmony_for(d):
+        if d <= 0:
+            return 60
+        if d < 15:
+            return 70
+        if d < 60:
+            return 90
+        if d < 120:
+            return 95
+        if d < 180:
+            return 85
+        return 70
+    harmony = sum(harmony_for(d) for d in diffs) / max(1, len(diffs))
+
+    score = round(
+        0.30 * contrast
+        + 0.25 * harmony
+        + 0.20 * depth
+        + 0.25 * sophistication
+    )
+    score = max(0, min(100, score))
+    return {
+        "score": int(score),
+        "contrast": round(contrast),
+        "harmony": round(harmony),
+        "depth": round(depth),
+        "sophistication": round(sophistication),
+    }
+
+
+@api_router.post("/ai/luxury-score")
+async def luxury_score(req: LuxuryScoreRequest):
+    """Calcula o Luxury Score (0-100) de uma paleta.
+
+    Combina heurística cromática determinística + parecer poético da IA (Claude).
+    Retorna sempre os números heurísticos; o `verdict` da IA é melhor-esforço
+    (se a IA falhar, retornamos um fallback textual baseado na heurística).
+    """
+    if not req.colors:
+        raise HTTPException(status_code=400, detail="Informe ao menos uma cor da paleta")
+
+    metrics = _compute_heuristic_luxury(req.colors)
+    score = metrics["score"]
+
+    if score >= 88:
+        tier = "Couture"
+    elif score >= 75:
+        tier = "Atelier"
+    elif score >= 60:
+        tier = "Premium"
+    elif score >= 45:
+        tier = "Casual Chic"
+    else:
+        tier = "Daily"
+
+    verdict = ""
+    suggestions: List[str] = []
+
+    if EMERGENT_LLM_KEY:
+        try:
+            color_list = ", ".join([c for c in req.colors if isinstance(c, str)])
+            system_msg = (
+                "Você é uma diretora criativa de joalheria de luxo. "
+                "Avalie a paleta com olhar crítico e refinado. "
+                "Retorne EXCLUSIVAMENTE JSON válido no formato:\n"
+                "{\n"
+                '  "verdict": "1-2 frases curtas em português elegante sobre o feeling da paleta",\n'
+                '  "suggestions": ["3 sugestões curtas e acionáveis para elevar o luxo da paleta"]\n'
+                "}\n"
+                "Sem markdown. Tom: refinado, conciso, evite clichês."
+            )
+            chat = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=f"luxury-{uuid.uuid4()}",
+                system_message=system_msg,
+            ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+            user_text = (
+                f"Paleta \"{req.palette_name or 'sem nome'}\" "
+                f"(estilo {req.style or 'não especificado'}). "
+                f"Cores: {color_list}. "
+                f"Score heurístico: {score}/100 (tier {tier}). "
+                f"Descrição: {req.description or '—'}."
+            )
+            response = await chat.send_message(UserMessage(text=user_text))
+            raw = (response or "").strip()
+            raw = re.sub(r"^```(?:json)?\s*", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+            match = re.search(r"\{[\s\S]*\}", raw)
+            if match:
+                data = json.loads(match.group(0))
+                verdict = str(data.get("verdict", "")).strip()
+                sg = data.get("suggestions") or []
+                if isinstance(sg, list):
+                    suggestions = [str(s).strip() for s in sg if str(s).strip()][:5]
+        except Exception as e:
+            logger.warning(f"Luxury verdict fallback: {e!r}")
+
+    if not verdict:
+        if score >= 80:
+            verdict = "Paleta com excelente equilíbrio entre contraste e sofisticação — pronta para campanhas premium."
+        elif score >= 60:
+            verdict = "Boa base de luxo. Pequenos ajustes em profundidade ou contraste podem elevar a peça."
+        else:
+            verdict = "Paleta interessante, mas distante do território luxuoso — considere intensificar contraste ou trocar uma cor saturada por um neutro profundo."
+    if not suggestions:
+        suggestions = [
+            "Acrescente um acento metálico (dourado, cobre ou champagne)",
+            "Inclua uma cor escura profunda para criar drama",
+            "Reduza saturação de cores muito vibrantes",
+        ]
+
+    return {
+        "score": score,
+        "tier": tier,
+        "metrics": metrics,
+        "verdict": verdict,
+        "suggestions": suggestions,
     }
 
 
