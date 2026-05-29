@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import io
 import json
+import time
 import logging
 import re
 import zipfile
@@ -1189,6 +1190,299 @@ async def visual_dna(req: VisualDNARequest):
 class DNAShareIn(BaseModel):
     payload: dict
     handle: Optional[str] = None
+
+
+# ============================================================
+# 🧠 Mentora IA do Ateliê — chat especializado em resina epóxi.
+# ============================================================
+class MentoraMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class MentoraRequest(BaseModel):
+    session_id: Optional[str] = None
+    message: str
+    history: Optional[List[MentoraMessage]] = None
+    image_base64: Optional[str] = None  # opcional: foto da peça para diagnóstico
+
+
+_MENTORA_SYSTEM = (
+    "Você é a Mentora IA do Ateliê LindArt — uma especialista sênior em resina "
+    "epóxi de alta joalheria e decoração de luxo. Você fala em PT-BR, com tom "
+    "acolhedor, técnico-poético e direto ao ponto. Sua expertise inclui: "
+    "proporção resina/catalisador, tempo de cura, eliminação de bolhas, "
+    "pigmentação (alcoólica, em pasta, mica, pearl), efeitos (mármore, geodo, "
+    "ocean, galáxia, smokey), acabamento (lixa, polimento, alto-brilho), "
+    "molhos de silicone, ambiente (umidade, temperatura), fornecedores BR, "
+    "tendências e correção de erros comuns (peça opaca, amarelada, mole, com "
+    "crateras, fish-eyes, vazios, descolamento). "
+    "Diretrizes de resposta: "
+    "1) Seja concisa — 3-6 parágrafos curtos, ou bullet list quando ajudar. "
+    "2) Quando o usuário descrever um problema, diagnostique CAUSAS PROVÁVEIS "
+    "em ordem de probabilidade + CORREÇÕES práticas. "
+    "3) Use unidades métricas (g, ml, °C, %). "
+    "4) Cite proporções e tempos específicos quando aplicável. "
+    "5) Termine com uma pergunta curta de follow-up quando fizer sentido. "
+    "6) Nunca invente marcas; se citar, use termos genéricos (ex: 'resina "
+    "epóxi cristal AB 1:1'). "
+    "7) Se a pergunta fugir do nicho (resina, cores, mockup, atelier), "
+    "responda gentilmente que sua especialidade é resina e redirecione."
+)
+
+
+@api_router.post("/ai/mentora")
+async def mentora_chat(req: MentoraRequest):
+    """Chat com a Mentora IA do Ateliê (Claude Sonnet 4.5).
+
+    Suporta sessão persistente via `session_id` (mesma sessão = mesmo contexto
+    no lado do LLM). Cliente pode também enviar `history` recente para reforçar
+    contexto após reload. Aceita imagem opcional para diagnóstico visual.
+    """
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+    msg = (req.message or "").strip()
+    if not msg:
+        raise HTTPException(status_code=400, detail="Mensagem vazia")
+    if len(msg) > 4000:
+        raise HTTPException(status_code=413, detail="Mensagem muito longa")
+
+    session_id = (req.session_id or f"mentora-{uuid.uuid4().hex[:12]}").strip()[:80]
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=session_id,
+        system_message=_MENTORA_SYSTEM,
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+
+    # Reforça contexto recente (últimas 6 trocas) — emergentintegrations já
+    # mantém histórico server-side via session_id, mas o cliente pode enviar
+    # `history` para retomar sessões antigas.
+    context_prefix = ""
+    if req.history:
+        recent = req.history[-6:]
+        lines = []
+        for m in recent:
+            r = "Usuário" if (m.role or "").lower() == "user" else "Mentora"
+            lines.append(f"{r}: {m.content[:600]}")
+        if lines:
+            context_prefix = "Contexto recente da conversa:\n" + "\n".join(lines) + "\n\nPergunta atual:\n"
+
+    file_contents = None
+    if req.image_base64:
+        raw_b64 = req.image_base64
+        if "," in raw_b64 and raw_b64.lstrip().startswith("data:"):
+            raw_b64 = raw_b64.split(",", 1)[1]
+        try:
+            file_contents = [ImageContent(image_base64=raw_b64)]
+        except Exception:
+            file_contents = None
+
+    user_msg = UserMessage(text=context_prefix + msg, file_contents=file_contents)
+    try:
+        response = await chat.send_message(user_msg)
+    except Exception as e:
+        logger.error(f"Mentora error: {e!r}")
+        raise _map_llm_exception(e)
+
+    reply = (response or "").strip()
+    logger.info(f"Mentora ok: session={session_id} q={len(msg)} a={len(reply)} img={bool(file_contents)}")
+    return {"session_id": session_id, "reply": reply}
+
+
+# ============================================================
+# 📈 Tendências da Semana — paletas em alta no nicho de resina.
+# ============================================================
+class TrendsRequest(BaseModel):
+    refresh: bool = False  # força regerar mesmo se cache válido
+    focus: Optional[str] = None  # ex: "joalheria", "decoração", "verão"
+
+
+_TRENDS_CACHE: dict = {"key": None, "data": None, "ts": 0.0}
+_TRENDS_TTL_SECONDS = 60 * 60 * 24  # 24h
+
+
+@api_router.post("/ai/trends")
+async def ai_trends(req: TrendsRequest):
+    """Retorna 5 paletas em tendência para resina epóxi (curadoria IA).
+
+    Faz cache em memória por 24h para economizar chamadas — passe `refresh=true`
+    para forçar regeneração. Resultado: lista pronta para consumo visual.
+    """
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+
+    cache_key = (req.focus or "geral").strip().lower()
+    now = time.time()
+    if (
+        not req.refresh
+        and _TRENDS_CACHE.get("key") == cache_key
+        and _TRENDS_CACHE.get("data")
+        and now - _TRENDS_CACHE.get("ts", 0) < _TRENDS_TTL_SECONDS
+    ):
+        return {"cached": True, **_TRENDS_CACHE["data"]}
+
+    system_msg = (
+        "Você é a curadora de tendências do LindArt — especialista em estética "
+        "de resina epóxi de luxo, joalheria contemporânea e decoração premium. "
+        "Sua função: identificar 5 tendências cromáticas em ALTA agora no "
+        "nicho de resina (Pinterest BR/US, Instagram, TikTok). "
+        "Retorne EXCLUSIVAMENTE JSON válido (sem markdown, sem ```), formato:\n"
+        "{\n"
+        '  "week_theme": "Tema unificador desta semana (frase curta poética)",\n'
+        '  "trends": [\n'
+        '    {\n'
+        '      "name": "Nome da tendência (2-3 palavras)",\n'
+        '      "tagline": "Frase de 8-12 palavras descrevendo o feeling",\n'
+        '      "colors": ["#XXXXXX","#XXXXXX","#XXXXXX","#XXXXXX"],\n'
+        '      "style": "geodo | marmore | oceano | galaxia | floral | metalico | pastel | boho | luxo | minimalista",\n'
+        '      "tags": ["tag1","tag2","tag3"],\n'
+        '      "viral_score": 78\n'
+        '    }\n'
+        '  ]\n'
+        "}\n"
+        "Regras: exatamente 5 tendências, 4 cores HEX cada, viral_score 0-100, "
+        "diversidade de paletas (não todas escuras nem todas claras). "
+        "Pense em peças reais: bandejas, joias, relógios, arte de parede."
+    )
+    user_text = (
+        f"Gere as 5 tendências da semana para resina epóxi. Foco: {cache_key}. "
+        f"Considere data atual {datetime.now(timezone.utc).strftime('%B %Y')}."
+    )
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"trends-{uuid.uuid4().hex[:10]}",
+        system_message=system_msg,
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+
+    try:
+        raw = await chat.send_message(UserMessage(text=user_text))
+    except Exception as e:
+        logger.error(f"Trends error: {e!r}")
+        raise _map_llm_exception(e)
+
+    data = _parse_llm_json(raw) or {}
+    trends = data.get("trends") or []
+    if not isinstance(trends, list) or len(trends) < 3:
+        # Fallback minimalista
+        trends = [
+            {"name": "Oceano Cristal", "tagline": "Translúcidos azuis com veios brancos e dourado champagne",
+             "colors": ["#0E5F8A", "#9BD9E5", "#F4F1E8", "#D8B260"], "style": "oceano",
+             "tags": ["translucido", "azul", "champagne"], "viral_score": 82},
+            {"name": "Mármore Rosé", "tagline": "Brancos leitosos com veios rosé e ouro fosco",
+             "colors": ["#F7F2EE", "#E8C4C0", "#C9A27E", "#A07150"], "style": "marmore",
+             "tags": ["nude", "rosegold", "feminino"], "viral_score": 76},
+            {"name": "Galáxia Smokey", "tagline": "Pretos profundos com brilho metálico e pó de estrela",
+             "colors": ["#0B0B12", "#2A2540", "#7B6FB5", "#E2D5A3"], "style": "galaxia",
+             "tags": ["dark", "metalico", "luxo"], "viral_score": 71},
+            {"name": "Âmbar Translúcido", "tagline": "Mel dourado com folhas botânicas e fundo cristal",
+             "colors": ["#F1DDA1", "#C68943", "#6B3E13", "#FFF7E2"], "style": "luxo",
+             "tags": ["amber", "botanico", "warm"], "viral_score": 68},
+            {"name": "Pastel Geodo", "tagline": "Rosas leitosos e mentas com veios brancos perolados",
+             "colors": ["#F6DDE3", "#D4F0E0", "#FFFFFF", "#E5C8A0"], "style": "geodo",
+             "tags": ["pastel", "soft", "geodo"], "viral_score": 64},
+        ]
+    week_theme = data.get("week_theme") or "Translucidez & Metálicos: a semana da resina escultural"
+
+    result = {
+        "week_theme": week_theme,
+        "trends": trends[:5],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "focus": cache_key,
+    }
+    _TRENDS_CACHE["key"] = cache_key
+    _TRENDS_CACHE["data"] = result
+    _TRENDS_CACHE["ts"] = now
+    logger.info(f"Trends ok: focus={cache_key} n={len(result['trends'])}")
+    return {"cached": False, **result}
+
+
+# ============================================================
+# 🎨 Gerador de Coleções — múltiplas peças coerentes (Claude).
+# ============================================================
+class CollectionRequest(BaseModel):
+    theme: str  # ex: "coleção oceano premium"
+    pieces: Optional[List[str]] = None  # ex: ["bandeja", "relógio", "porta-copos"]
+
+
+@api_router.post("/ai/collection")
+async def ai_collection(req: CollectionRequest):
+    """Cria uma coleção coerente: paleta + descrição de cada peça.
+
+    Frontend pode então usar `/api/ai/generate-image` para gerar mockup
+    visual de cada peça com base nas `mockup_prompts` retornadas.
+    """
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+    theme = (req.theme or "").strip()
+    if not theme:
+        raise HTTPException(status_code=400, detail="Informe o tema da coleção")
+    if len(theme) > 200:
+        raise HTTPException(status_code=413, detail="Tema muito longo")
+
+    default_pieces = ["bandeja", "relógio de parede", "porta-copos", "arte de parede"]
+    pieces = req.pieces or default_pieces
+    pieces = [p.strip() for p in pieces if (p or "").strip()][:6]
+    if not pieces:
+        pieces = default_pieces
+
+    system_msg = (
+        "Você é diretor criativo de uma linha de resina epóxi premium. "
+        "Dado um tema, crie uma COLEÇÃO coerente com paleta única e múltiplas "
+        "peças que conversem visualmente entre si. Retorne EXCLUSIVAMENTE JSON "
+        "válido (sem markdown), formato:\n"
+        "{\n"
+        '  "collection_name": "Nome poético da coleção (3-5 palavras)",\n'
+        '  "concept": "Conceito da coleção em 2 frases",\n'
+        '  "palette": {\n'
+        '    "name": "Nome da paleta",\n'
+        '    "colors": [\n'
+        '      {"hex":"#XXXXXX","name":"...","role":"principal"},\n'
+        '      {"hex":"#XXXXXX","name":"...","role":"acento"},\n'
+        '      {"hex":"#XXXXXX","name":"...","role":"detalhe"},\n'
+        '      {"hex":"#XXXXXX","name":"...","role":"veios"}\n'
+        '    ]\n'
+        '  },\n'
+        '  "pieces": [\n'
+        '    {\n'
+        '      "type": "tipo da peça (ex: bandeja)",\n'
+        '      "title": "Nome da peça nessa coleção",\n'
+        '      "description": "Descrição evocativa em 1-2 frases",\n'
+        '      "finish": "acabamento sugerido (alto-brilho, fosco, cetim)",\n'
+        '      "highlights": ["destaque1","destaque2"],\n'
+        '      "mockup_prompt": "Prompt EM INGLÊS, fotorrealista, para gerador de imagem (Nano Banana), descrevendo a peça com as cores HEX da paleta, ambiente de luxo, luz natural suave, ângulo 3/4."\n'
+        '    }\n'
+        '  ]\n'
+        "}\n"
+        "Regras: paleta exatamente 4 HEX, peças idênticas à lista do usuário "
+        "(mesma ordem), mockup_prompt sempre em INGLÊS começando por "
+        "'photorealistic luxury epoxy resin' e citando os HEX entre parênteses."
+    )
+    user_text = (
+        f"Tema: {theme}\n"
+        f"Peças a incluir (mesma ordem): {', '.join(pieces)}"
+    )
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"collection-{uuid.uuid4().hex[:10]}",
+        system_message=system_msg,
+    ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+
+    try:
+        raw = await chat.send_message(UserMessage(text=user_text))
+    except Exception as e:
+        logger.error(f"Collection error: {e!r}")
+        raise _map_llm_exception(e)
+
+    data = _parse_llm_json(raw) or {}
+    if not data.get("pieces") or not data.get("palette"):
+        raise HTTPException(status_code=502, detail="IA retornou estrutura inválida. Tente novamente.")
+    data.setdefault("collection_name", theme.title())
+    data.setdefault("concept", "")
+    logger.info(f"Collection ok: theme={theme[:40]} pieces={len(data.get('pieces', []))}")
+    return data
 
 
 @api_router.post("/dna/share")
