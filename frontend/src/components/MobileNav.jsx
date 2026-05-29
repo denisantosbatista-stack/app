@@ -24,11 +24,14 @@ const items = [
 export default function MobileNav() {
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-3"
+      // Levantado acima da área do badge "Made with Emergent" (fixed bottom-right ~56px),
+      // garantindo que itens da nav nunca sejam interceptados pelo badge.
+      className="md:hidden fixed inset-x-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-3"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 56px)" }}
       data-testid="mobile-nav"
     >
       <ul
-        className="flex items-center gap-1 px-3 pr-24 overflow-x-auto no-scrollbar"
+        className="flex items-center gap-1 px-3 overflow-x-auto no-scrollbar"
         style={{ scrollbarWidth: "none" }}
       >
         {items.map(({ to, icon: Icon, label, end }) => (

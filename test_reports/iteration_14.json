@@ -1,0 +1,37 @@
+{
+  "summary": "Iteração 14 (frontend-only): Validado fix da MobileNav levantada 56px (style.bottom = calc(env(safe-area-inset-bottom,0px) + 56px)). Em 390x844 todos os 7 itens (Início, Studio, Salvos, Mixer, Proporções, A/B, Técnicas) são CLICÁVEIS e elementsFromPoint no centro de cada item retorna o NavLink (svg dentro de A[mobile-nav-*]) — sem interceptação pelo badge Emergent. Gap medido entre nav.bottom (788px) e badge.top (798px) = 10px. Regressão scroll horizontal OK (Técnicas/tips entra no viewport via scroll). Regressão backend OK: /api/ai/generate-caption retorna 200 com parser tolerante.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Mobile bottom nav (390x844)",
+        "issues": [
+          "Cosmético/não bloqueante: a nav agora flutua a 56px do bottom deixando uma faixa visível do conteúdo entre nav e badge. Visualmente funcional, mas considera-se um pequeno descolamento estético da borda inferior. Aceitável dado o trade-off com cliques 100% funcionais."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_14.json"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MobileNav agora usa style.bottom calc(env(safe-area-inset-bottom,0px) + 56px) — bom para iOS notch + acima do badge fixo. Mantém scroll-x e min-w-[64px] por item.",
+    "App.js: pb-36/pb-40 (mobile) corretamente compensam altura da nav levantada (~73px) + gap + footer.",
+    "Sugestão futura (não bloqueia): em vez de hardcode 56px, considerar custom property --emergent-badge-offset injetada pelo provedor da preview para tornar o layout robusto a mudanças no tamanho do badge.",
+    "server.py continua acima de 700 linhas (1295) — split em módulos recomendado, mas fora do escopo desta iteração."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (caption regression OK)", "frontend": "100% (7/7 nav items clicáveis e navegando)"},
+  "test_credentials": "N/A — auth pausada",
+  "seed_data_creation": "Nenhum",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug do badge Emergent interceptando cliques em mobile-nav-mixer/calculator (iter 13) está RESOLVIDO via lift de 56px na MobileNav. Para pular onboarding em testes: setar localStorage 'lindart.onboarding.v1.completed'='1' E 'lindart.tour.v1.seen'='1' E patch lindart-store-v1.state.onboardingCompleted=true, depois reload. elementsFromPoint sobre centro de cada item agora retorna SVG/A[mobile-nav-*], nunca o badge.",
+  "rca of the issue": "Bug original (iter 13): badge 'Made with Emergent' (position:fixed bottom-right ~196..374 x 798..818) sobrepunha visualmente os itens 4-5 da nav horizontal (mixer/calculator em x=219..383, y=724..775). Com a nav fixa colada ao bottom (y bottom=844), a área dos itens centrais coincidia com o badge. Fix aplicado em MobileNav.jsx: alterado bottom-0 -> style={{bottom: 'calc(env(safe-area-inset-bottom,0px) + 56px)'}}, deslocando a nav para y=715..788 (10px acima do badge). main pb-36 + footer pb-40 (mobile) absorvem o novo offset. Validação: (a) elementsFromPoint no centro de cada um dos 7 itens retorna NavLink (isNavLinkOrChild=true); (b) page.click(sel) navega para a rota correta nos 7 itens; (c) tips (último item) permanece no viewport em x=300..377 — scroll-x continua operando para qualquer regressão futura com mais itens."
+}
