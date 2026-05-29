@@ -128,6 +128,15 @@ src/
   - **Backend novos endpoints**: `/api/ai/visual-dna` (linha 857), `/api/ai/luxury-score` (linha 669), `/api/ai/generate-caption` (linha 457).
   - **testing_agent_v3_fork iteração 11**: frontend 5/5 críticos PASS, zero bugs bloqueantes.
 
+- 2026-05-29: v1.8 entregue — Cartão de DNA Visual Compartilhável (viral loop)
+  - **Backend**: `POST /api/dna/share` persiste snapshot do DNA Visual (payload + handle opcional, truncado em 40 chars) e retorna `{id, path}`. `GET /api/dna/share/{id}` devolve o doc sem `_id`; 404 limpo para id inválido. Coleção `db.dna_shares`.
+  - **Frontend componentes**:
+    - `DNAShareCard.jsx`: cartão 1080×1080 com header, assinatura, mood chips, cores dominantes + hex labels, próxima paleta sugerida e rodapé (@handle + cor dominante + "lindart.studio"). Suporta `compact` (scale 0.5) para preview.
+    - `DNAShareModal.jsx`: portal modal com preview, input @handle, botão "Baixar PNG 1080×1080" (html2canvas) e "Gerar link público" com botão Copiar.
+    - `PublicDNAPage.jsx` (rota `/dna/:id`): rota pública sem auth, branch `isPublic` em `App.js` esconde Navbar/MobileNav. Estados de loading, erro 404 e download PNG.
+  - **Wiring**: `VisualDNAPanel.jsx` agora exibe CTA "Compartilhar cartão" (`data-testid='dna-share-open'`) que abre o modal com o DNA gerado.
+  - **testing_agent_v3_fork iteração 12**: backend 100% (6/6 pytest) + frontend 100% E2E (seed → DNA → modal → handle → link → PNG → rota pública → 404). Zero bugs.
+
 
 ## Roadmap Experiencial (em andamento — pivot do usuário, monetização PAUSADA)
 ### P0 (próximos)
