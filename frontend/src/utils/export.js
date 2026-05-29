@@ -47,17 +47,20 @@ export function downloadText(filename, content) {
 }
 
 export async function downloadPNG(element, filename) {
-  if (!element) return;
+  if (!element) throw new Error("Elemento de captura indisponível");
   const canvas = await html2canvas(element, {
     backgroundColor: "#0A0A0A",
     scale: 2,
     useCORS: true,
     logging: false,
   });
+  const dataUrl = canvas.toDataURL("image/png");
   const link = document.createElement("a");
   link.download = filename;
-  link.href = canvas.toDataURL("image/png");
+  link.href = dataUrl;
+  document.body.appendChild(link);
   link.click();
+  document.body.removeChild(link);
 }
 
 export async function downloadPDF(palette, element) {

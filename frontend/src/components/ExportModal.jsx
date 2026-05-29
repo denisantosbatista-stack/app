@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Copy, Download, FileImage, FileText, Code2, FileJson } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,8 +12,10 @@ import {
   downloadPDF,
 } from "@/utils/export";
 
-export default function ExportModal({ palette, captureRef, open, onClose }) {
+export default function ExportModal({ palette, captureRef: externalRef, open, onClose }) {
   const [format, setFormat] = useState("css");
+  const internalRef = useRef(null);
+  const captureRef = externalRef || internalRef;
 
   if (!palette) return null;
 
@@ -71,6 +73,132 @@ export default function ExportModal({ palette, captureRef, open, onClose }) {
           onClick={onClose}
           data-testid="export-modal"
         >
+          {/* Off-screen capture target for PNG/PDF — always mounted while modal is open */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "fixed",
+              left: "-10000px",
+              top: 0,
+              width: "1200px",
+              height: "675px",
+              pointerEvents: "none",
+              opacity: 1,
+            }}
+          >
+            <div
+              ref={internalRef}
+              data-testid="export-capture-target"
+              style={{
+                width: "1200px",
+                height: "675px",
+                background: "linear-gradient(180deg, #0A0A0A 0%, #15151c 100%)",
+                color: "#F7F7F7",
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                padding: "64px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxSizing: "border-box",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    letterSpacing: "0.32em",
+                    textTransform: "uppercase",
+                    color: "#D4AF37",
+                    fontFamily: "Helvetica, Arial, sans-serif",
+                    marginBottom: "16px",
+                  }}
+                >
+                  LindArt · Studio de Resina Premium
+                </div>
+                <div style={{ fontSize: "56px", lineHeight: 1.05, letterSpacing: "-0.01em" }}>
+                  {palette.name}
+                </div>
+                {palette.description && (
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      color: "#A1A1AA",
+                      marginTop: "12px",
+                      maxWidth: "880px",
+                      fontFamily: "Helvetica, Arial, sans-serif",
+                    }}
+                  >
+                    {palette.description}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", gap: "16px", width: "100%" }}>
+                {palette.colors.map((c, i) => (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        background: c.hex,
+                        width: "100%",
+                        height: "320px",
+                        borderRadius: "2px",
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        color: "#F7F7F7",
+                        marginTop: "12px",
+                        fontFamily: "Helvetica, Arial, sans-serif",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {(c.hex || "").toUpperCase()}
+                    </div>
+                    {c.name && (
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#A1A1AA",
+                          marginTop: "4px",
+                          fontFamily: "Helvetica, Arial, sans-serif",
+                        }}
+                      >
+                        {c.name}
+                      </div>
+                    )}
+                    {c.role && (
+                      <div
+                        style={{
+                          fontSize: "10px",
+                          color: "#D4AF37",
+                          marginTop: "4px",
+                          letterSpacing: "0.22em",
+                          textTransform: "uppercase",
+                          fontFamily: "Helvetica, Arial, sans-serif",
+                        }}
+                      >
+                        {c.role}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "11px",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "#71717A",
+                  fontFamily: "Helvetica, Arial, sans-serif",
+                }}
+              >
+                {palette.colors.length} cores · gerado em LindArt
+              </div>
+            </div>
+          </div>
+
           <motion.div
             initial={{ scale: 0.96, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
