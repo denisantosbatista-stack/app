@@ -1,0 +1,29 @@
+{
+  "summary": "Frontend-only testing of new /planos (Pricing) page completed. All requested functionality verified: route renders, hero uses Cormorant Garamond, 4 plan cards with correct prices (R$0/R$29/R$67/R$127), Pro 'Mais popular' badge, Annual tab visually disabled with 'Em breve' badge + working tooltip on hover, comparison table (desktop) + mobile accordion, 5 FAQs (first highlights free-forever + no card), dark-background final CTA, mobile responsive, and 'Ver planos' link present in both Navbar 'Minha conta' dropdown and Navbar hamburger menu — both navigate to /planos. All critical interactive elements have data-testid. Only finding: a non-blocking React console warning about missing key prop in COMPARISON map (uses bare <>...</> fragments inside .map).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Pricing.jsx (COMPARISON table render)", "issue": "React warning: 'Each child in a list should have a unique key prop'. Cause: bare React fragment <>...</> used inside COMPARISON.map at ~lines 534-558. Replace with <React.Fragment key={group.group}> ... </React.Fragment>.", "selector": "pricing-comparison-table", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_29.json"],
+  "action_items": [
+    "Fix React key warning in Pricing.jsx COMPARISON.map by replacing <>...</> with <React.Fragment key={group.group}>...</React.Fragment> (lines ~534-558). Functionality is unaffected but keeps console clean.",
+    "Out of scope but pre-existing: Navbar.jsx line 44 has Privacidade link pointing to '/privacy' while App.js route is '/privacidade' — broken link (NOT part of this feature)."
+  ],
+  "critical_code_review_comments": [
+    "Pricing.jsx (739 lines) is approaching the 700-line threshold. Consider extracting PLANS/COMPARISON/FAQ data and the Cell/comparison subcomponents into separate modules for maintainability.",
+    "Toggle for Anual is correctly disabled via ANNUAL_ENABLED flag with annualMonthly/annualTotal already hard-coded — clean future-activation path.",
+    "Hard-coded annual math verified: Essencial 23 (29*0.8=23.2), Pro 54 (67*0.8=53.6), Studio 102 (127*0.8=101.6). Reasonable rounding."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (17/17 functional checks passed)"},
+  "test_credentials": "Not required — /planos is public. Tested unauthenticated.",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Pricing page at /planos is fully functional. data-testids exist for: pricing-page, pricing-hero-title, pricing-billing-toggle, pricing-billing-monthly, pricing-billing-annual, pricing-annual-badge, pricing-annual-tooltip, pricing-card-{livre|essencial|pro|studio}, pricing-price-{id}, pricing-badge-pro, pricing-cta-{id}, pricing-comparison-table, pricing-comparison-mobile, pricing-mobile-group-{idx}, pricing-faq, pricing-faq-q-{0-4}, pricing-faq-a-{0-4}, pricing-cta-final, pricing-cta-final-primary, pricing-cta-final-secondary. Navbar dropdown link uses data-testid='nav-link-planos'; mobile hamburger uses 'mobile-nav-link-planos'. Bottom MobileNav.jsx (icon bar) intentionally does NOT contain 'Ver planos' — the mobile entry point is the hamburger menu inside Navbar.jsx, which is correct per implementation.",
+  "rca of the issue": "React key warning RCA: In /app/frontend/src/pages/Pricing.jsx, the .map over COMPARISON returns a bare fragment shorthand <>...</> wrapping the group <tr> and rows <tr>. Shorthand fragments can't accept a key prop, so React falls back to index-only reconciliation and emits the warning. Fix: replace `<>` with `<React.Fragment key={group.group}>` (and `</React.Fragment>` at close)."
+}

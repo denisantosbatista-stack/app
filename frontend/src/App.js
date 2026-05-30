@@ -20,6 +20,7 @@ import PublicDNAPage from "@/pages/PublicDNAPage";
 import Privacy from "@/pages/Privacy";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import Pricing from "@/pages/Pricing";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import UpgradeInfoModal from "@/components/UpgradeInfoModal";
@@ -69,6 +70,7 @@ function App() {
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/u/:handle" element={<PublicProfile />} />
             <Route path="/privacidade" element={<Privacy />} />
+            <Route path="/planos" element={<Pricing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
           </Routes>

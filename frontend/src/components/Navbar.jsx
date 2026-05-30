@@ -40,6 +40,7 @@ const NAV_GROUPS = [
     items: [
       { to: "/collections", label: "Coleção", ai: true },
       { to: "/compare", label: "Comparador" },
+      { to: "/planos", label: "Ver planos" },
       { to: "/privacy", label: "Privacidade" },
     ],
   },
