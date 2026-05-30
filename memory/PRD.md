@@ -24,6 +24,13 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - DNA Share (URL pública por paleta)
 - Onboarding + Tour de abertura
 
+### ✅ P0 — Visualizador 3D fix (DONE iter 19, 2026-02)
+- **Productions3D.jsx** corrigido: cena 3D estava escura porque `meshPhysicalMaterial` com alto `envMapIntensity` não tinha environment map → adicionado `<Environment preset="studio" />` do drei, ambientLight 0.5→0.9, novo `hemisphereLight`, `emissiveMap=texture` + `emissive=#ffffff` quando textura aplicada, metalness reduzido para 0.1-0.12 com textura.
+- **UX de loading**: overlay com spinner + barra de progresso animada (~30s) + texto "Nano Banana renderizando… Isso leva cerca de 30 segundos". Botão agora exibe `Renderizando… N%` ao invés de string estática. Banner de erro com botão "Tentar novamente" (data-testid `prod3d-retry-btn`).
+- **Texto de instruções**: era `text-[10px] text-zinc-500` (ilegível) → agora `text-xs text-zinc-300` com ícone `MousePointerClick` e ênfase em "Arraste"/"Scroll".
+- **Backend `/api/ai/generate-image`**: aceita `style` e `palette_name`, monta prompt vívido por shape (geodo cluster, bandeja catch-all com fio dourado, colar gota com corrente) + descrição por estilo (geodo/mármore/oceano/galáxia/floral/luxo/etc.) — peça gerada agora corresponde a uma fotografia realista, não textura abstrata.
+- Testing agent iter19: backend 8/8 pytest, frontend 100%, zero console errors.
+
 ### ✅ P2 — Comunidade (DONE em 2026-02)
 - **Feed Comunitário** (`/feed`) — POST/GET `/api/feed`, like, filtro por tag
 - **Pick da Semana** — highlight no Feed (campo `is_pick`)
@@ -73,4 +80,6 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
-**Iter 18 (2026-02)** — Migração Sora 2 → SVD 2.0 + OG tags absolutas + botão "Compartilhar no WhatsApp" no DNA Share Modal (usa URL `/api/og/dna/{id}` para preview com og:image; humanos são redirecionados para `/dna/{id}` via meta refresh). Backend 6/6 e frontend smoke 100%. Sem bugs.
+**Iter 19 (2026-02)** — Fixes P0 Visualizador 3D: cena clara via Environment studio + emissiveMap, overlay de loading com barra de progresso, retry banner, instruções legíveis, prompt Nano Banana específico por shape+estilo. Backend 8/8 e frontend 100%. Sem bugs remanescentes.
+
+**Iter 18 (2026-02)** — Migração Sora 2 → SVD 2.0 + OG tags absolutas + botão "Compartilhar no WhatsApp" no DNA Share Modal.
