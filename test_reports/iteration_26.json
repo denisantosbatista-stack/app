@@ -1,0 +1,39 @@
+{
+  "summary": "P2 AI router refactor regression: 23/23 backend tests pass. All /api/ai/* endpoints functional in routers/ai.py with prefix=/api. Non-AI routes (/api/, /api/palettes, /api/dna/share, /api/auth, /api/feed, /api/marketplace, /api/challenges) intact. Found and removed one duplicate (POST /api/dna/share + GET /api/dna/share/{share_id}) accidentally left in routers/ai.py during extraction — these belong only in server.py per spec.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p2_ai_refactor.py",
+    "/app/test_reports/pytest/iteration_26.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FIXED by testing agent: routers/ai.py had leftover duplicate definitions of POST /api/dna/share and GET /api/dna/share/{share_id} (lines 1390/1429 of pre-fix file). Since server.py still owns the canonical /api/dna/* routes per the refactor brief, removed both duplicates from ai.py and left a comment marker. Without this fix, FastAPI registered two identical paths — first-match (server.py) won, but ai.py copies were dead code and broke the 'no duplicate routes' acceptance criterion.",
+    "Router contract OK: routers/ai.py uses APIRouter(prefix='/api', tags=['ai']). All 10 AI paths register exactly once: /api/ai/generate-palette, /api/ai/generate-voice, /api/ai/transcribe, /api/ai/generate-image, /api/ai/generate-caption, /api/ai/luxury-score, /api/ai/visual-dna, /api/ai/mentora, /api/ai/trends, /api/ai/collection.",
+    "server.py reduced cleanly to ~340 lines (was 1708). Imports for all other routers (feed/marketplace/profiles/challenges/auth/og/svd_video/ai) wired correctly; module-level smoke (in-process app load) succeeds and counts routes match expectations.",
+    "Minor lint: 'use_ai' flag mentioned in the review request does NOT exist in LuxuryScoreRequest (only palette_name/colors/description/style). Behavior is: heuristic always computed; AI parecer is added only if EMERGENT_LLM_KEY is set. This is not a regression — same behavior as pre-refactor — but the review-request wording is misaligned. Consider adding an explicit use_ai:bool=True toggle if you want clients to skip the LLM call deterministically.",
+    "Pydantic 2 DeprecationWarning on @app.on_event('startup'/'shutdown') in server.py — not regression-blocking but worth migrating to lifespan handlers in a follow-up.",
+    "routers/challenges.py:56 still emits 'Field name \"status\" in \"ChallengeOut\" shadows an attribute in parent \"Challenge\"' UserWarning (pre-existing, not related to this refactor)."
+  ],
+  "updated_files": [
+    "/app/backend/routers/ai.py (removed duplicated /dna/share POST+GET that already live in server.py)",
+    "/app/backend/tests/test_p2_ai_refactor.py (new regression suite, 23 tests)"
+  ],
+  "success_rate": {
+    "backend": "100% (23/23)",
+    "frontend": "n/a (skipped per request)"
+  },
+  "test_credentials": "Not needed — AI/Palette/DNA share endpoints are public. Auth router only smoke-tested for existence (POST /api/auth/login with empty body returned 422 as expected, not 404).",
+  "seed_data_creation": "1 ephemeral dna_shares doc created with handle='TEST_handle' and payload name='TEST_p2_dna' for the create→get→404 verification flow. Safe to leave or cleanup via db.dna_shares.delete_many({'handle':'TEST_handle'}).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test file: /app/backend/tests/test_p2_ai_refactor.py — full P2 AI refactor regression. Run via: REACT_APP_BACKEND_URL=<url> pytest tests/test_p2_ai_refactor.py -v. Covers: smoke (root + palettes + no-duplicate-routes via in-process app introspection), dna/share CRUD, all 10 AI endpoints (with proper Pydantic schemas: LuxuryScoreRequest.colors=List[str], MentoraRequest.message=str, CollectionRequest.pieces=List[str]), and existence-checks for other routers. AI endpoints take ~60-90s total because of real Claude/OpenAI/Gemini calls. Duplicate-route detector loads server.py in-process (needs cwd=/app/backend). The luxury-score AI parecer path requires EMERGENT_LLM_KEY but falls back to heuristic-only if the LLM returns junk JSON. No mocks anywhere.",
+  "rca_of_the_issue": "During extraction of AI endpoints from server.py → routers/ai.py, the developer copy-pasted blocks that also included the /api/dna/share routes (which are NOT AI endpoints — they share the `db.dna_shares` collection but the brief explicitly keeps them in server.py). The original server.py code was kept for /dna/share, so both routers ended up registering identical POST + GET paths. FastAPI silently honors the first-registered route, masking the issue at runtime. Fix: deleted the two duplicate decorators+functions from routers/ai.py (~50 lines) and left a docstring comment. Verified by in-process route-introspection test (test_no_duplicate_routes) and live HTTP create→get→404 flow."
+}
