@@ -12,7 +12,9 @@ import {
   Trophy,
   ExternalLink,
   UserX,
+  Share2,
 } from "lucide-react";
+import ShareSheet from "../components/ShareSheet";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -34,6 +36,8 @@ export default function PublicProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null); // { kind: 'not_found' | 'network' | 'server', message }
   const [tab, setTab] = useState("posts");
+  const [profileShareOpen, setProfileShareOpen] = useState(false);
+  const [sharePost, setSharePost] = useState(null); // { id, title, description } | null
 
   useEffect(() => {
     let mounted = true;
@@ -202,6 +206,14 @@ export default function PublicProfile() {
             <p className="text-zinc-600 text-sm md:text-base mt-3 italic">
               Portfólio de processos, paletas e peças únicas.
             </p>
+            <button
+              type="button"
+              onClick={() => setProfileShareOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 text-[10px] tracking-[0.22em] uppercase border border-gold/50 text-gold-deep hover:bg-gold/10 transition-colors px-4 py-2 rounded-sm"
+              data-testid="profile-share-button"
+            >
+              <Share2 className="w-3.5 h-3.5" /> Compartilhar perfil
+            </button>
           </div>
 
           {signature_palette?.length > 0 && (
@@ -312,6 +324,20 @@ export default function PublicProfile() {
                         </div>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSharePost({
+                          id: p.id,
+                          title: p.title,
+                          description: p.description || "",
+                        })
+                      }
+                      className="mt-2 w-full inline-flex items-center justify-center gap-1.5 text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-gold-deep border-t border-black/[0.04] pt-2 transition-colors"
+                      data-testid={`post-share-button-${p.id}`}
+                    >
+                      <Share2 className="w-3 h-3" /> Compartilhar
+                    </button>
                   </div>
                 </article>
               ))}
@@ -449,6 +475,28 @@ export default function PublicProfile() {
             <Empty message="Sem participações em desafios." />
           ))}
       </div>
+
+      <ShareSheet
+        open={profileShareOpen}
+        onClose={() => setProfileShareOpen(false)}
+        url={`${API_BASE}/u/${encodeURIComponent(data.handle || handle)}`}
+        title={`@${data.handle || handle} — Artista LindArt`}
+        description={`Portfólio de @${data.handle || handle} no LindArt.`}
+      />
+
+      <ShareSheet
+        open={!!sharePost}
+        onClose={() => setSharePost(null)}
+        url={
+          sharePost ? `${API_BASE}/api/og/feed/${sharePost.id}` : ""
+        }
+        title={sharePost ? `${sharePost.title} — LindArt` : ""}
+        description={
+          sharePost
+            ? sharePost.description || "Post LindArt — paleta, processo e peça."
+            : ""
+        }
+      />
     </div>
   );
 }

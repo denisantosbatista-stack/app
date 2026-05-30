@@ -9,6 +9,8 @@ Rotas:
 - GET /api/og/dna/{share_id}/image.svg          → imagem SVG (cache 24h)
 - GET /api/og/marketplace/{item_id}             → HTML com OG tags do item
 - GET /api/og/marketplace/{item_id}/image.svg   → imagem SVG do item (cache 24h)
+- GET /api/og/feed/{post_id}                    → HTML com OG tags do post de feed
+- GET /api/og/feed/{post_id}/image.svg          → imagem SVG do post (cache 24h)
 """
 from __future__ import annotations
 
@@ -348,6 +350,133 @@ async def og_marketplace_image_svg(item_id: str):
     <text x="60" y="200" font-size="26" letter-spacing="4" opacity="0.75">{_html_escape(type_label.upper())}</text>
     <text x="60" y="300" font-size="64" font-weight="300" letter-spacing="2">{_html_escape(item_title)}</text>
     {price_node}
+    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
+    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
+  </g>
+  {swatches}
+</svg>"""
+    return StreamingResponse(
+        iter([svg.encode("utf-8")]),
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+    )
+
+
+# ─────────────────────────────── Feed OG ───────────────────────────────
+
+
+def _feed_swatches(post: dict) -> List[str]:
+    """Extrai paleta válida do post (campo `palette_colors`). Fallback curado."""
+    raw = post.get("palette_colors") or []
+    colors: List[str] = []
+    for c in raw:
+        if isinstance(c, str) and _HEX_RE.fullmatch(c.strip()):
+            cc = c.strip().lower()
+            if cc not in colors:
+                colors.append(cc)
+        if len(colors) >= 6:
+            break
+    if len(colors) < 3:
+        for c in _DEFAULT_PALETTE:
+            if c.lower() not in colors:
+                colors.append(c.lower())
+            if len(colors) >= 5:
+                break
+    return colors[:6]
+
+
+@router.get("/feed/{post_id}", response_class=HTMLResponse)
+async def og_feed_page(post_id: str, request: Request):
+    """Página HTML com Open Graph tags do post do feed.
+    Crawlers (WhatsApp, IG, X, FB) leem os metatags; humanos são redirecionados
+    para /feed#post-{post_id}."""
+    origin = _absolute_origin(request)
+    post = await db.feed_posts.find_one({"id": post_id}, {"_id": 0})
+    if not post:
+        html = (
+            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+            "<title>Post não encontrado · LindArt</title>"
+            '<meta property="og:title" content="Post não encontrado">'
+            '<meta property="og:description" content="Este post do feed expirou ou foi removido.">'
+            f'<meta property="og:url" content="{origin}/feed">'
+            '<meta http-equiv="refresh" content="0; url=/feed">'
+            "</head><body>Post não encontrado.</body></html>"
+        )
+        return HTMLResponse(content=html, status_code=404)
+
+    post_title = (post.get("title") or "Post LindArt").strip()[:80] or "Post LindArt"
+    handle = post.get("handle")
+    author_txt = f" — @{handle}" if handle else ""
+    title = f"{post_title}{author_txt} — LindArt"
+
+    colors = _feed_swatches(post)
+    raw_desc = (post.get("description") or "").strip()
+    desc_parts: List[str] = []
+    if raw_desc:
+        desc_parts.append(raw_desc)
+    if colors:
+        desc_parts.append("Paleta: " + " ".join(colors[:5]))
+    desc_parts.append("Veja o post completo no feed do LindArt.")
+    description = " · ".join(desc_parts)[:280]
+
+    redirect_path = f"/feed#post-{post_id}"
+    redirect_abs = f"{origin}{redirect_path}" if origin else redirect_path
+    og_image_abs = (
+        f"{origin}/api/og/feed/{post_id}/image.svg"
+        if origin
+        else f"/api/og/feed/{post_id}/image.svg"
+    )
+
+    # Reaproveita template dna_og.html (estrutura idêntica: title/desc/colors/redirect).
+    template = _jinja_env.get_template("dna_og.html")
+    html = template.render(
+        signature=post_title,
+        title=title,
+        description=description,
+        colors=colors,
+        redirect_path=redirect_path,
+        redirect_abs=redirect_abs,
+        og_image_abs=og_image_abs,
+    )
+    return HTMLResponse(
+        content=html,
+        headers={"Cache-Control": "public, max-age=600, s-maxage=600"},
+    )
+
+
+@router.get("/feed/{post_id}/image.svg")
+async def og_feed_image_svg(post_id: str):
+    """Imagem OG (SVG) do post de feed. 1200×630 para social."""
+    post = await db.feed_posts.find_one({"id": post_id}, {"_id": 0}) or {}
+    post_title = (post.get("title") or "Post LindArt").strip()[:60] or "Post LindArt"
+    handle = post.get("handle")
+    author = f"@{handle}" if handle else "LindArt"
+    colors = _feed_swatches(post) if post else list(_DEFAULT_PALETTE)
+    if not colors:
+        colors = list(_DEFAULT_PALETTE)
+
+    stops = "".join(
+        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
+        for i, c in enumerate(colors)
+    )
+    swatch_w = 1080 // max(1, len(colors))
+    swatches = "".join(
+        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
+        for i, c in enumerate(colors)
+    )
+
+    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
+  <rect width="1200" height="630" filter="url(#grain)"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
+    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · FEED</text>
+    <text x="60" y="280" font-size="64" font-weight="300" letter-spacing="2">{_html_escape(post_title)}</text>
     <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
     <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
   </g>

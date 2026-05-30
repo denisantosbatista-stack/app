@@ -343,7 +343,7 @@ function EmptyState({ onCreate }) {
 function PostCard({ post, liked, onLike }) {
   const colors = post.palette_colors || [];
   const [shareOpen, setShareOpen] = useState(false);
-  const shareUrl = `${API_BASE}/feed#post-${post.id}`;
+  const shareUrl = `${API_BASE}/api/og/feed/${post.id}`;
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}

@@ -1,0 +1,33 @@
+{
+  "summary": "Iteração 35 — Validação completa de OG feed (backend) + ShareSheet integrado em PublicProfile e Feed (frontend). 8/8 testes pytest passaram; 100% dos fluxos UI validados (perfil, post no perfil, share no /feed).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_og_feed.py",
+    "/app/test_reports/pytest/iteration_35.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "PublicProfile.jsx e Feed.jsx ja constroem corretamente a URL absoluta /api/og/feed/{id} a partir de REACT_APP_BACKEND_URL — sem hardcoding. OK.",
+    "Rota /api/og/feed/{id}/image.svg para id inexistente retorna 200 com SVG default (paleta fallback), conforme requisitado — nao crasha.",
+    "og:locale=pt_BR, og:url absoluto apontando para /feed#post-{id} e og:image absoluto para a rota /image.svg do mesmo post_id — todos validados via regex no HTML.",
+    "Onboarding global (lindart.onboarding.v1.completed em localStorage) pode bloquear UX em primeira sessao em paginas publicas como /u/{handle} e /feed. Considerar nao montar OnboardingFlow em rotas publicas anonimas para evitar friccao do visitante que recebe um link compartilhado (afeta diretamente o objetivo do feature de share)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_og_feed.py"
+  ],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100% (5/5 fluxos)"},
+  "test_credentials": "Nao necessario — todos os fluxos testados sao publicos (/u/teste, /feed, /api/og/feed/*).",
+  "seed_data_creation": "Nenhum seed criado. Utilizado post real id=8bc927129698 (handle teste) ja existente no banco.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Para testar rotas publicas com onboarding global, setar localStorage antes da navegacao: localStorage.setItem('lindart.onboarding.v1.completed','1') e localStorage.setItem('lindart.tour.v1.seen','1'). Senao o modal de onboarding bloqueia cliques. Post real para testes OG: id=8bc927129698, handle 'teste'. data-testids confirmados: profile-share-button, post-share-button-{id} (PublicProfile aba Feed), feed-share-{id} (Feed.jsx), share-sheet-url, share-sheet-close, share-sheet-overlay.",
+  "rca of the issue": "n/a — nenhuma falha encontrada. Todos os 11 cenarios do review_request validados com sucesso (5 backend OG + 6 frontend ShareSheet)."
+}
