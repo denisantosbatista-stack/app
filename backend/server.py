@@ -725,8 +725,8 @@ async def generate_video(req: VideoRequest, background_tasks: BackgroundTasks):
     """
     if not FAL_KEY:
         raise HTTPException(
-            status_code=500,
-            detail="FAL_KEY não configurada. Configure backend/.env (https://fal.ai/dashboard/keys) para usar Stable Video Diffusion 2.0.",
+            status_code=503,
+            detail="FAL_KEY não configurada. Adicione FAL_KEY em backend/.env (obtenha em https://fal.ai/dashboard/keys) para gerar vídeos com Stable Video Diffusion 2.0.",
         )
 
     duration = req.duration if req.duration in (4, 8, 12) else 4
@@ -862,7 +862,7 @@ async def onboarding_generate_welcome_video(background_tasks: BackgroundTasks):
     global _WELCOME_JOB
     if not FAL_KEY:
         raise HTTPException(
-            status_code=500,
+            status_code=503,
             detail="FAL_KEY não configurada (https://fal.ai/dashboard/keys).",
         )
 

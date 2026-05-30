@@ -10,10 +10,10 @@ const MANUAL_URL = process.env.REACT_APP_ONBOARDING_VIDEO_URL;
  *
  * Ordem de precedência:
  *  1. `REACT_APP_ONBOARDING_VIDEO_URL` (override manual, embed YouTube/Vimeo).
- *  2. Vídeo branded gerado por Sora 2 e servido em `/api/static/onboarding-welcome.mp4`.
+ *  2. Vídeo branded gerado por Stable Video Diffusion 2.0 e servido em `/api/static/onboarding-welcome.mp4`.
  *  3. Placeholder elegante (gradiente dourado) com aviso "em breve".
  *
- * Faz polling leve enquanto o status é "processing" (job Sora 2 em andamento).
+ * Faz polling leve enquanto o status é "processing" (job SVD 2.0 em andamento).
  */
 export default function OnboardingVideo() {
   const [state, setState] = useState({
@@ -118,7 +118,7 @@ export default function OnboardingVideo() {
     );
   }
 
-  // 2) Vídeo branded Sora 2 disponível
+  // 2) Vídeo branded SVD 2.0 disponível
   if (state.exists && state.url) {
     return (
       <motion.div {...baseAnim} className={wrapperClass} data-testid="onboarding-video">
@@ -134,14 +134,14 @@ export default function OnboardingVideo() {
             data-testid="onboarding-video-element"
           />
           <div className="absolute bottom-2 left-3 text-[9px] tracking-[0.3em] uppercase text-white/80 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full pointer-events-none">
-            LindArt · Sora 2
+            LindArt · SVD 2.0
           </div>
         </div>
       </motion.div>
     );
   }
 
-  // 3) Placeholder — processing (Sora 2 gerando) ou idle
+  // 3) Placeholder — processing (SVD 2.0 gerando) ou idle
   const isProcessing = state.status === "processing";
   return (
     <motion.div
@@ -166,7 +166,7 @@ export default function OnboardingVideo() {
             )}
           </div>
           <div className="text-[10px] tracking-[0.28em] uppercase text-gold-deep mb-1">
-            {isProcessing ? "Sora 2 · gerando" : "Tour em vídeo"}
+            {isProcessing ? "SVD 2.0 · gerando" : "Tour em vídeo"}
           </div>
           <div className="text-sm text-ink-text font-medium">
             {isProcessing
@@ -187,7 +187,7 @@ export default function OnboardingVideo() {
               data-testid="onboarding-video-retry"
             >
               <RefreshCw className={`w-3 h-3 ${retrying ? "animate-spin" : ""}`} />
-              {retrying ? "Iniciando" : "Gerar com Sora 2"}
+              {retrying ? "Iniciando" : "Gerar com SVD 2.0"}
             </button>
           )}
         </div>

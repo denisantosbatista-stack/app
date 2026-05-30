@@ -51,11 +51,11 @@ const STEPS = [
     id: "mix",
     icon: Beaker,
     title: "Mistura realista de tintas",
-    subtitle: "Swirl 2D em tempo real + vídeo cinematográfico com Sora 2",
+    subtitle: "Swirl 2D em tempo real + vídeo cinematográfico com SVD 2.0",
     body:
       "Veja duas cores se fundindo num canvas com veios dourados, e gere um vídeo realista da mistura com a IA de vídeo da OpenAI.",
     narration:
-      "No misturador, veja duas cores se fundindo em tempo real, com veios dourados e brilho de estúdio. E quando quiser, gere um vídeo cinematográfico realista da mistura usando a inteligência artificial de vídeo Sora 2.",
+      "No misturador, veja duas cores se fundindo em tempo real, com veios dourados e brilho de estúdio. E quando quiser, gere um vídeo cinematográfico realista da mistura usando Stable Video Diffusion 2.0.",
     accent: "from-sky-300/30 to-sky-500/10",
   },
   {

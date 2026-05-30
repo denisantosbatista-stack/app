@@ -9,7 +9,7 @@ const API_BASE = process.env.REACT_APP_BACKEND_URL;
 /**
  * Simulação realista de mistura de tintas:
  *  - Canvas 2D: swirl orgânico em tempo real entre Cor A e Cor B (loop).
- *  - Botão "Gerar vídeo IA (Sora 2)" → POST /api/ai/generate-video → <video> mp4 base64.
+ *  - Botão "Gerar vídeo IA (SVD 2.0)" → POST /api/ai/generate-video → <video> mp4 base64.
  */
 export default function MixerSwirl({ colorA, colorB }) {
   const canvasRef = useRef(null);
@@ -140,13 +140,13 @@ export default function MixerSwirl({ colorA, colorB }) {
       }
       if (data.status === "error") {
         setLoadingVideo(false);
-        toast.error(`Falha Sora 2: ${data.detail || "erro"}`, { id: tid });
+        toast.error(`Falha SVD 2.0: ${data.detail || "erro"}`, { id: tid });
         return;
       }
       // ainda processando — agenda próximo poll (até ~5 min = 60 tentativas a cada 5s)
       if (attempt >= 90) {
         setLoadingVideo(false);
-        toast.error("Tempo esgotado aguardando Sora 2", { id: tid });
+        toast.error("Tempo esgotado aguardando SVD 2.0", { id: tid });
         return;
       }
       pollRef.current = setTimeout(() => pollJob(jobId, tid, attempt + 1), 5000);
@@ -160,7 +160,7 @@ export default function MixerSwirl({ colorA, colorB }) {
     if (loadingVideo) return;
     setLoadingVideo(true);
     setVideoSrc(null);
-    const tid = toast.loading("Sora 2 gerando vídeo realista… pode levar ~1min", {
+    const tid = toast.loading("SVD 2.0 gerando vídeo realista… pode levar ~1min", {
       icon: "🎬",
     });
     try {
@@ -175,10 +175,14 @@ export default function MixerSwirl({ colorA, colorB }) {
       pollRef.current = setTimeout(() => pollJob(data.job_id, tid, 0), 3000);
     } catch (e) {
       setLoadingVideo(false);
-      const msg =
-        e instanceof ApiError && e.tipo === "saldo"
-          ? "Saldo do Universal Key esgotado. Recarregue para gerar vídeos."
-          : `Falha Sora 2: ${e?.message || "erro"}`;
+      let msg;
+      if (e instanceof ApiError && e.tipo === "saldo") {
+        msg = "Saldo do Universal Key esgotado. Recarregue para gerar vídeos.";
+      } else if (e?.status === 503 || /FAL_KEY/i.test(`${e?.detail || ""} ${e?.message || ""}`)) {
+        msg = "FAL_KEY ausente no backend. Configure em backend/.env (fal.ai/dashboard/keys).";
+      } else {
+        msg = `Falha SVD 2.0: ${e?.message || "erro"}`;
+      }
       toast.error(msg, { id: tid });
     }
   };
@@ -193,7 +197,7 @@ export default function MixerSwirl({ colorA, colorB }) {
               <Sparkles className="w-3 h-3" /> Simulação realista
             </div>
             <h3 className="font-display text-2xl tracking-tight mt-1">
-              Swirl 2D + <span className="italic gold-shimmer">Sora 2</span>
+              Swirl 2D + <span className="italic gold-shimmer">SVD 2.0</span>
             </h3>
           </div>
           <div className="flex items-center gap-2">
@@ -245,7 +249,7 @@ export default function MixerSwirl({ colorA, colorB }) {
                   <div className="flex flex-col items-center gap-3 text-zinc-300">
                     <Loader2 className="w-7 h-7 animate-spin text-gold" />
                     <div className="text-[11px] tracking-[0.2em] uppercase">
-                      Gerando com Sora 2…
+                      Gerando com SVD 2.0…
                     </div>
                     <div className="text-[10px] text-zinc-500">
                       Aguarde, pode levar até 1 minuto.
@@ -279,12 +283,12 @@ export default function MixerSwirl({ colorA, colorB }) {
           ) : (
             <Video className="w-4 h-4" />
           )}
-          {loadingVideo ? "Gerando vídeo…" : "Gerar vídeo realista (Sora 2)"}
+          {loadingVideo ? "Gerando vídeo…" : "Gerar vídeo realista (SVD 2.0)"}
         </button>
 
         <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
           A simulação 2D roda instantaneamente no canvas. O vídeo cinematográfico
-          é gerado pela IA Sora 2 com base nas suas cores ({colorA.toUpperCase()} ×{" "}
+          é gerado por Stable Video Diffusion 2.0 a partir das suas cores ({colorA.toUpperCase()} ×{" "}
           {colorB.toUpperCase()}).
         </p>
       </div>

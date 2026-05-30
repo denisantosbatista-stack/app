@@ -1,0 +1,37 @@
+{
+  "summary": "Iteração 18 — Validação SVD 2.0 (substituiu Sora 2) + OG tags absolutas + Feed smoke. Backend 6/6 pytest passando: POST /api/ai/generate-video retorna 503 com detail mencionando 'FAL_KEY' (sem crash 500); GET /api/ai/video-status/{inexistente} → 404 'não encontrado'; POST /api/dna/share + GET /api/og/dna/{id} renderiza HTML com og:image, og:url e twitter:image em URLs ABSOLUTAS (https://...); GET /api/og/dna/{id}/image.svg retorna content-type image/svg+xml; GET /api/og/dna/inexistente123 retorna 404 com HTML fallback contendo og:title/og:url; GET /api/feed → 200 (array vazio). Frontend: Home (/) e /feed carregam sem console errors críticos. /mixer expõe data-testid='mixer-generate-video-btn' com texto 'Gerar vídeo realista (SVD 2.0)'; clique no botão dispara toast PT-BR 'FAL_KEY ausente no backend. Configure em backend/.env (fal.ai/dashboard/keys).' SEM crash da página. Seção mostra 'Swirl 2D + SVD 2.0', placeholder 'AGUARDANDO GERAÇÃO'. Nenhuma string 'Sora 2' visível na UI em Home, /feed ou /mixer. Tour modal continua funcionando. Console limpo (apenas as 3x 503 esperadas do fetch que são tratadas pelo MixerSwirl).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_svd_og_iter18.py",
+    "/app/test_reports/pytest/iteration_18.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py está em 2119 linhas — bem acima do limite recomendado de 700; já flaggado em iterações anteriores. SVD 2.0 + OG handlers + DNA share são candidatos óbvios a extração para routers/svd_video.py e routers/og.py.",
+    "_render_dna_og_html (server.py:1788) usa f-string gigante com HTML inline (~50 linhas); considerar template (jinja2 ou string Template) para legibilidade.",
+    "MixerSwirl.jsx handleGenerateVideo (l.180-184) trata 503 corretamente com mensagem específica, mas o fetch dispara um console.error 503 (visível no DevTools) — não é bug funcional, apenas ruído. Opcional: usar resp.ok check antes de log.",
+    "_absolute_origin (server.py:1777) confia em x-forwarded-host e x-forwarded-proto sem allowlist; em ambientes self-hosted onde o cliente pode injetar Host arbitrário, isso poderia ser usado para gerar URLs OG apontando para outro domínio. No Emergent platform o proxy normaliza, mas vale documentar como tech-debt.",
+    "OG fallback (server.py:1877-1886) usa redirect imediato (refresh content=0) — para crawlers OK, mas se um humano abrir o link expirado verá redirect para '/' sem feedback. Considerar atraso de 2-3s + mensagem visível antes do redirect."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_svd_og_iter18.py"
+  ],
+  "success_rate": {
+    "backend": "100% (6/6 pytest iter18)",
+    "frontend": "100% — Home, /feed, /mixer renderizam; toast FAL_KEY funciona; sem 'Sora 2' visível; tour OK"
+  },
+  "test_credentials": "N/A — app sem auth",
+  "seed_data_creation": "1 dna_share gerado pelo pytest (handle '@lindart_test', signature 'TEST_DNA_iter18') — não foi limpo, mas não polui UI por ser id aleatório.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "FAL_KEY continua intencionalmente ausente em backend/.env (escolha do usuário). Para testar fluxo real de SVD 2.0 no futuro, adicionar FAL_KEY do fal.ai e rodar /app/backend/tests/test_svd_og_iter18.py — os testes atuais validam apenas o caminho de erro 503. data-testids confirmados em MixerSwirl.jsx: 'mixer-generate-video-btn'. Para dismiss do tour antes de testar /mixer ou /feed via Playwright: localStorage.setItem('lindart.onboarding.v1.completed','1') e localStorage.setItem('lindart.tour.v1.seen','1') antes do reload. URLs OG agora absolutas — funcionam para crawlers WhatsApp/IG/FB.",
+  "rca of the issue": "N/A — sem bugs nesta iteração. Comportamento alinhado com a escolha (b) do usuário: app degrada graciosamente sem FAL_KEY (503 + toast claro), e migração Sora 2 → SVD 2.0 está completa em backend (server.py) e frontend (MixerSwirl, OnboardingVideo, OpeningTour, UpgradeInfoModal)."
+}
