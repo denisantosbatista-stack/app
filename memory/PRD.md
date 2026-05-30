@@ -16,6 +16,12 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P1 — Extração de modais Feed/Marketplace (DONE em iter 23-fork, 2026-02)
+- **`/app/frontend/src/components/CreatePostModal.jsx`** (novo, default export): modal de novo post extraído de `Feed.jsx`. Props: `user`, `onClose`, `onCreated`. Mantém auth Bearer (`lindart.auth.token`), FileReader 4MB guard, parsing de tags/paleta hex, todos os `data-testid="feed-create-*"` originais.
+- **`/app/frontend/src/components/CreateItemModal.jsx`** (novo, default export): modal de novo item extraído de `Marketplace.jsx`. Props: `user`, `onClose`, `onCreated`. Mantém categorias TYPES locais, parsing de preço BRL, todos os `data-testid="market-create-*"` originais (inclui 6 chips de tipo).
+- **`Feed.jsx`** / **`Marketplace.jsx`**: imports `X`, `Field` (e `useMemo` no Marketplace) removidos quando não mais usados; `TOKEN_KEY` removido de Marketplace.jsx; modais inline substituídos por `<CreatePostModal />` / `<CreateItemModal />` com mesmas props.
+- Testing agent (iter 23-fork): **100%** — 9 `feed-create-*` + 17 `market-create-*` (inclui 6 type chips) renderizam; open/close via cancel e X validados; `GET /api/feed` 200, `GET /api/marketplace` 200. Zero regressões.
+
 ### ✅ P0 — Modularização server.py Fase 1: OG + SVD Video (DONE em iter 22-fork, 2026-02)
 - **`/app/backend/routers/og.py`** (novo, 177 linhas): extraídas rotas `GET /api/og/dna/{share_id}` e `GET /api/og/dna/{share_id}/image.svg`, helpers `_html_escape`, `_absolute_origin`, `_render_dna_og_html`, e `Environment` Jinja2 isolado. Prefix=`/api/og`.
 - **`/app/backend/routers/svd_video.py`** (novo, 369 linhas): extraídas rotas `POST /api/ai/generate-video`, `GET /api/ai/video-status/{job_id}`, `GET /api/onboarding/welcome-video`, `POST /api/onboarding/generate-welcome-video`. Movidos helpers `_hex_to_rgb`, `_make_swirl_image_png`, `_run_svd_job`, `_run_welcome_video_job`, `_cleanup_video_jobs`, `_svd_set_job_error`, modelo `VideoRequest`, constantes `SVD_MODEL`/`SVD_DEFAULT_SIZE`, stores `_VIDEO_JOBS`/`_WELCOME_JOB`. `FAL_KEY` carregada lazy via `_fal_key()`.
