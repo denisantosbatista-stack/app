@@ -16,6 +16,11 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P0 — JWT em writes de comunidade (DONE em iter 21, 2026-02)
+- **Backend** (`routers/feed.py`, `routers/marketplace.py`, `routers/challenges.py`): `POST /api/feed`, `POST /api/marketplace`, `POST /api/challenges/{id}/submissions` agora exigem `Depends(get_current_user)`. Handle e flag `verified=True` são derivados do usuário autenticado (cliente não pode forjar handle).
+- **Frontend** — `Feed.jsx`, `Marketplace.jsx`, `Challenges.jsx`: removidos inputs manuais de handle nos modais; bloco "Postando/Anunciando/Enviando como @user + Perfil Verificado" (BadgeCheck dourado). Botões de submit/anunciar/enviar gateados por `isAuthenticated` → toast + redirect `/login`. Token Bearer + `credentials: include` em todos os POSTs protegidos. BadgeCheck também em cards de items/posts/submissions e no `winner.handle` quando `verified=true`.
+- Testing agent iter21: backend 7/7 (401 sem token, 201 com token, GET inclui `verified`), frontend 5/5 (gate logged-out, modal sem campo handle, criação E2E, badge presente, regressão `/feed` ok). Zero bugs.
+
 ### ✅ P0 — Autenticação JWT (DONE em iter 20, 2026-02)
 - **Backend** (`/app/backend/routers/auth.py`): `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` — JWT HS256 + bcrypt via `passlib`, expiração 7d, seed automático no startup (`admin@lindart.app` / `teste@lindart.app`).
 - **Frontend**: `AuthContext` (token persistido em `localStorage` `lindart.auth.token`), páginas `/login` e `/register`, `ProtectedRoute`, integração no `Navbar.jsx` (desktop dropdown com iniciais + nome + email + Logout; mobile section com avatar e botões).
@@ -58,11 +63,14 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Testing agent iter18: backend 6/6 pytest 100%, frontend smoke 100%, console limpo
 
 ### 🟢 P2 — Backlog
-- [ ] **Challenge System** (próximo) — temas semanais com submissões da comunidade
+- [ ] **Challenge System** — temas semanais com submissões da comunidade (POST/vote já protegidos por JWT)
 - [x] ~~Auth real~~ — feito em iter20 (JWT)
-- [ ] Proteger endpoints de escrita (`/api/feed`, `/api/marketplace`, `/api/dna/share`) exigindo `Authorization: Bearer <token>` agora que há auth real
+- [x] ~~Proteger endpoints de escrita (feed/marketplace/challenges) com Bearer~~ — feito em iter21
+- [ ] Centralizar `authFetch(url, opts)` em `AuthContext` com refresh/expiry handling (hoje cada page lê `localStorage` direto)
+- [ ] Extrair componente compartilhado `<VerifiedAuthorChip user=.../>` (atualmente duplicado em Marketplace/Challenges)
+- [ ] Tratamento de 401 nos modais protegidos: fechar modal + redirect `/login` automaticamente
 - [ ] Fluxo E2E real de SVD 2.0 quando usuário fornecer `FAL_KEY`
-- [ ] Refactor: extrair `CreatePostModal` e `CreateItemModal` de Feed.jsx/Marketplace.jsx
+- [ ] Refactor: extrair `CreatePostModal`/`CreateItemModal`/`SubmitModal` para arquivos próprios
 - [ ] DRY: extrair `Field` duplicado em `/components/ui/Field.jsx`
 - [ ] Backend `/api/profile/{handle}` → retornar 404 quando handle não existe em nenhuma coleção
 - [ ] Refactor `server.py` (2119 linhas) → extrair `routers/svd_video.py` e `routers/og.py`
@@ -90,6 +98,8 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
+**Iter 21 (2026-02)** — JWT protege writes de Feed/Marketplace/Challenges. Frontend Marketplace.jsx e Challenges.jsx alinhados ao padrão do Feed.jsx: removidos inputs manuais de handle, modais gateados por login (toast + redirect `/login`), Bearer token + credentials:include nos POSTs, "Perfil Verificado" (BadgeCheck dourado) ao lado de @handle em cards de items/posts/submissions/winner. Testing agent 7/7 backend + 5/5 frontend, zero bugs.
+
 **Iter 20 (2026-02)** — Auth JWT (backend + frontend integrado no Navbar com dropdown desktop e seção mobile, persistência via localStorage). Páginas `/login` e `/register` funcionais, seed automático de `admin@lindart.app` e `teste@lindart.app`. P1 fix: chips de foco da página `/trends` agora rolam horizontalmente em mobile (era `flex-wrap` puro). Testing agent: 11/11 flows E2E auth, zero bugs.
 
 **Iter 19 (2026-02)** — Fixes P0 Visualizador 3D: cena clara via Environment studio + emissiveMap, overlay de loading com barra de progresso, retry banner, instruções legíveis, prompt Nano Banana específico por shape+estilo. Backend 8/8 e frontend 100%. Sem bugs remanescentes.
