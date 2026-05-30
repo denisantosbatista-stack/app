@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Heart, Plus, Loader2, X, Image as ImageIcon, RefreshCw, Hash } from "lucide-react";
+import { Heart, Plus, Loader2, X, Image as ImageIcon, RefreshCw, Hash, Crown } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
@@ -31,6 +31,18 @@ export default function Feed() {
   const [activeTag, setActiveTag] = useState(null);
   const [liked, setLiked] = useState(loadLiked());
   const [showCreate, setShowCreate] = useState(false);
+  const [pick, setPick] = useState(null);
+
+  async function fetchPick() {
+    try {
+      const res = await fetch(`${API_BASE}/api/feed/pick`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPick(data || null);
+    } catch {
+      /* silencioso */
+    }
+  }
 
   async function fetchFeed(tag = null) {
     setLoading(true);
@@ -52,6 +64,10 @@ export default function Feed() {
   useEffect(() => {
     fetchFeed(activeTag);
   }, [activeTag]);
+
+  useEffect(() => {
+    fetchPick();
+  }, []);
 
   async function handleLike(post) {
     if (liked.has(post.id)) {
@@ -114,6 +130,9 @@ export default function Feed() {
           Inspirações, paletas e processos do ateliê de quem cria com cor.
         </p>
       </motion.header>
+
+      {/* Pick da Semana */}
+      {pick && !activeTag && <PickHero pick={pick} liked={liked.has(pick.id)} onLike={() => handleLike(pick)} />}
 
       {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-8" data-testid="feed-tags">
@@ -183,6 +202,90 @@ export default function Feed() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function PickHero({ pick, liked, onLike }) {
+  const colors = pick.palette_colors || [];
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55 }}
+      className="relative mb-10 rounded-sm overflow-hidden border border-gold/30 bg-ink-surface"
+      data-testid="feed-pick-hero"
+    >
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-gold/[0.06] via-transparent to-gold/[0.04]" />
+      <div className="absolute -top-24 -right-16 w-72 h-72 bg-gold/10 blur-3xl rounded-full pointer-events-none" />
+
+      <div className="relative grid md:grid-cols-2 gap-0">
+        <Link
+          to={`/u/${pick.handle}`}
+          className="block aspect-[4/3] md:aspect-auto md:min-h-[420px] overflow-hidden bg-black"
+        >
+          <img
+            src={pick.image_url}
+            alt={pick.title}
+            loading="lazy"
+            className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-[1.6s] ease-out"
+            data-testid="feed-pick-image"
+          />
+        </Link>
+
+        <div className="p-7 md:p-10 flex flex-col justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center gap-2 text-[10px] tracking-[0.28em] uppercase text-gold border border-gold/40 px-2.5 py-1 rounded-sm mb-5">
+              <Crown className="w-3 h-3" /> Pick da Semana
+            </div>
+            <h2
+              className="font-display text-3xl md:text-4xl tracking-tight leading-[1.1] mb-4"
+              data-testid="feed-pick-title"
+            >
+              {pick.title}
+            </h2>
+            {pick.description && (
+              <p className="text-sm md:text-base text-zinc-600 italic leading-relaxed line-clamp-4 mb-5">
+                {pick.description}
+              </p>
+            )}
+            <Link
+              to={`/u/${pick.handle}`}
+              className="text-xs tracking-[0.18em] uppercase text-zinc-700 hover:text-gold inline-flex items-center gap-1"
+              data-testid="feed-pick-handle"
+            >
+              @{pick.handle}
+            </Link>
+          </div>
+
+          <div className="flex items-end justify-between flex-wrap gap-4">
+            {colors.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                {colors.slice(0, 6).map((c, i) => (
+                  <span
+                    key={i}
+                    className="w-6 h-6 rounded-sm border border-black/10"
+                    style={{ background: c }}
+                    title={c}
+                  />
+                ))}
+              </div>
+            )}
+            <button
+              onClick={onLike}
+              className={`inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase border px-4 py-2 rounded-sm transition-colors ${
+                liked
+                  ? "border-gold text-gold bg-gold/10"
+                  : "border-black/15 text-zinc-700 hover:border-gold hover:text-gold"
+              }`}
+              data-testid="feed-pick-like"
+            >
+              <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+              {pick.likes || 0}
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.section>
   );
 }
 

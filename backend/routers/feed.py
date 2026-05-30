@@ -46,6 +46,29 @@ class FeedPostCreate(BaseModel):
     tags: List[str] = Field(default_factory=list)
 
 
+@router.get("/pick", response_model=Optional[FeedPost])
+async def pick_of_the_week():
+    """Pick da Semana — curadoria automática: post com mais likes dos últimos 7 dias.
+
+    Retorna `null` quando não há nenhum post elegível (DB vazio ou sem likes recentes).
+    """
+    from datetime import timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    doc = await db.feed_posts.find_one(
+        {"created_at": {"$gte": cutoff}, "likes": {"$gt": 0}},
+        {"_id": 0},
+        sort=[("likes", -1), ("created_at", -1)],
+    )
+    if not doc:
+        # fallback: post mais recente que tenha qualquer like (ou último publicado)
+        doc = await db.feed_posts.find_one(
+            {"likes": {"$gt": 0}}, {"_id": 0}, sort=[("likes", -1)]
+        ) or await db.feed_posts.find_one(
+            {}, {"_id": 0}, sort=[("created_at", -1)]
+        )
+    return FeedPost(**doc) if doc else None
+
+
 @router.get("", response_model=List[FeedPost])
 async def list_feed(
     handle: Optional[str] = None,
