@@ -16,6 +16,13 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P0 — Modularização server.py Fase 1: OG + SVD Video (DONE em iter 22-fork, 2026-02)
+- **`/app/backend/routers/og.py`** (novo, 177 linhas): extraídas rotas `GET /api/og/dna/{share_id}` e `GET /api/og/dna/{share_id}/image.svg`, helpers `_html_escape`, `_absolute_origin`, `_render_dna_og_html`, e `Environment` Jinja2 isolado. Prefix=`/api/og`.
+- **`/app/backend/routers/svd_video.py`** (novo, 369 linhas): extraídas rotas `POST /api/ai/generate-video`, `GET /api/ai/video-status/{job_id}`, `GET /api/onboarding/welcome-video`, `POST /api/onboarding/generate-welcome-video`. Movidos helpers `_hex_to_rgb`, `_make_swirl_image_png`, `_run_svd_job`, `_run_welcome_video_job`, `_cleanup_video_jobs`, `_svd_set_job_error`, modelo `VideoRequest`, constantes `SVD_MODEL`/`SVD_DEFAULT_SIZE`, stores `_VIDEO_JOBS`/`_WELCOME_JOB`. `FAL_KEY` carregada lazy via `_fal_key()`.
+- **`server.py`** reduzido de **2180 → 1709 linhas** (~470 linhas extraídas). Removidos imports `fal_client`, `jinja2`. Mantido `STATIC_DIR` (usado por `app.mount`). Adicionados `app.include_router(og_router)` e `app.include_router(svd_video_router)` no rodapé.
+- Testing agent (iter 22-fork): **13/13 passed**, 1 skipped (FAL_KEY ausente — esperado). End-to-end OG (criar `dna_shares` → `/api/og/dna/{id}` 200 com paleta/handle/signature corretos). Zero regressões em `/api/auth/login`, `/api/feed`, `/api/marketplace`, `/api/challenges`, `/api/ai/generate-caption`. Test file: `/app/backend/tests/test_refactor_og_svd.py`.
+- Observação minor (não-bloqueante): preview ingress sobrescreve `Cache-Control` em `/api/og/*` para `no-store` — verificar em produção.
+
 ### ✅ P0 — Refactor _render_dna_og_html → Jinja2 template (DONE em iter 23, 2026-02)
 - **Backend** (`server.py`): adicionado `jinja2.Environment` com `FileSystemLoader(ROOT_DIR/'templates')` + `autoescape=select_autoescape(['html','xml'])` e `trim_blocks/lstrip_blocks`. `_render_dna_og_html` agora monta apenas as variáveis (signature, title, description, colors, redirect_path, redirect_abs, og_image_abs) e delega o markup ao template.
 - **Template** (`/app/backend/templates/dna_og.html`): card OG completo (title, description, og:*, twitter:*, og:image abs, meta refresh, canonical, swatches via `{% for color in colors %}`, JS redirect com `{{ redirect_path|tojson }}`). Autoescape Jinja2 substitui o `_html_escape` manual em todas as variáveis.
