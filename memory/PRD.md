@@ -16,6 +16,11 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P1 — Botão "Compartilhar" no Feed (DONE em iter 31-fork, 2026-02)
+- **`/app/frontend/src/pages/Feed.jsx`** `PostCard`: novo botão ícone (`Share2`) sobre a imagem, posição inferior-esquerda, simétrico ao botão de like. `data-testid="feed-share-{post.id}"`, `aria-label="Compartilhar post"`. Abre o **mesmo** `ShareSheet` reutilizável com URL `${REACT_APP_BACKEND_URL}/feed#post-{post.id}` (preview rico usa as og tags raiz; OG endpoint dedicado por post fica como melhoria P2 futura).
+- Pequena melhoria de a11y aplicada no `ShareSheet`: `role="dialog"` + `aria-modal="true"` + `aria-label="Compartilhar"`.
+- **Testing agent frontend-only (iter 31)**: **12/12 (100%)**, sem regressões no `/marketplace`, `/planos` ou `/feed`. Zero erros no console.
+
 ### ✅ P1 — Refactor Pricing.jsx + ShareSheet no Marketplace (DONE em iter 30-fork, 2026-02)
 - **Refactor `Pricing.jsx`**: 739 → **347 linhas** (sob a meta de 400). Dados estáticos extraídos para `/app/frontend/src/data/pricingPlans.js` (PLANS), `/app/frontend/src/data/pricingComparison.js` (COMPARISON) e `/app/frontend/src/data/pricingFaq.js` (FAQ). UI da tabela e do FAQ movida para componentes dedicados `/app/frontend/src/components/pricing/PricingComparison.jsx` e `PricingFAQ.jsx`. Removido código morto (`Cell`, `Minus`, `ChevronDown`, `openFaq`, `openGroup`). Zero regressão visual.
 - **`/app/frontend/src/components/ShareSheet.jsx`** (NOVO, 173 linhas): folha de compartilhamento reutilizável (portal-based, `role="dialog"` + `aria-modal`), com botões WhatsApp (`wa.me`), Instagram (Web Share API + fallback clipboard→instagram.com) e Copiar link (clipboard + toast `Link copiado`). Props: `{ open, onClose, url, title, description }`. Fechamento por X, backdrop e ESC implícito via React.
