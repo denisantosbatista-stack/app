@@ -2087,14 +2087,16 @@ async def download_source_code():
 
 app.include_router(api_router)
 
-# Routers modulares (P2 — feed, marketplace, perfis públicos)
+# Routers modulares (P2 — feed, marketplace, perfis públicos, desafios)
 from routers.feed import router as feed_router  # noqa: E402
 from routers.marketplace import router as marketplace_router  # noqa: E402
 from routers.profiles import router as profiles_router  # noqa: E402
+from routers.challenges import router as challenges_router  # noqa: E402
 
 app.include_router(feed_router)
 app.include_router(marketplace_router)
 app.include_router(profiles_router)
+app.include_router(challenges_router)
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).

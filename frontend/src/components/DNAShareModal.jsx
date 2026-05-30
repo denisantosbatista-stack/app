@@ -89,6 +89,13 @@ export default function DNAShareModal({ open, onClose, dna }) {
     }
   };
 
+  const shareWhatsApp = () => {
+    if (!shareUrl) return;
+    const message = `Olha o DNA da minha arte em resina no LindArt 🎨\n${shareUrl}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, "_blank", "noopener,noreferrer");
+  };
+
   if (typeof document === "undefined") return null;
 
   return createPortal(
