@@ -4,6 +4,8 @@
   duplicada).
 - Helpers de decodificação base64 e persistência de imagens em
   static_assets/.
+- Modelos Pydantic compartilhados (Palette, ColorSwatch) usados por
+  múltiplos routers (ai, palettes).
 """
 from __future__ import annotations
 
@@ -11,10 +13,12 @@ import base64
 import os
 import re
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel, ConfigDict, Field
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT_DIR / "static_assets"
