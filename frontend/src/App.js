@@ -12,6 +12,9 @@ import Tips from "@/pages/Tips";
 import Mentora from "@/pages/Mentora";
 import Trends from "@/pages/Trends";
 import Collections from "@/pages/Collections";
+import Feed from "@/pages/Feed";
+import Marketplace from "@/pages/Marketplace";
+import PublicProfile from "@/pages/PublicProfile";
 import PublicDNAPage from "@/pages/PublicDNAPage";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
@@ -52,6 +55,9 @@ function App() {
           <Route path="/mentora" element={<Mentora />} />
           <Route path="/trends" element={<Trends />} />
           <Route path="/collections" element={<Collections />} />
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/u/:handle" element={<PublicProfile />} />
         </Routes>
       </main>
       <footer className="border-t border-black/[0.06] py-6 md:py-10 px-6 pb-36 md:pb-10 text-center text-[10px] md:text-xs tracking-[0.2em] uppercase text-ink-muted">

@@ -1,0 +1,47 @@
+{
+  "summary": "Iteração 17: validação P2 (Feed comunitário, Marketplace, Perfil Público). Backend 5/5 pytest passando (GET /api/feed + filtro tag, GET /api/marketplace + filtro type, GET /api/profile/{handle} unknown). Frontend smoke test em /feed, /marketplace, /u/artista-teste — todas as rotas renderizam, todos os data-testids esperados presentes, Navbar desktop e MobileNav 390px expõem links Feed e Market, modal de criação de post abre com handle/title/file fields. Onboarding dismissed via localStorage keys conforme handoff. Console limpo (somente DataCloneError do script emergent-main.js, ruído conhecido da plataforma, não relacionado ao app).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "PublicProfile /u/:handle",
+        "issues": [
+          "Para handle inexistente (ex.: 'artista-teste'), backend retorna 200 com stats zerados em vez de 404 → frontend cai no caminho 'perfil vazio' (mostra stats 0/0 e cada tab com mensagem 'Ainda sem posts...'). O bloco 'Artista não encontrado' (data-testid='profile-not-found') definido em PublicProfile.jsx linha 72-93 nunca é exibido nesse cenário. Comportamento aceitável (handoff permite 'perfil vazio'), mas se a intenção for diferenciar 'não cadastrado' de 'sem peças', o backend deveria retornar 404 quando handle não existir em nenhuma das coleções (posts/dnas/marketplace/submissions)."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p2_feed_marketplace_profile.py",
+    "/app/test_reports/pytest/iteration_17.xml"
+  ],
+  "action_items": [
+    "(opcional) Backend: GET /api/profile/{handle} retornar 404 quando handle não tiver nenhum conteúdo (atualmente devolve 200 com stats zerados, fazendo a UI mostrar perfil vazio em vez do empty state 'Artista não encontrado'). Comportamento atual é tolerado pelo handoff.",
+    "Bug pendente da iteração 15 (Trends.jsx saveAsPalette enviando `title` em vez de `name`, sem await/catch → toast verde falso) continua não verificado nesta iteração — fora do escopo P2."
+  ],
+  "critical_code_review_comments": [
+    "Feed.jsx (433 linhas) e Marketplace.jsx (493 linhas) — ainda dentro do limite, mas Marketplace está perto. Considerar extrair CreatePostModal/CreateItemModal para componentes próprios em /components/ caso cresçam mais.",
+    "Field é redefinido em Feed.jsx (l.409) e Marketplace.jsx (l.468) — código duplicado idêntico. DRY: extrair para /components/ui/Field.jsx.",
+    "Feed.jsx PostCard usa `w-full h-auto object-cover` sem container aspect-ratio (intencional para masonry). Sem distorção, mas se imagens vierem com proporções extremas, podem quebrar o ritmo visual das colunas. Marketplace usa aspect-square corretamente.",
+    "PublicProfile.jsx — se data.handle puder ser undefined/null em cenário de stats zeradas, o template '@{data.handle}' renderiza '@' vazio. Pelos testes o backend devolve `handle` no payload, então OK; vale defensiva (`@{data.handle || handle}`).",
+    "Todos os 3 endpoints aceitam POST/like e POST/click sem rate-limit nem auth. Permite spam trivial de likes/cliques. Para MVP é aceitável; documentar como tech-debt."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p2_feed_marketplace_profile.py"
+  ],
+  "success_rate": {
+    "backend": "100% (5/5 pytest P2)",
+    "frontend": "100% — rotas /feed, /marketplace, /u/:handle renderizam; navbar desktop + mobile nav OK; modal Publicar abre; imagens com loading=lazy + object-cover conforme código"
+  },
+  "test_credentials": "N/A — app sem auth",
+  "seed_data_creation": "Nenhuma — DB sem posts/marketplace, validado empty state ('Ainda silêncio por aqui' / 'Vitrine vazia, por enquanto')",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Para limpar onboarding antes de testar qualquer rota P2: navegar para '/' e executar `localStorage.setItem('lindart.onboarding.v1.completed','1'); localStorage.setItem('lindart.tour.v1.seen','1');` antes do goto. Test file /app/backend/tests/test_p2_feed_marketplace_profile.py cobre 3 endpoints P2 com schema validation tolerante (empty list ok). Backend retorna 200 com stats zerados para handles desconhecidos — se backend mudar para 404, ajustar o teste em TestProfile (já tolera 200/404). Imagens não puderam ser testadas em conteúdo real pois DB está vazio; classes object-cover/loading=lazy verificadas via código (Feed.jsx l.222-223, Marketplace.jsx l.258-259, PublicProfile.jsx l.228-230, 324-326).",
+  "rca of the issue": "N/A — sem bugs nesta iteração."
+}

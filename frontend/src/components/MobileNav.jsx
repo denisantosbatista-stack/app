@@ -10,6 +10,8 @@ import {
   Brain,
   TrendingUp,
   Layers,
+  Rss,
+  ShoppingBag,
 } from "lucide-react";
 
 // Mobile mostra TODAS as abas em scroll horizontal com fade lateral indicando
@@ -21,6 +23,8 @@ const items = [
   { to: "/mentora", icon: Brain, label: "Mentora", ai: true },
   { to: "/trends", icon: TrendingUp, label: "Tendências", ai: true },
   { to: "/collections", icon: Layers, label: "Coleções", ai: true },
+  { to: "/feed", icon: Rss, label: "Feed" },
+  { to: "/marketplace", icon: ShoppingBag, label: "Market" },
   { to: "/library", icon: Heart, label: "Salvos" },
   { to: "/mixer", icon: Beaker, label: "Mixer" },
   { to: "/calculator", icon: Ruler, label: "Proporções" },

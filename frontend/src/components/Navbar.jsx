@@ -9,6 +9,8 @@ const links = [
   { to: "/mentora", label: "Mentora", ai: true },
   { to: "/trends", label: "Tendências", ai: true },
   { to: "/collections", label: "Coleções", ai: true },
+  { to: "/feed", label: "Feed" },
+  { to: "/marketplace", label: "Marketplace" },
   { to: "/library", label: "Biblioteca" },
   { to: "/mixer", label: "Mixer" },
   { to: "/calculator", label: "Proporções" },
