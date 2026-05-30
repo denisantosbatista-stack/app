@@ -16,6 +16,15 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P0 — Autenticação JWT (DONE em iter 20, 2026-02)
+- **Backend** (`/app/backend/routers/auth.py`): `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` — JWT HS256 + bcrypt via `passlib`, expiração 7d, seed automático no startup (`admin@lindart.app` / `teste@lindart.app`).
+- **Frontend**: `AuthContext` (token persistido em `localStorage` `lindart.auth.token`), páginas `/login` e `/register`, `ProtectedRoute`, integração no `Navbar.jsx` (desktop dropdown com iniciais + nome + email + Logout; mobile section com avatar e botões).
+- **Auth removida do escopo "público"**: app não é mais 100% anônimo; rotas existentes continuam abertas, mas há identidade real disponível para posts/marketplace no futuro.
+- Testing agent iter20: 11/11 flows E2E (login válido/inválido, registro auto-login, persistência via reload, logout, dropdown desktop, mobile menu). Zero bugs.
+
+### ✅ P1 — Trends focus tabs overflow fix (DONE em iter 20, 2026-02)
+- `pages/Trends.jsx`: `flex flex-wrap` → `flex overflow-x-auto hide-scrollbar snap-x snap-mandatory md:flex-wrap md:overflow-visible` com `shrink-0 whitespace-nowrap` nos chips. Mobile agora rola horizontalmente sem cortar; desktop mantém wrap.
+
 ### ✅ P0 — Core (DONE)
 - Mentora IA (chat criativo)
 - Tendências da Semana
@@ -50,7 +59,8 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ### 🟢 P2 — Backlog
 - [ ] **Challenge System** (próximo) — temas semanais com submissões da comunidade
-- [ ] Auth real (custo: hoje qualquer um pode publicar; rate limit por IP como mitigação)
+- [x] ~~Auth real~~ — feito em iter20 (JWT)
+- [ ] Proteger endpoints de escrita (`/api/feed`, `/api/marketplace`, `/api/dna/share`) exigindo `Authorization: Bearer <token>` agora que há auth real
 - [ ] Fluxo E2E real de SVD 2.0 quando usuário fornecer `FAL_KEY`
 - [ ] Refactor: extrair `CreatePostModal` e `CreateItemModal` de Feed.jsx/Marketplace.jsx
 - [ ] DRY: extrair `Field` duplicado em `/components/ui/Field.jsx`
@@ -80,6 +90,8 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
+**Iter 20 (2026-02)** — Auth JWT (backend + frontend integrado no Navbar com dropdown desktop e seção mobile, persistência via localStorage). Páginas `/login` e `/register` funcionais, seed automático de `admin@lindart.app` e `teste@lindart.app`. P1 fix: chips de foco da página `/trends` agora rolam horizontalmente em mobile (era `flex-wrap` puro). Testing agent: 11/11 flows E2E auth, zero bugs.
+
 **Iter 19 (2026-02)** — Fixes P0 Visualizador 3D: cena clara via Environment studio + emissiveMap, overlay de loading com barra de progresso, retry banner, instruções legíveis, prompt Nano Banana específico por shape+estilo. Backend 8/8 e frontend 100%. Sem bugs remanescentes.
 
 **Iter 18 (2026-02)** — Migração Sora 2 → SVD 2.0 + OG tags absolutas + botão "Compartilhar no WhatsApp" no DNA Share Modal.

@@ -124,7 +124,10 @@ export default function Trends() {
       </motion.header>
 
       {/* Focus tabs */}
-      <div className="flex flex-wrap gap-2 mb-8" data-testid="trends-focus-tabs">
+      <div
+        className="flex gap-2 mb-8 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-1 snap-x snap-mandatory md:flex-wrap md:overflow-visible md:mx-0 md:px-0 md:pb-0"
+        data-testid="trends-focus-tabs"
+      >
         {FOCUS_OPTIONS.map((f) => (
           <button
             key={f.id}
@@ -133,7 +136,7 @@ export default function Trends() {
               fetchTrends({ refresh: false, currentFocus: f.id });
             }}
             disabled={loading}
-            className={`text-xs px-3 py-1.5 rounded-sm border transition-colors uppercase tracking-[0.18em] ${
+            className={`shrink-0 snap-start whitespace-nowrap text-xs px-3 py-1.5 rounded-sm border transition-colors uppercase tracking-[0.18em] ${
               focus === f.id
                 ? "border-gold bg-gold/10 text-gold"
                 : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
