@@ -9,6 +9,7 @@ import {
 import { PLANS } from "../data/pricingPlans";
 import PricingComparison from "../components/pricing/PricingComparison";
 import PricingFAQ from "../components/pricing/PricingFAQ";
+import PricingBeforeAfter from "../components/pricing/PricingBeforeAfter";
 
 /* Flag de ativação do plano anual (ver /app/frontend/src/data/pricingPlans.js).
    Quando o anual for liberado, trocar para true — o math já está pronto. */
@@ -291,6 +292,9 @@ export default function Pricing() {
           Preços em reais (BRL). Sem trial enganoso, sem cobrança escondida — cancele quando quiser.
         </p>
       </section>
+
+      {/* ───────── ANTES / DEPOIS PRO ───────── */}
+      <PricingBeforeAfter />
 
       {/* ───────── TABELA COMPARATIVA ───────── */}
       <PricingComparison />
