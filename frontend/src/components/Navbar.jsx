@@ -12,7 +12,7 @@ const NAV_GROUPS = [
     label: "Criar",
     items: [
       { to: "/studio", label: "Studio" },
-      { to: "/mixer", label: "Mixer" },
+      { to: "/mixer", label: "Criar Paleta" },
       { to: "/calculator", label: "Calculadora" },
     ],
   },

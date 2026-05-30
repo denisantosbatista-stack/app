@@ -28,7 +28,7 @@ const items = [
   { to: "/marketplace", icon: ShoppingBag, label: "Market" },
   { to: "/challenges", icon: Trophy, label: "Desafios" },
   { to: "/library", icon: Heart, label: "Salvos" },
-  { to: "/mixer", icon: Beaker, label: "Mixer" },
+  { to: "/mixer", icon: Beaker, label: "Criar Paleta" },
   { to: "/calculator", icon: Ruler, label: "Calculadora" },
   { to: "/compare", icon: GitCompare, label: "A/B" },
   { to: "/tips", icon: Sparkles, label: "Técnicas" },

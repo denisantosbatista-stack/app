@@ -33,11 +33,27 @@ export default function PaletteGrid({
             data-testid="palette-search"
           />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto hide-scrollbar -mx-1 px-1">
-          <FilterChip id="todos" label="Todos" active={filterStyle === "todos"} onClick={onFilterChange} />
-          {STYLES.map((s) => (
-            <FilterChip key={s.id} id={s.id} label={s.label} active={filterStyle === s.id} onClick={onFilterChange} />
-          ))}
+        <div className="relative -mx-1">
+          <div
+            className="flex gap-1.5 overflow-x-auto hide-scrollbar scroll-smooth px-1"
+            style={{ scrollBehavior: "smooth" }}
+            data-testid="palette-filters-row"
+          >
+            <FilterChip id="todos" label="Todos" active={filterStyle === "todos"} onClick={onFilterChange} />
+            {STYLES.map((s) => (
+              <FilterChip key={s.id} id={s.id} label={s.label} active={filterStyle === s.id} onClick={onFilterChange} />
+            ))}
+          </div>
+          {/* Fade gradient à direita indicando mais filtros ao rolar */}
+          <div
+            aria-hidden
+            data-testid="palette-filters-fade"
+            className="pointer-events-none absolute right-0 top-0 bottom-0 w-8"
+            style={{
+              background:
+                "linear-gradient(to left, rgba(250,247,242,0.95), rgba(250,247,242,0))",
+            }}
+          />
         </div>
       </div>
 
