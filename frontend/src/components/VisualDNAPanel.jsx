@@ -15,7 +15,7 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
 
   const analyze = async () => {
     if (!palettes?.length) {
-      toast.error("Salve ao menos 1 paleta para gerar seu DNA Visual");
+      toast.error("Salve ao menos 1 paleta para gerar sua Assinatura de Cor");
       return;
     }
     setLoading(true);
@@ -35,7 +35,7 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
       const data = await chamarIA("/ai/visual-dna", body);
       setDna(data);
       setOpen(true);
-      toast.success("DNA Visual decifrado");
+      toast.success("Assinatura de Cor decifrada");
     } catch (e) {
       const erro =
         e instanceof ApiError
@@ -68,7 +68,7 @@ export default function VisualDNAPanel({ palettes, onUseNextPalette }) {
             <Fingerprint className="w-5 h-5" />
           </div>
           <div>
-            <div className="label-eyebrow text-gold mb-0.5">DNA Visual</div>
+            <div className="label-eyebrow text-gold mb-0.5">Assinatura de Cor</div>
             <h3 className="font-display text-xl tracking-tight">
               {dna ? "Sua linguagem estética" : "Decifre sua linguagem visual"}
             </h3>

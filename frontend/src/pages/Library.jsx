@@ -40,7 +40,7 @@ export default function Library() {
     try {
       const palette = {
         name: "DNA · Próxima paleta",
-        description: "Sugerida pelo seu DNA Visual",
+        description: "Sugerida pela sua Assinatura de Cor",
         colors: colors.map((hex) => ({ hex, name: hex })),
         style: "luxo",
         tags: ["dna", "sugestao"],

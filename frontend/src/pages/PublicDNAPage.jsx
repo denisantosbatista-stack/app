@@ -76,7 +76,7 @@ export default function PublicDNAPage() {
   if (state.error || !state.dna) {
     return (
       <div className="min-h-screen bg-bone flex flex-col items-center justify-center px-6 text-center" data-testid="dna-public-error">
-        <div className="label-eyebrow text-gold mb-2">DNA Visual</div>
+        <div className="label-eyebrow text-gold mb-2">Assinatura de Cor</div>
         <h1 className="font-display text-3xl mb-2">Cartão não encontrado</h1>
         <p className="text-sm text-zinc-600 mb-6 max-w-md">
           O link pode ter expirado ou ter sido digitado incorretamente.
@@ -125,7 +125,7 @@ export default function PublicDNAPage() {
 
           <aside className="space-y-5">
             <div>
-              <div className="label-eyebrow text-gold mb-1">DNA Visual</div>
+              <div className="label-eyebrow text-gold mb-1">Assinatura de Cor</div>
               <h1 className="font-display text-3xl tracking-tight leading-tight">
                 {state.handle ? `Linguagem de @${state.handle}` : "Linguagem cromática"}
               </h1>

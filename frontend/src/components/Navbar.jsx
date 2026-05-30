@@ -6,7 +6,7 @@ import { toast } from "react-hot-toast";
 const links = [
   { to: "/", label: "Início", end: true },
   { to: "/studio", label: "Studio" },
-  { to: "/mentora", label: "Mentora", ai: true },
+  { to: "/mentora", label: "Mentoria", ai: true },
   { to: "/trends", label: "Tendências", ai: true },
   { to: "/collections", label: "Coleções", ai: true },
   { to: "/feed", label: "Feed" },
@@ -14,7 +14,7 @@ const links = [
   { to: "/challenges", label: "Desafios" },
   { to: "/library", label: "Biblioteca" },
   { to: "/mixer", label: "Mixer" },
-  { to: "/calculator", label: "Proporções" },
+  { to: "/calculator", label: "Calculadora" },
   { to: "/compare", label: "Comparar" },
   { to: "/tips", label: "Técnicas" },
 ];

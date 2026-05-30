@@ -1,0 +1,186 @@
+/* LindArt — Privacy Policy
+   Rose + Gold visual identity. Generous spacing (1.5x line-height).
+   No cool gradients. Only warm bone/cream + rose + gold. */
+
+.privacy-root {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
+  color: #2C2C34;
+  line-height: 1.7;
+}
+
+.privacy-hero {
+  text-align: left;
+  padding-bottom: 48px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  margin-bottom: 56px;
+}
+
+.privacy-eyebrow {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: #B8860B;
+  margin-bottom: 24px;
+  padding: 6px 14px;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: #F8F2E9;
+  border-radius: 2px;
+}
+
+.privacy-title {
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: clamp(2.6rem, 6vw, 4.5rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #2C2C34;
+  margin: 0 0 24px;
+}
+
+.privacy-accent {
+  background: linear-gradient(120deg, #D4AF37 0%, #B8860B 50%, #E8B4B8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-style: italic;
+}
+
+.privacy-lead {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #4a4a55;
+  max-width: 720px;
+  margin: 0 0 24px;
+}
+
+.privacy-meta {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #6b6b73;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.privacy-meta strong { color: #2C2C34; font-weight: 600; }
+
+.privacy-divider {
+  color: #D4AF37;
+  font-weight: 700;
+}
+
+.privacy-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+
+@media (min-width: 768px) {
+  .privacy-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+}
+
+.privacy-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  padding: 32px 28px;
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.privacy-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 10px 40px -20px rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.privacy-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F8F2E9, #F2D4D4);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #B8860B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.privacy-card-title {
+  font-family: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2C2C34;
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+
+.privacy-card-body {
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: #444450;
+}
+
+.privacy-card-body p { margin: 0 0 12px; }
+.privacy-card-body p:last-child { margin-bottom: 0; }
+
+.privacy-card-body ul {
+  margin: 0;
+  padding-left: 18px;
+  list-style: none;
+}
+
+.privacy-card-body ul li {
+  position: relative;
+  padding-left: 18px;
+  margin-bottom: 10px;
+}
+
+.privacy-card-body ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #D4AF37;
+}
+
+.privacy-card-body strong { color: #2C2C34; font-weight: 600; }
+
+.privacy-link {
+  color: #B8860B;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.4);
+  transition: color 0.2s ease, border-color 0.2s ease;
+  font-weight: 500;
+}
+
+.privacy-link:hover {
+  color: #2C2C34;
+  border-color: #2C2C34;
+}
+
+.privacy-footer {
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(212, 175, 55, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.privacy-tag {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #8a8a93;
+}

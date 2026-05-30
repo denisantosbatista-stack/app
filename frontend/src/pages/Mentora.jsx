@@ -103,7 +103,7 @@ export default function Mentora() {
       setImageB64(null);
       setImagePreview(null);
     } catch (e) {
-      toast.error(e.message || "Erro ao consultar a Mentora");
+      toast.error(e.message || "Erro ao consultar a Mentoria");
       console.error(e);
       setMessages(next.slice(0, -1));
       setInput(text);
@@ -141,7 +141,7 @@ export default function Mentora() {
       >
         <div className="label-eyebrow text-gold mb-3">Inteligência Artística</div>
         <h1 className="font-display text-4xl md:text-5xl tracking-tight leading-[1.05] pb-1">
-          Mentora IA <span className="italic gold-shimmer">do Ateliê</span>
+          Mentoria IA <span className="italic gold-shimmer">do Ateliê</span>
         </h1>
         <p className="text-zinc-600 text-sm md:text-base mt-3 max-w-2xl leading-relaxed">
           Sua especialista sênior em resina epóxi — diagnóstico de problemas,
@@ -207,7 +207,7 @@ export default function Mentora() {
                     <Sparkles className="w-4 h-4 text-ink" />
                   </div>
                   <span className="text-[9px] tracking-[0.18em] uppercase text-gold font-medium">
-                    Mentora
+                    Mentoria
                   </span>
                 </div>
               )}
@@ -318,7 +318,7 @@ export default function Mentora() {
               </span>
             </div>
             <p className="text-[11px] text-zinc-500 leading-relaxed">
-              A Mentora analisará a peça anexada junto da sua próxima pergunta.
+              A Mentoria analisará a peça anexada junto da sua próxima pergunta.
             </p>
           </div>
           <button
@@ -403,7 +403,7 @@ export default function Mentora() {
       <div className="flex items-center justify-between mt-4 text-[11px] text-zinc-500">
         <span className="flex items-center gap-1.5">
           <Sparkles className="w-3 h-3 text-gold" />
-          Mentora IA · contexto persistente
+          Mentoria IA · contexto persistente
         </span>
         {messages.length > 0 && (
           <button

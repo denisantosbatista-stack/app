@@ -9,7 +9,7 @@ import { usePaletteStore } from "@/store/usePaletteStore";
 import MixerSwirl from "@/components/MixerSwirl";
 
 const SUGGESTIONS = [
-  { a: "#D4AF37", b: "#0B0B0F", label: "Dourado × Onyx" },
+  { a: "#D4AF37", b: "#2C2C34", label: "Dourado × Onyx" },
   { a: "#E8C9D0", b: "#7E3F8F", label: "Rosa × Ametista" },
   { a: "#7CB7E8", b: "#E8E1D8", label: "Céu × Marfim" },
   { a: "#F5C4B4", b: "#26544F", label: "Pêssego × Esmeralda" },
@@ -18,7 +18,7 @@ const SUGGESTIONS = [
 
 export default function Mixer() {
   const [colorA, setColorA] = useState("#D4AF37");
-  const [colorB, setColorB] = useState("#0B0B0F");
+  const [colorB, setColorB] = useState("#2C2C34");
   const [ratio, setRatio] = useState(50);
   const [applying, setApplying] = useState(false);
   const navigate = useNavigate();

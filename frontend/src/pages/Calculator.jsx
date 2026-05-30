@@ -34,7 +34,7 @@ export default function Calculator() {
       <div className="flex gap-2 mb-6 flex-wrap" role="tablist">
         <TabBtn active={mode === "volume"} onClick={() => setMode("volume")} icon={CalcIcon} label="Proporções" testid="calc-tab-volume" />
         <TabBtn active={mode === "pricing"} onClick={() => setMode("pricing")} icon={DollarSign} label="Precificação" testid="calc-tab-pricing" />
-        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="Medidas (3D)" testid="calc-tab-measure" />
+        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="Medidas 3D" testid="calc-tab-measure" />
       </div>
 
       {mode === "volume" && <VolumeMode />}
@@ -129,6 +129,12 @@ function VolumeMode() {
               </button>
             ))}
           </div>
+          <p className="text-[11px] text-zinc-500 mt-2 flex gap-1.5 items-start">
+            <AlertCircle className="w-3 h-3 text-gold mt-0.5 shrink-0" />
+            <span>
+              <b>Epóxi padrão = 2:1</b> (resina:endurecedor) · <b>Uretana = 1:1</b>. Confirme sempre na ficha técnica do seu fabricante.
+            </span>
+          </p>
         </div>
 
         <div>
@@ -186,61 +192,92 @@ function VolumeMode() {
 
 function PricingMode() {
   const [volume, setVolume] = useState(50);
-  const [resinCost, setResinCost] = useState(0.45); // R$/ml de mistura final
-  const [pigmentCost, setPigmentCost] = useState(2.0); // R$/ml de pigmento
+  // Entradas no padrão do mercado brasileiro: R$/Litro
+  const [resinCostL, setResinCostL] = useState(450); // R$/Litro de resina
+  const [pigmentCostL, setPigmentCostL] = useState(2000); // R$/Litro de pigmento
   const [pigmentPct, setPigmentPct] = useState(3);
   const [packagingCost, setPackagingCost] = useState(5);
   const [extraCost, setExtraCost] = useState(0); // moldes/aplicações/etc
   const [hours, setHours] = useState(1.5);
   const [hourlyRate, setHourlyRate] = useState(40);
-  const [markup, setMarkup] = useState(2.5);
+  const [marginPct, setMarginPct] = useState(150); // % de margem sobre custo
 
   const calc = useMemo(() => {
+    // Conversão para R$/ml (1 litro = 1000 ml)
+    const resinCostMl = Number(resinCostL) / 1000;
+    const pigmentCostMl = Number(pigmentCostL) / 1000;
+
     const pigmentVol = (volume * pigmentPct) / 100;
-    const matResina = volume * resinCost;
-    const matPigmento = pigmentVol * pigmentCost;
+    const matResina = volume * resinCostMl;
+    const matPigmento = pigmentVol * pigmentCostMl;
     const materialTotal = matResina + matPigmento + Number(packagingCost) + Number(extraCost);
     const trabalho = hours * hourlyRate;
     const custoTotal = materialTotal + trabalho;
-    const precoVenda = custoTotal * markup;
+    // Fórmula correta: Preço = Custo Total × (1 + Margem%/100)
+    const precoVenda = custoTotal * (1 + Number(marginPct) / 100);
     const lucro = precoVenda - custoTotal;
-    const margemPct = precoVenda > 0 ? (lucro / precoVenda) * 100 : 0;
-    return { matResina, matPigmento, materialTotal, trabalho, custoTotal, precoVenda, lucro, margemPct };
-  }, [volume, resinCost, pigmentPct, pigmentCost, packagingCost, extraCost, hours, hourlyRate, markup]);
+    const margemRealPct = precoVenda > 0 ? (lucro / precoVenda) * 100 : 0;
+    return {
+      matResina,
+      matPigmento,
+      materialTotal,
+      trabalho,
+      custoTotal,
+      precoVenda,
+      lucro,
+      margemRealPct,
+    };
+  }, [volume, resinCostL, pigmentPct, pigmentCostL, packagingCost, extraCost, hours, hourlyRate, marginPct]);
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
       <div className="glass rounded-sm p-6 space-y-5">
         <NumberField label="Volume da peça (ml)" value={volume} setValue={setVolume} min={1} step={1} testid="price-volume" />
-        <NumberField label="Custo da resina (R$/ml)" value={resinCost} setValue={setResinCost} min={0} step={0.05} testid="price-resin-cost" />
+        <NumberField label="Custo da resina (R$/Litro)" value={resinCostL} setValue={setResinCostL} min={0} step={10} testid="price-resin-cost" />
         <NumberField label="Pigmento (% do volume)" value={pigmentPct} setValue={setPigmentPct} min={0} max={10} step={0.5} testid="price-pigment-pct" />
-        <NumberField label="Custo do pigmento (R$/ml)" value={pigmentCost} setValue={setPigmentCost} min={0} step={0.1} testid="price-pigment-cost" />
+        <NumberField label="Custo do pigmento (R$/Litro)" value={pigmentCostL} setValue={setPigmentCostL} min={0} step={50} testid="price-pigment-cost" />
         <NumberField label="Embalagem (R$)" value={packagingCost} setValue={setPackagingCost} min={0} step={0.5} testid="price-packaging" />
         <NumberField label="Outros materiais (R$)" value={extraCost} setValue={setExtraCost} min={0} step={0.5} testid="price-extra" />
         <NumberField label="Horas de trabalho" value={hours} setValue={setHours} min={0} step={0.25} testid="price-hours" />
         <NumberField label="Valor da hora (R$)" value={hourlyRate} setValue={setHourlyRate} min={0} step={5} testid="price-hourly" />
 
         <div>
-          <label className="label-eyebrow block mb-3">Markup (multiplicador)</label>
+          <label className="label-eyebrow block mb-3">Margem de lucro sobre o custo (%)</label>
           <div className="grid grid-cols-4 gap-2">
-            {[2, 2.5, 3, 4].map((m) => (
+            {[100, 150, 200, 300].map((m) => (
               <button
                 key={m}
-                onClick={() => setMarkup(m)}
+                onClick={() => setMarginPct(m)}
                 className={`px-3 py-2.5 rounded-sm text-sm transition-all ${
-                  markup === m
+                  marginPct === m
                     ? "bg-gold text-ink shadow-gold"
                     : "border border-black/10 text-zinc-700 hover:border-gold/40"
                 }`}
-                data-testid={`price-markup-${m}`}
+                data-testid={`price-margin-${m}`}
               >
-                {m}×
+                {m}%
               </button>
             ))}
           </div>
+          <div className="mt-2">
+            <input
+              type="range"
+              min="0"
+              max="400"
+              step="5"
+              value={marginPct}
+              onChange={(e) => setMarginPct(Number(e.target.value))}
+              className="w-full"
+              data-testid="price-margin-slider"
+            />
+            <div className="flex items-center justify-between text-[11px] text-zinc-600 mt-1">
+              <span>Margem atual: <b>{marginPct}%</b></span>
+              <span className="font-mono">Preço = Custo × (1 + {marginPct}/100)</span>
+            </div>
+          </div>
           <p className="text-[11px] text-zinc-500 mt-2 flex gap-1.5 items-start">
             <AlertCircle className="w-3 h-3 text-gold mt-0.5 shrink-0" />
-            Mercado artesanal: 2.5–3× cobre risco, refugo e crescimento.
+            Mercado artesanal: 150–200% cobre risco, refugo e crescimento. Equivale a markup 2,5×–3×.
           </p>
         </div>
       </div>
@@ -271,13 +308,13 @@ function PricingMode() {
               </div>
               <div className="flex items-center justify-between mt-2 text-[11px] text-zinc-600">
                 <span>Lucro: <b className="text-emerald-700">R$ {calc.lucro.toFixed(2)}</b></span>
-                <span>Margem: <b className="text-emerald-700">{calc.margemPct.toFixed(1)}%</b></span>
+                <span>Margem real: <b className="text-emerald-700">{calc.margemRealPct.toFixed(1)}%</b></span>
               </div>
             </div>
           </div>
 
-          <div className="text-[11px] text-zinc-500 pt-1">
-            Salve esta paleta na biblioteca para vincular custos no futuro.
+          <div className="text-[11px] text-zinc-500 pt-1 leading-relaxed">
+            Custos por litro convertidos automaticamente: <b>1 L = 1000 ml</b>. Salve esta paleta na biblioteca para vincular custos no futuro.
           </div>
         </div>
       </div>

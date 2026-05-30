@@ -269,7 +269,7 @@ export default function PublicProfile() {
                   className="group border border-black/[0.06] bg-ink-surface rounded-sm p-4 hover:border-gold/40 transition-colors"
                   data-testid={`profile-dna-${d.id}`}
                 >
-                  <div className="label-eyebrow text-gold mb-1">DNA Visual</div>
+                  <div className="label-eyebrow text-gold mb-1">Assinatura de Cor</div>
                   <h3 className="font-display text-lg text-zinc-900 mb-3 line-clamp-2">
                     {d.signature || "Sem assinatura"}
                   </h3>

@@ -21,7 +21,7 @@ import {
 const items = [
   { to: "/", icon: Home, label: "Início", end: true },
   { to: "/studio", icon: Palette, label: "Studio" },
-  { to: "/mentora", icon: Brain, label: "Mentora", ai: true },
+  { to: "/mentora", icon: Brain, label: "Mentoria", ai: true },
   { to: "/trends", icon: TrendingUp, label: "Tendências", ai: true },
   { to: "/collections", icon: Layers, label: "Coleções", ai: true },
   { to: "/feed", icon: Rss, label: "Feed" },
@@ -29,7 +29,7 @@ const items = [
   { to: "/challenges", icon: Trophy, label: "Desafios" },
   { to: "/library", icon: Heart, label: "Salvos" },
   { to: "/mixer", icon: Beaker, label: "Mixer" },
-  { to: "/calculator", icon: Ruler, label: "Proporções" },
+  { to: "/calculator", icon: Ruler, label: "Calculadora" },
   { to: "/compare", icon: GitCompare, label: "A/B" },
   { to: "/tips", icon: Sparkles, label: "Técnicas" },
 ];

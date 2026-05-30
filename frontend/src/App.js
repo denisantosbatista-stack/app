@@ -17,6 +17,7 @@ import Marketplace from "@/pages/Marketplace";
 import Challenges from "@/pages/Challenges";
 import PublicProfile from "@/pages/PublicProfile";
 import PublicDNAPage from "@/pages/PublicDNAPage";
+import Privacy from "@/pages/Privacy";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import UpgradeInfoModal from "@/components/UpgradeInfoModal";
@@ -60,10 +61,17 @@ function App() {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/u/:handle" element={<PublicProfile />} />
+          <Route path="/privacidade" element={<Privacy />} />
         </Routes>
       </main>
       <footer className="border-t border-black/[0.06] py-6 md:py-10 px-6 pb-36 md:pb-10 text-center text-[10px] md:text-xs tracking-[0.2em] uppercase text-ink-muted">
-        LindArt · Studio de Resina Premium · © 2026
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <span>LindArt · Studio de Resina Premium · © 2026</span>
+          <span className="text-gold">·</span>
+          <a href="/privacidade" className="hover:text-gold transition-colors" data-testid="footer-privacy-link">
+            Privacidade
+          </a>
+        </div>
       </footer>
       <MobileNav />
       <OnboardingFlow />

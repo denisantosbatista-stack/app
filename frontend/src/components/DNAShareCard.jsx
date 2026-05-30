@@ -115,7 +115,7 @@ const DNAShareCard = forwardRef(function DNAShareCard(
               marginBottom: 16,
             }}
           >
-            LindArt · DNA Visual
+            LindArt · Assinatura de Cor
           </div>
           <div
             style={{
