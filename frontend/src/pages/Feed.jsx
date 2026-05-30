@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, Plus, Loader2, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import CreatePostModal from "../components/CreatePostModal";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
@@ -28,7 +28,7 @@ const POPULAR_TAGS = ["minimalista", "joalheria", "geode", "ocean", "petal", "fl
 
 export default function Feed() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, authHeaders } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState(null);
@@ -201,19 +201,34 @@ export default function Feed() {
         </div>
       )}
 
-      <AnimatePresence>
-        {showCreate && (
-          <CreatePostModal
-            user={user}
-            onClose={() => setShowCreate(false)}
-            onCreated={(newPost) => {
-              setPosts((arr) => [newPost, ...arr]);
-              setShowCreate(false);
-              toast.success("Publicado no feed");
-            }}
-          />
-        )}
-      </AnimatePresence>
+      <CreatePostModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        onSubmit={async (payload) => {
+          const res = await fetch(`${API_BASE}/api/feed`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...authHeaders(),
+            },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            let detail;
+            try {
+              const j = await res.json();
+              detail = j?.detail;
+            } catch {
+              /* ignore */
+            }
+            throw new Error(formatApiErrorDetail(detail) || `HTTP ${res.status}`);
+          }
+          const newPost = await res.json();
+          setPosts((arr) => [newPost, ...arr]);
+          setShowCreate(false);
+          toast.success("Publicado no feed");
+        }}
+      />
     </div>
   );
 }

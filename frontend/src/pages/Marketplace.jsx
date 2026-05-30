@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -16,7 +16,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import CreateItemModal from "../components/CreateItemModal";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
@@ -47,7 +47,7 @@ function formatBRL(value) {
 
 export default function Marketplace() {
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, authHeaders } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState(null);
@@ -200,19 +200,34 @@ export default function Marketplace() {
         </div>
       )}
 
-      <AnimatePresence>
-        {showCreate && (
-          <CreateItemModal
-            user={user}
-            onClose={() => setShowCreate(false)}
-            onCreated={(created) => {
-              setItems((arr) => [created, ...arr]);
-              setShowCreate(false);
-              toast.success("Item anunciado");
-            }}
-          />
-        )}
-      </AnimatePresence>
+      <CreateItemModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        onSubmit={async (payload) => {
+          const res = await fetch(`${API_BASE}/api/marketplace`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...authHeaders(),
+            },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            let detail;
+            try {
+              const j = await res.json();
+              detail = j?.detail;
+            } catch {
+              /* ignore */
+            }
+            throw new Error(formatApiErrorDetail(detail) || `HTTP ${res.status}`);
+          }
+          const created = await res.json();
+          setItems((arr) => [created, ...arr]);
+          setShowCreate(false);
+          toast.success("Item anunciado");
+        }}
+      />
     </div>
   );
 }

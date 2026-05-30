@@ -1,0 +1,53 @@
+{
+  "summary": "Frontend regression test for P1 refactor: CreatePostModal and CreateItemModal now follow the strict 'dumb component' contract { isOpen, onClose, onSubmit } with NO internal fetch — parent pages (Feed.jsx / Marketplace.jsx) perform POST /api/feed and POST /api/marketplace via onSubmit. Logged in as teste@lindart.app, skipped onboarding via localStorage, exercised both happy-path submits and close-without-submit flows. All 10 acceptance criteria pass.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Contract is correctly enforced: CreatePostModal.jsx and CreateItemModal.jsx receive only { isOpen, onClose, onSubmit } and call onSubmit(payload). Submit/loading state, file→base64 conversion, palette hex parsing, and reset-on-success are kept inside the modals (presentation concerns), POST is owned by parents — matches the requested separation of concerns.",
+    "Feed.jsx / Marketplace.jsx wire onSubmit with fetch(`${API_BASE}/api/feed|/api/marketplace`) using authHeaders() and propagate Pydantic detail errors via formatApiErrorDetail. New post/item is prepended via setPosts([new, ...arr]) and modal is closed via setShowCreate(false). Correct.",
+    "Minor mismatch with the review_request wording: the request mentions submitting an image_url field, but neither modal exposes an image_url input — they only support file upload (image_base64 via FileReader). Backend accepts either, so functionally OK; if image_url input was intended for UX, it is currently missing. Not a regression vs iteration_23.",
+    "Suggestion (non-blocking): duplicated handleFile + base64 preview pattern across both modals could be extracted into a useImageUpload hook (carried over from iteration_23 review).",
+    "Suggestion (non-blocking): TYPES list duplicated between CreateItemModal.jsx and Marketplace.jsx — extract to a shared constants module."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (skipped per request)", "frontend": "100%" },
+  "test_credentials": "teste@lindart.app / Teste#2026 (from /app/memory/test_credentials.md). Onboarding bypass via localStorage 'lindart.onboarding.v1.completed'=1 and 'lindart.tour.v1.seen'=1.",
+  "seed_data_creation": "Created during this run: 1 feed post (title=TEST_post_p1_refactor) and 1 marketplace item (title=TEST_item_p1_refactor, type=curso, price=99.90). Both via real POST through the modal UI flow.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P1 refactor verified end-to-end: modals are truly 'dumb' (no internal fetch). Network listener captured exactly 1 POST /api/feed and 1 POST /api/marketplace ONLY when submit was clicked; close via X / Cancel triggered 0 network calls. After submit, modal closed (isOpen=false) and the new item appeared at the top of its list (initial_feed_posts=0→1; initial_market_items=1→2). To reproduce: login via /api/auth/login, write token to localStorage 'lindart.auth.token', set onboarding flags, navigate to /feed or /marketplace, wait ~2.5s for AuthContext re-hydration before clicking feed-open-create / market-open-create. Modals do NOT expose an image_url input — file upload (base64) is the only path; this is consistent with iteration_23 implementation.",
+  "playwright_test_evidence": {
+    "login_status": 200,
+    "login_token_present": true,
+    "feed_page_loaded": true,
+    "initial_feed_posts": 0,
+    "feed_modal_opened": true,
+    "feed_modal_closed_via_x": true,
+    "no_api_call_on_close_x": true,
+    "feed_post_api_called": true,
+    "feed_post_api_url": "/api/feed",
+    "feed_modal_closed_after_submit": true,
+    "final_feed_posts": 1,
+    "post_added_to_top": true,
+    "marketplace_page_loaded": true,
+    "initial_market_items": 1,
+    "market_modal_opened": true,
+    "market_modal_closed_via_cancel": true,
+    "no_api_call_on_market_close": true,
+    "market_post_api_called": true,
+    "market_modal_closed_after_submit": true,
+    "final_market_items": 2,
+    "item_added_to_top": true,
+    "network_post_calls_total": 2,
+    "network_posts": [
+      "POST /api/feed",
+      "POST /api/marketplace"
+    ]
+  }
+}
