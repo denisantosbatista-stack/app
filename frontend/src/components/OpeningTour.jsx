@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Sparkles,
@@ -16,6 +17,25 @@ import { chamarIA, ApiError } from "@/utils/api";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const SEEN_KEY = "lindart.tour.v1.seen";
+
+// Rotas públicas/anônimas — mesmo conjunto do OnboardingFlow.
+// Em links compartilhados (WhatsApp/IG/X) o tour não deve abrir sozinho.
+const PUBLIC_PATH_PREFIXES = [
+  "/u/",
+  "/feed",
+  "/dna/",
+  "/planos",
+  "/privacidade",
+  "/login",
+  "/register",
+];
+
+function isPublicPath(pathname) {
+  if (!pathname) return false;
+  return PUBLIC_PATH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p)
+  );
+}
 
 /**
  * OpeningTour — Tour autoexplicativo de abertura (HTML/CSS + narração IA via OpenAI TTS).
@@ -72,6 +92,7 @@ const STEPS = [
 ];
 
 export default function OpeningTour() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -80,13 +101,17 @@ export default function OpeningTour() {
   const cacheRef = useRef(new Map()); // step.id -> objectURL
   const ttsDisabledRef = useRef(false); // circuit breaker quando saldo IA esgota
 
-  // Abre automaticamente na 1a visita
+  // Abre automaticamente na 1a visita — exceto em rotas públicas/compartilhadas,
+  // onde o visitante anônimo precisa ver o conteúdo direto. O evento
+  // `lindart:open-tour` continua disponível em qualquer rota.
   useEffect(() => {
-    try {
-      const seen = localStorage.getItem(SEEN_KEY);
-      if (!seen) setOpen(true);
-    } catch {
-      setOpen(true);
+    if (!isPublicPath(location.pathname)) {
+      try {
+        const seen = localStorage.getItem(SEEN_KEY);
+        if (!seen) setOpen(true);
+      } catch {
+        setOpen(true);
+      }
     }
     const handler = () => {
       setStep(0);
@@ -94,7 +119,7 @@ export default function OpeningTour() {
     };
     window.addEventListener("lindart:open-tour", handler);
     return () => window.removeEventListener("lindart:open-tour", handler);
-  }, []);
+  }, [location.pathname]);
 
   // Limpa cache de áudio no unmount
   useEffect(

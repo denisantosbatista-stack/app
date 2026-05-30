@@ -100,6 +100,102 @@ def _render_dna_og_html(share_id: str, payload: dict, handle: Optional[str], ori
         redirect_path=redirect_path,
         redirect_abs=redirect_abs,
         og_image_abs=og_image_abs,
+        og_alt=f"{signature} — DNA Visual em resina",
+    )
+
+
+# ─────────────────────── Shared helpers (404 + SVG) ─────────────────────
+
+
+def _og_404_html(
+    *,
+    title: str,
+    description: str,
+    redirect_path: str,
+    origin: str,
+    status: int = 404,
+) -> HTMLResponse:
+    """Resposta HTML mínima para crawlers quando o recurso não existe.
+    Mantém og:title/og:description/og:url + refresh para que o link nunca
+    quebre no WhatsApp/IG, mesmo apagado."""
+    t = _html_escape(title)
+    d = _html_escape(description)
+    url_abs = f"{origin}{redirect_path}" if origin else redirect_path
+    html = (
+        f'<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+        f"<title>{t} · LindArt</title>"
+        f'<meta property="og:title" content="{t}">'
+        f'<meta property="og:description" content="{d}">'
+        f'<meta property="og:url" content="{url_abs}">'
+        f'<meta http-equiv="refresh" content="0; url={redirect_path}">'
+        f"</head><body>{t}.</body></html>"
+    )
+    return HTMLResponse(content=html, status_code=status)
+
+
+def _build_og_palette_svg(
+    *,
+    eyebrow: str,
+    title_text: str,
+    title_size: int = 64,
+    title_y: int = 280,
+    subtitle: str = "",
+    subtitle_y: int = 340,
+    subtitle_size: int = 26,
+    footer_left: str = "",
+    footer_right: str = "lindart · ateliê de resina",
+    colors: List[str],
+    extras_svg: str = "",
+) -> str:
+    """SVG OG 1200×630 com gradiente vertical da paleta + grain + swatches.
+    Layout comum a DNA / Marketplace / Feed / Profile, parametrizado para
+    cada variação textual. `extras_svg` permite injetar nós <text> extras
+    (ex.: preço no marketplace, segundo eyebrow)."""
+    palette = colors or list(_DEFAULT_PALETTE)
+    last = max(1, len(palette) - 1)
+    stops = "".join(
+        f'<stop offset="{int(i / last * 100)}%" stop-color="{_html_escape(c)}"/>'
+        for i, c in enumerate(palette)
+    )
+    swatch_w = 1080 // max(1, len(palette))
+    swatches = "".join(
+        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" '
+        f'height="80" fill="{_html_escape(c)}" rx="4"/>'
+        for i, c in enumerate(palette)
+    )
+    subtitle_node = (
+        f'<text x="60" y="{subtitle_y}" font-size="{subtitle_size}" opacity="0.85">'
+        f"{_html_escape(subtitle)}</text>"
+        if subtitle
+        else ""
+    )
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
+  <rect width="1200" height="630" filter="url(#grain)"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
+    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">{_html_escape(eyebrow)}</text>
+    <text x="60" y="{title_y}" font-size="{title_size}" font-weight="300" letter-spacing="2">{_html_escape(title_text)}</text>
+    {subtitle_node}
+    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(footer_left)}</text>
+    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">{_html_escape(footer_right)}</text>
+    {extras_svg}
+  </g>
+  {swatches}
+</svg>"""
+
+
+def _svg_response(svg: str) -> StreamingResponse:
+    """StreamingResponse padrão p/ SVGs OG (cache 24h)."""
+    return StreamingResponse(
+        iter([svg.encode("utf-8")]),
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
     )
 
 
@@ -114,17 +210,12 @@ async def og_dna_page(share_id: str, request: Request):
     origin = _absolute_origin(request)
     doc = await db.dna_shares.find_one({"id": share_id}, {"_id": 0})
     if not doc:
-        # 404 ainda renderiza HTML básico para crawlers não quebrarem
-        html = (
-            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
-            '<title>DNA não encontrado · LindArt</title>'
-            '<meta property="og:title" content="DNA Visual não encontrado">'
-            '<meta property="og:description" content="Este DNA Visual expirou ou foi removido.">'
-            f'<meta property="og:url" content="{origin}/">'
-            '<meta http-equiv="refresh" content="0; url=/">'
-            "</head><body>DNA não encontrado.</body></html>"
+        return _og_404_html(
+            title="DNA não encontrado",
+            description="Este DNA Visual expirou ou foi removido.",
+            redirect_path="/",
+            origin=origin,
         )
-        return HTMLResponse(content=html, status_code=404)
     payload = doc.get("payload") or {}
     handle = doc.get("handle")
     html = _render_dna_og_html(share_id, payload, handle, origin=origin)
@@ -148,39 +239,18 @@ async def og_dna_image_svg(share_id: str):
     handle = (doc or {}).get("handle")
     author = f"@{handle}" if handle else "LindArt"
 
-    # Gradiente vertical com as 5 primeiras cores em paradas igualmente espaçadas
-    stops = "".join(
-        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
-        for i, c in enumerate(colors)
+    svg = _build_og_palette_svg(
+        eyebrow="LINDART · DNA VISUAL",
+        title_text=signature,
+        title_size=76,
+        title_y=260,
+        subtitle=mood_txt,
+        subtitle_y=320,
+        subtitle_size=30,
+        footer_left=author,
+        colors=colors,
     )
-    swatch_w = 1080 // max(1, len(colors))
-    swatches = "".join(
-        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
-        for i, c in enumerate(colors)
-    )
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
-    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
-  <rect width="1200" height="630" filter="url(#grain)"/>
-  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
-    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · DNA VISUAL</text>
-    <text x="60" y="260" font-size="76" font-weight="300" letter-spacing="2">{_html_escape(signature)}</text>
-    <text x="60" y="320" font-size="30" opacity="0.85">{_html_escape(mood_txt)}</text>
-    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
-    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
-  </g>
-  {swatches}
-</svg>"""
-    return StreamingResponse(
-        iter([svg.encode("utf-8")]),
-        media_type="image/svg+xml",
-        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
-    )
+    return _svg_response(svg)
 
 
 # ─────────────────────────── Marketplace OG ────────────────────────────
@@ -249,16 +319,12 @@ async def og_marketplace_page(item_id: str, request: Request):
     origin = _absolute_origin(request)
     item = await db.marketplace_items.find_one({"id": item_id}, {"_id": 0})
     if not item:
-        html = (
-            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
-            "<title>Item não encontrado · LindArt</title>"
-            '<meta property="og:title" content="Item não encontrado">'
-            '<meta property="og:description" content="Este item do marketplace expirou ou foi removido.">'
-            f'<meta property="og:url" content="{origin}/marketplace">'
-            '<meta http-equiv="refresh" content="0; url=/marketplace">'
-            "</head><body>Item não encontrado.</body></html>"
+        return _og_404_html(
+            title="Item não encontrado",
+            description="Este item do marketplace expirou ou foi removido.",
+            redirect_path="/marketplace",
+            origin=origin,
         )
-        return HTMLResponse(content=html, status_code=404)
 
     item_title = (item.get("title") or "Item LindArt").strip()[:80] or "Item LindArt"
     typ = (item.get("type") or "outro").lower()
@@ -322,46 +388,25 @@ async def og_marketplace_image_svg(item_id: str):
     if not colors:
         colors = list(_DEFAULT_PALETTE)
 
-    stops = "".join(
-        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
-        for i, c in enumerate(colors)
-    )
-    swatch_w = 1080 // max(1, len(colors))
-    swatches = "".join(
-        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
-        for i, c in enumerate(colors)
-    )
-
     price_node = (
         f'<text x="1140" y="260" text-anchor="end" font-size="48" font-weight="300" opacity="0.95">{_html_escape(price_txt)}</text>'
         if price_txt
         else ""
     )
-
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
-    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
-  <rect width="1200" height="630" filter="url(#grain)"/>
-  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
-    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · MARKETPLACE</text>
-    <text x="60" y="200" font-size="26" letter-spacing="4" opacity="0.75">{_html_escape(type_label.upper())}</text>
-    <text x="60" y="300" font-size="64" font-weight="300" letter-spacing="2">{_html_escape(item_title)}</text>
-    {price_node}
-    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
-    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
-  </g>
-  {swatches}
-</svg>"""
-    return StreamingResponse(
-        iter([svg.encode("utf-8")]),
-        media_type="image/svg+xml",
-        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+    type_eyebrow = (
+        f'<text x="60" y="200" font-size="26" letter-spacing="4" opacity="0.75">{_html_escape(type_label.upper())}</text>'
     )
+
+    svg = _build_og_palette_svg(
+        eyebrow="LINDART · MARKETPLACE",
+        title_text=item_title,
+        title_size=64,
+        title_y=300,
+        footer_left=author,
+        colors=colors,
+        extras_svg=type_eyebrow + price_node,
+    )
+    return _svg_response(svg)
 
 
 # ─────────────────────────────── Feed OG ───────────────────────────────
@@ -395,16 +440,12 @@ async def og_feed_page(post_id: str, request: Request):
     origin = _absolute_origin(request)
     post = await db.feed_posts.find_one({"id": post_id}, {"_id": 0})
     if not post:
-        html = (
-            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
-            "<title>Post não encontrado · LindArt</title>"
-            '<meta property="og:title" content="Post não encontrado">'
-            '<meta property="og:description" content="Este post do feed expirou ou foi removido.">'
-            f'<meta property="og:url" content="{origin}/feed">'
-            '<meta http-equiv="refresh" content="0; url=/feed">'
-            "</head><body>Post não encontrado.</body></html>"
+        return _og_404_html(
+            title="Post não encontrado",
+            description="Este post do feed expirou ou foi removido.",
+            redirect_path="/feed",
+            origin=origin,
         )
-        return HTMLResponse(content=html, status_code=404)
 
     post_title = (post.get("title") or "Post LindArt").strip()[:80] or "Post LindArt"
     handle = post.get("handle")
@@ -429,7 +470,8 @@ async def og_feed_page(post_id: str, request: Request):
         else f"/api/og/feed/{post_id}/image.svg"
     )
 
-    # Reaproveita template dna_og.html (estrutura idêntica: title/desc/colors/redirect).
+    # `dna_og.html` agora é template genérico (DNA/feed/profile); só passamos
+    # og_alt customizado por tipo para corrigir a tag semântica.
     template = _jinja_env.get_template("dna_og.html")
     html = template.render(
         signature=post_title,
@@ -439,6 +481,7 @@ async def og_feed_page(post_id: str, request: Request):
         redirect_path=redirect_path,
         redirect_abs=redirect_abs,
         og_image_abs=og_image_abs,
+        og_alt=f"{post_title} — Post no feed LindArt",
     )
     return HTMLResponse(
         content=html,
@@ -457,38 +500,15 @@ async def og_feed_image_svg(post_id: str):
     if not colors:
         colors = list(_DEFAULT_PALETTE)
 
-    stops = "".join(
-        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
-        for i, c in enumerate(colors)
+    svg = _build_og_palette_svg(
+        eyebrow="LINDART · FEED",
+        title_text=post_title,
+        title_size=64,
+        title_y=280,
+        footer_left=author,
+        colors=colors,
     )
-    swatch_w = 1080 // max(1, len(colors))
-    swatches = "".join(
-        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
-        for i, c in enumerate(colors)
-    )
-
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
-    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
-  <rect width="1200" height="630" filter="url(#grain)"/>
-  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
-    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · FEED</text>
-    <text x="60" y="280" font-size="64" font-weight="300" letter-spacing="2">{_html_escape(post_title)}</text>
-    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
-    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
-  </g>
-  {swatches}
-</svg>"""
-    return StreamingResponse(
-        iter([svg.encode("utf-8")]),
-        media_type="image/svg+xml",
-        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
-    )
+    return _svg_response(svg)
 
 
 # ───────────────────────────── Profile OG ─────────────────────────────
@@ -552,16 +572,13 @@ async def og_profile_page(handle: str, request: Request):
     origin = _absolute_origin(request)
     h = normalize_handle(handle)
     if not h:
-        html = (
-            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
-            "<title>Handle inválido · LindArt</title>"
-            '<meta property="og:title" content="Handle inválido">'
-            '<meta property="og:description" content="Esse identificador de artista não é válido.">'
-            f'<meta property="og:url" content="{origin}/feed">'
-            '<meta http-equiv="refresh" content="0; url=/feed">'
-            "</head><body>Handle inválido.</body></html>"
+        return _og_404_html(
+            title="Handle inválido",
+            description="Esse identificador de artista não é válido.",
+            redirect_path="/feed",
+            origin=origin,
+            status=400,
         )
-        return HTMLResponse(content=html, status_code=400)
 
     summary = await _profile_summary(h)
     redirect_path = f"/u/{h}"
@@ -615,6 +632,7 @@ async def og_profile_page(handle: str, request: Request):
         redirect_path=redirect_path,
         redirect_abs=redirect_abs,
         og_image_abs=og_image_abs,
+        og_alt=f"Paleta assinatura de @{h} no LindArt",
     )
     return HTMLResponse(
         content=html,

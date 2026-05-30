@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { usePaletteStore } from "@/store/usePaletteStore";
@@ -15,7 +16,29 @@ const TOUR_SEEN_KEY = "lindart.tour.v1.seen";
 
 const STEPS = ["splash", "segment", "palette", "generation", "register", "welcome"];
 
+// Rotas públicas / anônimas onde o onboarding NÃO deve abrir automaticamente.
+// Visitantes chegando via WhatsApp/IG (links de perfil, feed, posts, planos,
+// privacidade, login/register) precisam ver o conteúdo direto, sem modal por cima.
+// O fluxo continua disponível via evento `lindart:open-onboarding` em qualquer rota.
+const PUBLIC_PATH_PREFIXES = [
+  "/u/",
+  "/feed",
+  "/dna/",
+  "/planos",
+  "/privacidade",
+  "/login",
+  "/register",
+];
+
+function isPublicPath(pathname) {
+  if (!pathname) return false;
+  return PUBLIC_PATH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p)
+  );
+}
+
 export default function OnboardingFlow() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [data, setData] = useState({
@@ -35,8 +58,12 @@ export default function OnboardingFlow() {
   // Auto-open na primeira visita — só decide DEPOIS da hidratação do Zustand
   // persist, senão o estado inicial (false) sobrepõe o Studio mesmo para
   // usuários que já concluíram o onboarding.
+  // Em rotas públicas (perfis, feed, posts compartilhados, planos, privacidade,
+  // login/register) o auto-open é suprimido para não bloquear visitantes
+  // anônimos chegando via link.
   useEffect(() => {
     if (!hasHydrated) return;
+    if (isPublicPath(location.pathname)) return;
     try {
       const done = localStorage.getItem(DONE_KEY);
       if (onboardingCompletedStore || done) {
@@ -51,7 +78,7 @@ export default function OnboardingFlow() {
     } catch {
       if (!onboardingCompletedStore) setOpen(true);
     }
-  }, [hasHydrated, onboardingCompletedStore]);
+  }, [hasHydrated, onboardingCompletedStore, location.pathname]);
 
   // Listener para reabrir manualmente (ex: via UI de configurações)
   useEffect(() => {
