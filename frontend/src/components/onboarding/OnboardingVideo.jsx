@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { PlayCircle, Sparkles, Loader2 } from "lucide-react";
+import { PlayCircle, Sparkles, Loader2, RefreshCw } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const MANUAL_URL = process.env.REACT_APP_ONBOARDING_VIDEO_URL;
@@ -23,46 +23,56 @@ export default function OnboardingVideo() {
     status: "idle",
   });
   const [playing, setPlaying] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const pollRef = useRef(null);
+
+  async function fetchStatus() {
+    try {
+      const r = await fetch(`${BACKEND_URL}/api/onboarding/welcome-video`, {
+        cache: "no-store",
+      });
+      if (!r.ok) throw new Error("status_failed");
+      const data = await r.json();
+      setState({
+        loading: false,
+        exists: !!data.exists,
+        url: data.url ? `${BACKEND_URL}${data.url}` : null,
+        status: data.status || "idle",
+      });
+      if (data.status === "processing" && !data.exists) {
+        pollRef.current = setTimeout(fetchStatus, 6000);
+      }
+    } catch {
+      setState({ loading: false, exists: false, url: null, status: "error" });
+    }
+  }
+
+  async function handleRetry() {
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      await fetch(`${BACKEND_URL}/api/onboarding/generate-welcome-video`, {
+        method: "POST",
+      });
+      setState((s) => ({ ...s, status: "processing" }));
+      pollRef.current = setTimeout(fetchStatus, 6000);
+    } catch {
+      // noop — placeholder remains
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   useEffect(() => {
     if (MANUAL_URL) {
       setState({ loading: false, exists: true, url: MANUAL_URL, status: "manual" });
       return;
     }
-
-    let cancelled = false;
-
-    async function fetchStatus() {
-      try {
-        const r = await fetch(`${BACKEND_URL}/api/onboarding/welcome-video`, {
-          cache: "no-store",
-        });
-        if (!r.ok) throw new Error("status_failed");
-        const data = await r.json();
-        if (cancelled) return;
-        setState({
-          loading: false,
-          exists: !!data.exists,
-          url: data.url ? `${BACKEND_URL}${data.url}` : null,
-          status: data.status || "idle",
-        });
-        // Continua o polling se ainda está processando
-        if (data.status === "processing" && !data.exists) {
-          pollRef.current = setTimeout(fetchStatus, 6000);
-        }
-      } catch {
-        if (!cancelled) {
-          setState({ loading: false, exists: false, url: null, status: "error" });
-        }
-      }
-    }
-
     fetchStatus();
     return () => {
-      cancelled = true;
       if (pollRef.current) clearTimeout(pollRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const wrapperClass = "mt-8 max-w-md mx-auto";
@@ -168,6 +178,18 @@ export default function OnboardingVideo() {
               ? "Recarregue em alguns instantes para assistir."
               : "Por enquanto, siga o tour guiado interativo."}
           </p>
+          {!isProcessing && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              disabled={retrying}
+              className="mt-3 inline-flex items-center gap-1.5 text-[10px] tracking-[0.24em] uppercase text-gold-deep hover:text-gold transition-colors disabled:opacity-50"
+              data-testid="onboarding-video-retry"
+            >
+              <RefreshCw className={`w-3 h-3 ${retrying ? "animate-spin" : ""}`} />
+              {retrying ? "Iniciando" : "Gerar com Sora 2"}
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

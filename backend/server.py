@@ -677,7 +677,7 @@ def _run_welcome_video_job() -> None:
             "art studio. No text, no logos, pure visual poetry."
         )
         video_gen = OpenAIVideoGeneration(api_key=EMERGENT_LLM_KEY)
-        video_bytes = video_gen.text_to_video(prompt, "sora-2", "1280x720", 4, 600)
+        video_bytes = video_gen.text_to_video(prompt, "sora-2", "1280x720", 4, 900)
         if not video_bytes:
             _WELCOME_JOB = {"status": "error", "error": "Sora 2 retornou vazio"}
             return

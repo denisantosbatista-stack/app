@@ -9,6 +9,13 @@ Refatorar app monolítico HTML (`lindart-v8-1.html`) — sofrendo de CSS gigante
 - **DB**: MongoDB (`/api/palettes` CRUD)
 - **Estilo**: Dark luxury, dourado #D4AF37, glassmorphism, gradientes animados, glow premium
 
+## Status Sora 2 (30/Mai/2026)
+- Integração via `emergentintegrations.llm.openai.video_generation.OpenAIVideoGeneration` está implementada em `/api/onboarding/generate-welcome-video` e `/api/ai/generate-video`.
+- Duas tentativas consecutivas (sora-2, 1280x720, 4s, max_wait_time=900) retornaram **timeout em 0% progress** — serviço Sora 2 parece estar instável/sobrecarregado nesta janela.
+- UX: placeholder elegante na home + botão "Gerar com Sora 2" para o usuário tentar novamente quando o serviço estiver disponível. Nenhum crédito é gasto até o usuário clicar.
+- Próximo passo: revalidar Sora 2 em horários distintos; considerar `sora-2-pro` se persistir.
+
+
 ## Estrutura de pastas (frontend)
 ```
 src/
@@ -29,6 +36,8 @@ src/
 ## Core Requirements (entregues nesta v1.0)
 - [x] Arquitetura modular (components/pages/hooks/utils/data/store)
 - [x] Stack moderna: Tailwind + Framer Motion + Zustand + Lucide + React Hot Toast
+- [x] Onboarding: placeholder elegante para vídeo Sora 2 + botão "Gerar com Sora 2" para retry manual (Sora 2 instável — ver Status Sora 2)
+- [x] Polling backend `/api/onboarding/welcome-video` com estados idle/processing/error/exists
 - [x] Tema premium dark luxury com dourado + glassmorphism + glow + gradientes animados
 - [x] Hero cinematográfica (parallax, partículas flutuantes, mockup grande animado)
 - [x] Preview real (3 mockups gerados por IA: relógio, bandeja, geodo) + 10 silhuetas SVG de peças com gradientes das paletas
