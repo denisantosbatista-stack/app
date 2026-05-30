@@ -140,8 +140,7 @@ export default function PricingBeforeAfter() {
 
         {/* Slider Antes/Depois */}
         <div
-          className="relative rounded-2xl overflow-hidden border border-black/10 shadow-deep bg-white select-none"
-          style={{ minHeight: 520 }}
+          className="relative rounded-2xl overflow-hidden border border-black/10 shadow-deep bg-white select-none min-h-[460px] md:min-h-[520px]"
           ref={wrapRef}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
