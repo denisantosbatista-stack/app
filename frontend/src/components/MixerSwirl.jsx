@@ -178,12 +178,18 @@ export default function MixerSwirl({ colorA, colorB }) {
       let msg;
       if (e instanceof ApiError && e.tipo === "saldo") {
         msg = "Saldo do Universal Key esgotado. Recarregue para gerar vídeos.";
+      } else if (e instanceof ApiError && e.tipo === "config") {
+        // 503 — FAL_KEY ausente. Usa detail PT-BR vindo do backend quando disponível.
+        msg =
+          typeof e.detail === "string"
+            ? e.detail
+            : "FAL_KEY ausente no backend. Configure em backend/.env (fal.ai/dashboard/keys).";
       } else if (e?.status === 503 || /FAL_KEY/i.test(`${e?.detail || ""} ${e?.message || ""}`)) {
         msg = "FAL_KEY ausente no backend. Configure em backend/.env (fal.ai/dashboard/keys).";
       } else {
         msg = `Falha SVD 2.0: ${e?.message || "erro"}`;
       }
-      toast.error(msg, { id: tid });
+      toast.error(msg, { id: tid, duration: 6000 });
     }
   };
 

@@ -23,7 +23,14 @@ def _clean(doc: dict) -> dict:
 async def get_profile(handle: str, limit: int = Query(24, ge=1, le=60)):
     h = normalize_handle(handle)
     if not h:
-        raise HTTPException(status_code=400, detail="Handle inválido")
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_handle",
+                "message": "Handle inválido. Use apenas letras, números, ponto, hífen ou underline.",
+                "handle": handle,
+            },
+        )
 
     # Posts do feed
     posts_cursor = (
@@ -40,17 +47,6 @@ async def get_profile(handle: str, limit: int = Query(24, ge=1, le=60)):
         .limit(6)
     )
     dnas_raw: List[Dict[str, Any]] = await dna_cursor.to_list(6)
-    dnas = [
-        {
-            "id": d.get("id"),
-            "signature": (d.get("payload") or {}).get("signature"),
-            "dominant_colors": (d.get("payload") or {}).get("dominant_colors", [])[:6],
-            "mood": (d.get("payload") or {}).get("mood", [])[:6],
-            "created_at": d.get("created_at"),
-            "path": f"/dna/{d.get('id')}",
-        }
-        for d in dnas_raw
-    ]
 
     # Itens do marketplace
     market_cursor = (
@@ -67,6 +63,29 @@ async def get_profile(handle: str, limit: int = Query(24, ge=1, le=60)):
         .limit(8)
     )
     submissions: List[Dict[str, Any]] = await subs_cursor.to_list(8)
+
+    # 404 estruturado: handle não tem presença em nenhuma coleção
+    if not posts and not dnas_raw and not market and not submissions:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "profile_not_found",
+                "message": f"Perfil @{h} ainda não tem peças, DNAs, itens ou submissões publicadas.",
+                "handle": h,
+            },
+        )
+
+    dnas = [
+        {
+            "id": d.get("id"),
+            "signature": (d.get("payload") or {}).get("signature"),
+            "dominant_colors": (d.get("payload") or {}).get("dominant_colors", [])[:6],
+            "mood": (d.get("payload") or {}).get("mood", [])[:6],
+            "created_at": d.get("created_at"),
+            "path": f"/dna/{d.get('id')}",
+        }
+        for d in dnas_raw
+    ]
 
     # Agrega cores dominantes mais usadas (top 8) para "paleta assinatura"
     color_counts: Dict[str, int] = {}

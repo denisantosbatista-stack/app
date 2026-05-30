@@ -9,7 +9,7 @@ export class ApiError extends Error {
   constructor(message, { tipo, status, detail } = {}) {
     super(message);
     this.name = "ApiError";
-    this.tipo = tipo; // 'limite' | 'saldo' | 'timeout' | 'rede' | 'servidor'
+    this.tipo = tipo; // 'limite' | 'saldo' | 'timeout' | 'rede' | 'servidor' | 'config'
     this.status = status;
     this.detail = detail;
   }
@@ -73,6 +73,26 @@ export async function chamarIA(path, body, { maxTentativas = 3, timeoutMs = 6000
         throw new ApiError("Saldo de gerações esgotado.", {
           tipo: "saldo",
           status: resp.status,
+          detail,
+        });
+      }
+
+      // 503 = recurso/integração indisponível (ex.: FAL_KEY ausente).
+      // Erro terminal de configuração — NÃO faz retry, mostra mensagem direta.
+      if (resp.status === 503) {
+        let detail;
+        try {
+          detail = (await resp.json())?.detail;
+        } catch (_) {
+          /* noop */
+        }
+        const msg =
+          typeof detail === "string"
+            ? detail
+            : "Integração indisponível. Verifique a configuração do servidor.";
+        throw new ApiError(msg, {
+          tipo: "config",
+          status: 503,
           detail,
         });
       }

@@ -16,6 +16,15 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P0 — FAL_KEY backend-only + 404 estruturado em /api/profile (DONE em iter 22, 2026-02)
+- **Backend** (`server.py` linhas 38-41): `FAL_KEY = os.environ.get('FAL_KEY')` + `os.environ['FAL_KEY'] = FAL_KEY` para `fal_client` pegar automaticamente; endpoints `/api/ai/generate-video` e `/api/onboarding/generate-welcome-video` retornam **503 com `detail` PT-BR** quando chave ausente (sem mais hardcode no frontend).
+- **Backend** (`routers/profiles.py`): `GET /api/profile/{handle}` agora retorna **404 estruturado** `{detail:{error:"profile_not_found", message, handle}}` quando o handle não tem presença em `feed_posts`, `dna_shares`, `marketplace_items` nem `challenge_submissions`. `400` (invalid_handle) também estruturado.
+- **Frontend** (`utils/api.js`): `chamarIA` agora trata `503` como erro terminal de configuração (tipo `"config"`) — sem mais retry exponencial inútil; expõe `detail` para a UI usar.
+- **Frontend** (`components/MixerSwirl.jsx`): toast usa o `detail` PT-BR do backend quando disponível; botão reseta loading imediatamente em caso de 503.
+- **Frontend** (`components/onboarding/OnboardingVideo.jsx`): `handleRetry` agora checa `r.ok` e `r.status === 503`; se chave ausente, exibe **alerta inline vermelho (KeyRound)** com mensagem do backend + toast + reseta `status: "idle"` (sem polling infinito). Botão muda label para "Tentar novamente".
+- **Frontend** (`pages/PublicProfile.jsx`): erro 404 distinguido de erros de rede; UI elegante com card `backdrop-blur-md`, ícone `UserX` em círculo dourado, dois CTAs (`Voltar ao início` → `/`, `Explorar feed` → `/feed`) e mensagem PT-BR parseada do `detail` do backend.
+- Testing: 4 curls smoke (HTTP 404 profile_not_found ✓, HTTP 503 video PT-BR ✓, HTTP 503 onboarding PT-BR ✓); screenshot script confirmou `profile-not-found-title`, `profile-not-found-home`, `profile-not-found-feed` visíveis.
+
 ### ✅ P0 — JWT em writes de comunidade (DONE em iter 21, 2026-02)
 - **Backend** (`routers/feed.py`, `routers/marketplace.py`, `routers/challenges.py`): `POST /api/feed`, `POST /api/marketplace`, `POST /api/challenges/{id}/submissions` agora exigem `Depends(get_current_user)`. Handle e flag `verified=True` são derivados do usuário autenticado (cliente não pode forjar handle).
 - **Frontend** — `Feed.jsx`, `Marketplace.jsx`, `Challenges.jsx`: removidos inputs manuais de handle nos modais; bloco "Postando/Anunciando/Enviando como @user + Perfil Verificado" (BadgeCheck dourado). Botões de submit/anunciar/enviar gateados por `isAuthenticated` → toast + redirect `/login`. Token Bearer + `credentials: include` em todos os POSTs protegidos. BadgeCheck também em cards de items/posts/submissions e no `winner.handle` quando `verified=true`.

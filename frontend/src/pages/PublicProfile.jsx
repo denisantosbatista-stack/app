@@ -5,13 +5,14 @@ import {
   Loader2,
   ArrowLeft,
   Heart,
+  Home,
   Image as ImageIcon,
   ShoppingBag,
   Sparkles,
   Trophy,
   ExternalLink,
+  UserX,
 } from "lucide-react";
-import { toast } from "react-hot-toast";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -31,22 +32,43 @@ export default function PublicProfile() {
   const { handle } = useParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); // { kind: 'not_found' | 'network' | 'server', message }
   const [tab, setTab] = useState("posts");
 
   useEffect(() => {
     let mounted = true;
     async function fetchProfile() {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(
           `${API_BASE}/api/profile/${encodeURIComponent(handle)}`,
         );
+        if (res.status === 404) {
+          let payload;
+          try {
+            payload = await res.json();
+          } catch {
+            /* noop */
+          }
+          const detail = payload?.detail;
+          const message =
+            (detail && typeof detail === "object" && detail.message) ||
+            (typeof detail === "string" ? detail : null) ||
+            `Perfil @${handle} não encontrado.`;
+          if (mounted) setError({ kind: "not_found", message });
+          return;
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const j = await res.json();
         if (mounted) setData(j);
       } catch (e) {
         console.error(e);
-        toast.error("Perfil não encontrado");
+        if (mounted)
+          setError({
+            kind: "network",
+            message: "Não foi possível carregar este perfil. Tente novamente.",
+          });
       } finally {
         if (mounted) setLoading(false);
       }
@@ -70,24 +92,63 @@ export default function PublicProfile() {
   }
 
   if (!data) {
+    const isNotFound = error?.kind === "not_found";
     return (
       <div
-        className="max-w-3xl mx-auto px-5 md:px-10 pt-16 pb-20 text-center"
+        className="max-w-2xl mx-auto px-5 md:px-10 pt-20 pb-24"
         data-testid="profile-not-found"
       >
-        <h1 className="font-display text-3xl text-zinc-900 mb-3">
-          Artista não encontrado
-        </h1>
-        <p className="text-zinc-600 text-sm mb-6">
-          O handle <span className="font-mono">@{handle}</span> não tem peças
-          publicadas ainda.
-        </p>
-        <Link
-          to="/feed"
-          className="text-[11px] tracking-[0.22em] uppercase border border-gold/60 text-gold hover:bg-gold/10 px-5 py-2.5 inline-flex items-center gap-2 rounded-sm"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: [0.22, 0.9, 0.3, 1] }}
+          className="relative rounded-sm border border-gold/25 bg-white/70 backdrop-blur-md shadow-[0_12px_40px_rgba(184,149,74,0.12)] overflow-hidden"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao feed
-        </Link>
+          <div
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at 20% 10%, rgba(212,175,55,0.18), transparent 55%), radial-gradient(circle at 85% 90%, rgba(184,149,74,0.14), transparent 60%)",
+            }}
+          />
+          <div className="relative px-7 py-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-5 rounded-full border border-gold/40 bg-white flex items-center justify-center shadow-sm">
+              <UserX className="w-7 h-7 text-gold-deep" />
+            </div>
+            <div className="label-eyebrow text-gold mb-2">
+              {isNotFound ? "404 · Perfil" : "Erro ao carregar"}
+            </div>
+            <h1
+              className="font-display text-3xl md:text-4xl text-zinc-900 mb-3 tracking-tight"
+              data-testid="profile-not-found-title"
+            >
+              {isNotFound ? "Perfil não encontrado" : "Algo deu errado"}
+            </h1>
+            <p className="text-zinc-600 text-sm md:text-[15px] leading-relaxed max-w-md mx-auto mb-2">
+              {error?.message ||
+                `O handle @${handle} ainda não publicou peças, DNAs ou itens.`}
+            </p>
+            <p className="text-zinc-500 text-xs mb-8">
+              Que tal explorar outros artistas no feed?
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                to="/"
+                className="text-[11px] tracking-[0.22em] uppercase bg-gold-deep text-white hover:bg-gold transition-colors px-5 py-2.5 inline-flex items-center gap-2 rounded-sm shadow-sm"
+                data-testid="profile-not-found-home"
+              >
+                <Home className="w-3.5 h-3.5" /> Voltar ao início
+              </Link>
+              <Link
+                to="/feed"
+                className="text-[11px] tracking-[0.22em] uppercase border border-gold/60 text-gold-deep hover:bg-gold/10 transition-colors px-5 py-2.5 inline-flex items-center gap-2 rounded-sm"
+                data-testid="profile-not-found-feed"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Explorar feed
+              </Link>
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }

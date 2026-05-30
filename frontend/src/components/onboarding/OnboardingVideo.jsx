@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { PlayCircle, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { PlayCircle, Sparkles, Loader2, RefreshCw, KeyRound } from "lucide-react";
+import toast from "react-hot-toast";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const MANUAL_URL = process.env.REACT_APP_ONBOARDING_VIDEO_URL;
@@ -21,6 +22,7 @@ export default function OnboardingVideo() {
     exists: false,
     url: null,
     status: "idle",
+    configError: null,
   });
   const [playing, setPlaying] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -51,13 +53,34 @@ export default function OnboardingVideo() {
     if (retrying) return;
     setRetrying(true);
     try {
-      await fetch(`${BACKEND_URL}/api/onboarding/generate-welcome-video`, {
-        method: "POST",
-      });
-      setState((s) => ({ ...s, status: "processing" }));
+      const r = await fetch(
+        `${BACKEND_URL}/api/onboarding/generate-welcome-video`,
+        { method: "POST" },
+      );
+      if (r.status === 503) {
+        // FAL_KEY ausente no backend — não inicia polling, mostra erro amigável.
+        let detail;
+        try {
+          detail = (await r.json())?.detail;
+        } catch {
+          /* noop */
+        }
+        const msg =
+          typeof detail === "string"
+            ? detail
+            : "FAL_KEY não configurada no servidor.";
+        setState((s) => ({ ...s, status: "idle", configError: msg }));
+        toast.error(msg);
+        return;
+      }
+      if (!r.ok) {
+        toast.error("Não foi possível iniciar a geração. Tente novamente.");
+        return;
+      }
+      setState((s) => ({ ...s, status: "processing", configError: null }));
       pollRef.current = setTimeout(fetchStatus, 6000);
     } catch {
-      // noop — placeholder remains
+      toast.error("Falha de conexão ao iniciar o vídeo.");
     } finally {
       setRetrying(false);
     }
@@ -178,6 +201,17 @@ export default function OnboardingVideo() {
               ? "Recarregue em alguns instantes para assistir."
               : "Por enquanto, siga o tour guiado interativo."}
           </p>
+          {!isProcessing && state.configError && (
+            <div
+              className="mt-3 mx-auto max-w-xs flex items-start gap-2 text-left bg-red-50 border border-red-200 rounded-sm px-3 py-2"
+              data-testid="onboarding-video-config-error"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-red-600 mt-0.5 shrink-0" />
+              <span className="text-[11px] text-red-700 leading-snug">
+                {state.configError}
+              </span>
+            </div>
+          )}
           {!isProcessing && (
             <button
               type="button"
@@ -187,7 +221,7 @@ export default function OnboardingVideo() {
               data-testid="onboarding-video-retry"
             >
               <RefreshCw className={`w-3 h-3 ${retrying ? "animate-spin" : ""}`} />
-              {retrying ? "Iniciando" : "Gerar com SVD 2.0"}
+              {retrying ? "Iniciando" : state.configError ? "Tentar novamente" : "Gerar com SVD 2.0"}
             </button>
           )}
         </div>
