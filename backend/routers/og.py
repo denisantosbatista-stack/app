@@ -650,16 +650,6 @@ async def og_profile_image_svg(handle: str):
         palette = palette + [c for c in _DEFAULT_PALETTE if c.lower() not in palette]
     palette = palette[:6] or list(_DEFAULT_PALETTE)
 
-    stops = "".join(
-        f'<stop offset="{int(i / max(1, len(palette) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
-        for i, c in enumerate(palette)
-    )
-    swatch_w = 1080 // max(1, len(palette))
-    swatches = "".join(
-        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
-        for i, c in enumerate(palette)
-    )
-
     stats_line = ""
     if summary:
         bits: List[str] = []
@@ -671,26 +661,12 @@ async def og_profile_image_svg(handle: str):
             bits.append(f"{summary['total_likes']} curtidas")
         stats_line = " · ".join(bits)
 
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
-    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
-  <rect width="1200" height="630" filter="url(#grain)"/>
-  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
-    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · ARTISTA</text>
-    <text x="60" y="280" font-size="80" font-weight="300" letter-spacing="2">@{_html_escape(h)}</text>
-    <text x="60" y="340" font-size="26" opacity="0.75">{_html_escape(stats_line)}</text>
-    <text x="60" y="600" font-size="22" opacity="0.7">Paleta assinatura</text>
-    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
-  </g>
-  {swatches}
-</svg>"""
-    return StreamingResponse(
-        iter([svg.encode("utf-8")]),
-        media_type="image/svg+xml",
-        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+    svg = _build_og_palette_svg(
+        eyebrow="LINDART · ARTISTA",
+        title_text=f"@{h}",
+        title_size=80,
+        subtitle=stats_line,
+        footer_left="Paleta assinatura",
+        colors=palette,
     )
+    return _svg_response(svg)
