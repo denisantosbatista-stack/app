@@ -1,0 +1,41 @@
+{
+  "summary": "P3 — Open Graph Marketplace endpoints validados em 19/19 testes pytest. Cobre HTML (og:*, twitter:card, product:price condicional, meta-refresh, Cache-Control 600s), SVG (viewBox 1200x630, swatches, Cache-Control 86400s), extração de hexes via regex em tags, 4 fallbacks por type (molde/curso/preset/default), 404 HTML e 200 SVG para itens inexistentes, regressão completa em DNA OG (HTML+SVG) e smoke (/api/, /api/palettes, /api/marketplace, /api/auth/login).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/og/marketplace/{id} (Cache-Control)", "issue": "Ingress (Cloudflare/k8s) reescreve Cache-Control para 'no-store, no-cache, must-revalidate' no domínio público — a app emite corretamente 'public, max-age=600/86400, s-maxage=...' (verificado direto em localhost:8001). Não é bug da app, mas reduz cache real em crawlers. Avaliar configurar ingress para preservar Cache-Control nos paths /api/og/*."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_og_marketplace.py",
+    "/app/test_reports/pytest/iteration_28.xml"
+  ],
+  "action_items": [
+    "(Opcional, infra) Configurar ingress para preservar Cache-Control nas rotas /api/og/* — crawlers WhatsApp/IG/FB respeitam o header e atualmente recachearão a cada hit por causa do no-store imposto pelo Cloudflare."
+  ],
+  "critical_code_review_comments": [
+    "routers/og.py:184 — _HEX_RE = re.compile(r'#[0-9a-fA-F]{6}') captura corretamente hexes embutidos em strings; tags=['#aabbcc','#112233','foo'] extraem aabbcc/112233 e o fallback molde preenche o 3º slot.",
+    "routers/og.py:295 — `f'{float(item.get(\"price_brl\")):.2f}'` é seguro porque só é avaliado quando price_txt é truthy (else ramo retorna ''). OK.",
+    "routers/og.py:317 — `_market_swatches(item) if item else list(_DEFAULT_PALETTE)` no SVG é defensivo: quando o item não existe, `item` vira `{}` (falsy) e cai no default, garantindo 200 com paleta padrão para crawlers (comportamento intencional confirmado).",
+    "templates/market_og.html:21-22 — bloco condicional {% if price_txt %} omite product:price:amount e product:price:currency quando preço é None/0; confirmado em 3 testes (positivo, None, zero).",
+    "Pré-existente (não relacionado a P3): routers/marketplace.py:35 declara `image_url: str` (obrigatório). Itens em produção podem ter image_url ausente/None e quebrar a listagem com 500. Recomenda-se Optional[str] = None ou default '/api/static/market/_placeholder.png'. Fora do escopo deste PR mas vale registrar."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_og_marketplace.py (NOVO — 19 testes, ~250 linhas, com cleanup automático de items ogt_*)"
+  ],
+  "success_rate": {
+    "backend": "100% (19/19)",
+    "frontend": "n/a (escopo backend-only)"
+  },
+  "test_credentials": "Não necessário — endpoints OG são públicos. DNA share também é público (POST /api/dna/share sem auth).",
+  "seed_data_creation": "Testes seedam direto via pymongo em db.marketplace_items com id prefixado 'ogt_' (12 chars). Fixture autouse module-scoped roda db.marketplace_items.delete_many({'id': {'$regex': '^ogt_'}}) ao fim. DNA share criado via API POST /api/dna/share (handle 'test_p3_dna', nome 'TEST_p3_dna') e deletado no teardown da classe. Confirmado: 0 docs residuais ao final.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Suite oficial P3 OG Marketplace: /app/backend/tests/test_og_marketplace.py. Pontos-chave para próximos agentes: (1) Cache-Control deve ser asserted via localhost:8001 (LOCAL_URL), NÃO via REACT_APP_BACKEND_URL, porque Cloudflare/ingress reescreve para no-store no domínio público — comportamento da app está correto e foi verificado com curl direto. (2) Seed item exige image_url string (campo obrigatório no schema MarketItem), usar '/api/static/market/placeholder.png' como mock. (3) Helper _new_id() gera 'ogt_' + uuid hex truncado em 12 chars, mas o id final pode passar de 12 quando há sufixo — não importa pra OG endpoints que aceitam strings arbitrárias. (4) Fallback palette: type='ferramenta' cai no _DEFAULT_PALETTE (#c9a84c) mesmo estando em _TYPE_LABELS, porque _TYPE_PALETTES tem só {molde, curso, preset}. (5) 404 do SVG retorna 200 intencionalmente (não-404) — não tente 'corrigir' isso. (6) Total ~2.5s de execução.",
+  "rca_of_the_issue": "Nenhum bug funcional em P3. Dois ajustes feitos no teste durante o desenvolvimento: (a) header Cache-Control assertado via localhost:8001 porque o ingress público reescreve para no-store (descoberto via curl -I comparando localhost vs domínio); (b) seed inicial usava image_url=None, que violava o schema Pydantic MarketItem.image_url:str e fazia /api/marketplace retornar 500 no teste de regressão — corrigido usando string placeholder. Ambos eram bugs do teste, não do código de produção."
+}

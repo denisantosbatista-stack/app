@@ -1,17 +1,20 @@
 """Routers de Open Graph (cards de compartilhamento dinâmicos).
 
 Expõe HTML com metatags `og:*` / `twitter:*` para que crawlers de
-WhatsApp/Instagram/Facebook/X gerem preview rico do DNA Visual e a imagem
-SVG 1200×630 que serve de `og:image`.
+WhatsApp/Instagram/Facebook/X gerem preview rico do DNA Visual e dos itens
+do Marketplace + a imagem SVG 1200×630 que serve de `og:image`.
 
 Rotas:
-- GET /api/og/dna/{share_id}            → HTML com OG tags + redirect humano
-- GET /api/og/dna/{share_id}/image.svg  → imagem SVG (cache 24h)
+- GET /api/og/dna/{share_id}                    → HTML com OG tags + redirect humano
+- GET /api/og/dna/{share_id}/image.svg          → imagem SVG (cache 24h)
+- GET /api/og/marketplace/{item_id}             → HTML com OG tags do item
+- GET /api/og/marketplace/{item_id}/image.svg   → imagem SVG do item (cache 24h)
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
@@ -164,6 +167,187 @@ async def og_dna_image_svg(share_id: str):
     <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · DNA VISUAL</text>
     <text x="60" y="260" font-size="76" font-weight="300" letter-spacing="2">{_html_escape(signature)}</text>
     <text x="60" y="320" font-size="30" opacity="0.85">{_html_escape(mood_txt)}</text>
+    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
+    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
+  </g>
+  {swatches}
+</svg>"""
+    return StreamingResponse(
+        iter([svg.encode("utf-8")]),
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+    )
+
+
+# ─────────────────────────── Marketplace OG ────────────────────────────
+
+_HEX_RE = re.compile(r"#[0-9a-fA-F]{6}")
+
+# Paleta curada por tipo (fallback quando tags não trazem hexes suficientes).
+_TYPE_PALETTES: dict[str, List[str]] = {
+    "molde": ["#c4b9a6", "#8b7355", "#d4c5b0"],
+    "curso": ["#d4956a", "#c17f3e", "#8b5e3c"],
+    "preset": ["#7ba7bc", "#5b8fa8", "#3d6b82"],
+}
+_DEFAULT_PALETTE = ["#c9a84c", "#8a7d6e", "#f2ede4"]
+
+_TYPE_LABELS = {
+    "molde": "Molde",
+    "curso": "Curso",
+    "preset": "Preset",
+    "ebook": "E-book",
+    "ferramenta": "Ferramenta",
+    "outro": "Item",
+}
+
+
+def _market_swatches(item: dict) -> List[str]:
+    """Extrai hexes válidos de `tags` (opção b). Faz fallback curado por
+    `type` quando há menos de 3 cores."""
+    tags = item.get("tags") or []
+    colors: List[str] = []
+    for t in tags:
+        if not isinstance(t, str):
+            continue
+        for m in _HEX_RE.findall(t):
+            c = m.lower()
+            if c not in colors:
+                colors.append(c)
+        if len(colors) >= 6:
+            break
+    if len(colors) < 3:
+        fallback = _TYPE_PALETTES.get((item.get("type") or "").lower(), _DEFAULT_PALETTE)
+        for c in fallback:
+            if c.lower() not in colors:
+                colors.append(c.lower())
+            if len(colors) >= 5:
+                break
+    return colors[:6]
+
+
+def _format_brl(value) -> str:
+    """Formata preço em BRL no padrão pt-BR (R$ 1.234,56). Retorna '' se inválido."""
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return ""
+    if v <= 0:
+        return ""
+    inteiro, dec = f"{v:,.2f}".split(".")
+    inteiro = inteiro.replace(",", ".")
+    return f"R$ {inteiro},{dec}"
+
+
+@router.get("/marketplace/{item_id}", response_class=HTMLResponse)
+async def og_marketplace_page(item_id: str, request: Request):
+    """Página HTML com Open Graph tags do item de marketplace.
+    Crawlers leem os metatags; humanos são redirecionados para /marketplace."""
+    origin = _absolute_origin(request)
+    item = await db.marketplace_items.find_one({"id": item_id}, {"_id": 0})
+    if not item:
+        html = (
+            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+            "<title>Item não encontrado · LindArt</title>"
+            '<meta property="og:title" content="Item não encontrado">'
+            '<meta property="og:description" content="Este item do marketplace expirou ou foi removido.">'
+            f'<meta property="og:url" content="{origin}/marketplace">'
+            '<meta http-equiv="refresh" content="0; url=/marketplace">'
+            "</head><body>Item não encontrado.</body></html>"
+        )
+        return HTMLResponse(content=html, status_code=404)
+
+    item_title = (item.get("title") or "Item LindArt").strip()[:80] or "Item LindArt"
+    typ = (item.get("type") or "outro").lower()
+    type_label = _TYPE_LABELS.get(typ, "Item")
+    handle = item.get("handle")
+    author_txt = f" — @{handle}" if handle else ""
+    title = f"{item_title} · {type_label}{author_txt} — LindArt"
+
+    price_txt = _format_brl(item.get("price_brl"))
+    raw_desc = (item.get("description") or "").strip()
+    desc_parts: List[str] = [type_label]
+    if price_txt:
+        desc_parts.append(price_txt)
+    if raw_desc:
+        desc_parts.append(raw_desc)
+    else:
+        desc_parts.append("Encontre no marketplace LindArt.")
+    description = " · ".join(desc_parts)[:280]
+
+    colors = _market_swatches(item)
+
+    redirect_path = "/marketplace"
+    redirect_abs = f"{origin}{redirect_path}" if origin else redirect_path
+    og_image_abs = (
+        f"{origin}/api/og/marketplace/{item_id}/image.svg"
+        if origin
+        else f"/api/og/marketplace/{item_id}/image.svg"
+    )
+
+    template = _jinja_env.get_template("market_og.html")
+    html = template.render(
+        title=title,
+        item_title=item_title,
+        type_label=type_label,
+        description=description,
+        colors=colors,
+        price_txt=price_txt,
+        price_amount=f"{float(item.get('price_brl')):.2f}" if price_txt else "",
+        currency=(item.get("currency") or "BRL"),
+        redirect_path=redirect_path,
+        redirect_abs=redirect_abs,
+        og_image_abs=og_image_abs,
+    )
+    return HTMLResponse(
+        content=html,
+        headers={"Cache-Control": "public, max-age=600, s-maxage=600"},
+    )
+
+
+@router.get("/marketplace/{item_id}/image.svg")
+async def og_marketplace_image_svg(item_id: str):
+    """Imagem OG (SVG) gerada a partir dos dados do item. 1200×630 para social."""
+    item = await db.marketplace_items.find_one({"id": item_id}, {"_id": 0}) or {}
+    item_title = (item.get("title") or "Marketplace LindArt").strip()[:60] or "Marketplace LindArt"
+    typ = (item.get("type") or "outro").lower()
+    type_label = _TYPE_LABELS.get(typ, "Item")
+    handle = item.get("handle")
+    author = f"@{handle}" if handle else "LindArt"
+    price_txt = _format_brl(item.get("price_brl"))
+    colors = _market_swatches(item) if item else list(_DEFAULT_PALETTE)
+    if not colors:
+        colors = list(_DEFAULT_PALETTE)
+
+    stops = "".join(
+        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
+        for i, c in enumerate(colors)
+    )
+    swatch_w = 1080 // max(1, len(colors))
+    swatches = "".join(
+        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
+        for i, c in enumerate(colors)
+    )
+
+    price_node = (
+        f'<text x="1140" y="260" text-anchor="end" font-size="48" font-weight="300" opacity="0.95">{_html_escape(price_txt)}</text>'
+        if price_txt
+        else ""
+    )
+
+    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
+  <rect width="1200" height="630" filter="url(#grain)"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
+    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · MARKETPLACE</text>
+    <text x="60" y="200" font-size="26" letter-spacing="4" opacity="0.75">{_html_escape(type_label.upper())}</text>
+    <text x="60" y="300" font-size="64" font-weight="300" letter-spacing="2">{_html_escape(item_title)}</text>
+    {price_node}
     <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
     <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
   </g>
