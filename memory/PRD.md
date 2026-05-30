@@ -16,6 +16,12 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P1 — Refactor Pricing.jsx + ShareSheet no Marketplace (DONE em iter 30-fork, 2026-02)
+- **Refactor `Pricing.jsx`**: 739 → **347 linhas** (sob a meta de 400). Dados estáticos extraídos para `/app/frontend/src/data/pricingPlans.js` (PLANS), `/app/frontend/src/data/pricingComparison.js` (COMPARISON) e `/app/frontend/src/data/pricingFaq.js` (FAQ). UI da tabela e do FAQ movida para componentes dedicados `/app/frontend/src/components/pricing/PricingComparison.jsx` e `PricingFAQ.jsx`. Removido código morto (`Cell`, `Minus`, `ChevronDown`, `openFaq`, `openGroup`). Zero regressão visual.
+- **`/app/frontend/src/components/ShareSheet.jsx`** (NOVO, 173 linhas): folha de compartilhamento reutilizável (portal-based, `role="dialog"` + `aria-modal`), com botões WhatsApp (`wa.me`), Instagram (Web Share API + fallback clipboard→instagram.com) e Copiar link (clipboard + toast `Link copiado`). Props: `{ open, onClose, url, title, description }`. Fechamento por X, backdrop e ESC implícito via React.
+- **`/app/frontend/src/pages/Marketplace.jsx`**: `ItemCard` agora exibe botão "Compartilhar" (ícone `Share2`, `data-testid="market-share-{itemId}"`, `aria-label="Compartilhar item"`) ao lado do CTA "Ver no site"; abre `ShareSheet` com URL `${REACT_APP_BACKEND_URL}/api/og/marketplace/{item_id}` (aproveita endpoints OG existentes para preview rico em WhatsApp/Instagram/redes).
+- **Testing agent frontend-only (iter 30)**: **21/21 (100%)**. Pricing /planos sem regressão; ShareSheet abre/fecha (X + backdrop), URL correto, WhatsApp/Instagram/Copy todos com testids, toast `Link copiado` validado.
+
 ### ✅ P0 — Página de Pricing /planos (DONE em iter 29-fork, 2026-02)
 - **`/app/frontend/src/pages/Pricing.jsx`** (739 linhas, NOVO): hero (Cormorant Garamond), toggle Mensal/Anual com aba Anual visualmente desabilitada (badge "Em breve" + tooltip "Plano anual com 20% de desconto chegando em breve"), 4 cards de planos (Livre R$0 / Essencial R$29/m / Pro R$67/m "Mais popular" / Studio R$127/m). Math de preços anuais hard-coded (Essencial 23, Pro 54, Studio 102) para ativação futura via flag `ANNUAL_ENABLED`. Tabela comparativa desktop + accordion mobile, 5 FAQs (primeira destaca "Livre é grátis para sempre, sem cartão"), CTA final com fundo escuro. Paleta creme/dourado, fonte Outfit/Cormorant Garamond.
 - **`/app/frontend/src/App.js`**: rota `/planos` adicionada.

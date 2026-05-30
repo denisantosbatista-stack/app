@@ -90,6 +90,9 @@ export default function ShareSheet({ open, onClose, url, title, description }) {
             onClick={(e) => e.stopPropagation()}
             className="w-full md:max-w-md bg-bone border border-gold/20 rounded-t-2xl md:rounded-sm shadow-2xl p-6 md:p-7"
             data-testid="share-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Compartilhar"
           >
             <div className="flex items-start justify-between gap-4 mb-5">
               <div className="min-w-0">
