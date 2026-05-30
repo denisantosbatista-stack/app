@@ -2,10 +2,18 @@ import { withAlpha, lighten, darken } from "@/utils/color";
 
 // SVG silhouettes for each piece, filled with palette gradients
 export default function PieceShape({ piece, palette, size = 320, animated = true }) {
-  const main = palette.colors[0]?.hex || "#fff";
-  const accent = palette.colors[1]?.hex || "#aaa";
-  const detail = palette.colors[2]?.hex || "#eee";
-  const veins = palette.colors[3]?.hex || "#D4AF37";
+  // Normaliza hex: trata vazio / "#000" / "#000000" como ausente
+  // para evitar blocos pretos quando a paleta não define a cor (ex.: "veios").
+  const safeHex = (hex, fallback) => {
+    const v = (hex || "").trim().toLowerCase();
+    if (!v || v === "#000" || v === "#000000") return fallback;
+    return hex;
+  };
+  const main = safeHex(palette.colors[0]?.hex, "#fff");
+  const accent = safeHex(palette.colors[1]?.hex, "#aaa");
+  const detail = safeHex(palette.colors[2]?.hex, "#eee");
+  // Veios: se ausente ou puro preto, cai para dourado neutro (não cria bloco preto).
+  const veins = safeHex(palette.colors[3]?.hex, "#D4AF37");
 
   const gradId = `g-${piece.id}`;
   const shadowId = `s-${piece.id}`;
