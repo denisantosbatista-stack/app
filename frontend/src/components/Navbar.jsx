@@ -1,22 +1,47 @@
-import { NavLink, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Sparkles, Download, Play } from "lucide-react";
+import { NavLink, Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Download, Play, ChevronDown, Menu, X } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useState, useRef, useEffect } from "react";
 
-const links = [
-  { to: "/", label: "Início", end: true },
-  { to: "/studio", label: "Studio" },
-  { to: "/mentora", label: "Mentoria", ai: true },
-  { to: "/trends", label: "Tendências", ai: true },
-  { to: "/collections", label: "Coleções", ai: true },
-  { to: "/feed", label: "Feed" },
-  { to: "/marketplace", label: "Marketplace" },
-  { to: "/challenges", label: "Desafios" },
-  { to: "/library", label: "Biblioteca" },
-  { to: "/mixer", label: "Mixer" },
-  { to: "/calculator", label: "Calculadora" },
-  { to: "/compare", label: "Comparar" },
-  { to: "/tips", label: "Técnicas" },
+// Grupos do menu — agrupa 14 itens em 4 dropdowns + 2 links diretos
+const NAV_GROUPS = [
+  {
+    id: "criar",
+    label: "Criar",
+    items: [
+      { to: "/studio", label: "Studio" },
+      { to: "/mixer", label: "Mixer" },
+      { to: "/calculator", label: "Calculadora" },
+    ],
+  },
+  {
+    id: "aprender",
+    label: "Aprender",
+    items: [
+      { to: "/mentora", label: "Mentora", ai: true },
+      { to: "/tips", label: "Técnicas" },
+      { to: "/library", label: "Biblioteca" },
+    ],
+  },
+  {
+    id: "comunidade",
+    label: "Comunidade",
+    items: [
+      { to: "/feed", label: "Feed" },
+      { to: "/challenges", label: "Desafios" },
+      { to: "/marketplace", label: "Marketplace" },
+    ],
+  },
+  {
+    id: "conta",
+    label: "Minha conta",
+    items: [
+      { to: "/collections", label: "Coleção", ai: true },
+      { to: "/compare", label: "Comparador" },
+      { to: "/privacy", label: "Privacidade" },
+    ],
+  },
 ];
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
@@ -46,7 +71,94 @@ async function handleDownloadSource() {
   }
 }
 
+function NavDropdown({ group }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const location = useLocation();
+  const groupActive = group.items.some((i) => location.pathname.startsWith(i.to));
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    function onClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      data-testid={`nav-group-${group.id}`}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 text-sm tracking-wide transition-colors duration-300 ${
+          groupActive || open ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
+        }`}
+        data-testid={`nav-group-btn-${group.id}`}
+      >
+        {group.label}
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+            className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-40"
+            data-testid={`nav-dropdown-${group.id}`}
+          >
+            <div className="min-w-[190px] glass-strong border border-black/[0.08] rounded-sm shadow-[0_12px_32px_rgba(0,0,0,0.10)] p-1.5">
+              {group.items.map((it) => (
+                <NavLink
+                  key={it.to}
+                  to={it.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 px-3 py-2 rounded-sm text-sm transition-colors duration-200 ${
+                      isActive
+                        ? "bg-gold/10 text-ink-text"
+                        : "text-zinc-700 hover:bg-gold/5 hover:text-ink-text"
+                    }`
+                  }
+                  data-testid={`nav-link-${it.to.replace("/", "") || "home"}`}
+                >
+                  {it.ai && (
+                    <span
+                      aria-hidden
+                      className="inline-block w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_6px_rgba(212,178,96,0.7)]"
+                    />
+                  )}
+                  {it.label}
+                </NavLink>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function Navbar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
   return (
     <motion.header
       initial={{ y: -30, opacity: 0 }}
@@ -68,72 +180,139 @@ export default function Navbar() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-5 lg:gap-7">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.end}
-              className={({ isActive }) =>
-                `text-sm tracking-wide transition-colors duration-300 relative inline-flex items-center gap-1.5 ${
-                  isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
-                }`
-              }
-              data-testid={`nav-link-${l.to.replace("/", "") || "home"}`}
-            >
-              {({ isActive }) => (
-                <>
-                  {l.ai && (
-                    <span
-                      aria-hidden
-                      className="inline-block w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_6px_rgba(212,178,96,0.7)]"
-                    />
-                  )}
-                  {l.label}
-                  {isActive && (
-                    <motion.span
-                      layoutId="nav-underline"
-                      className="absolute -bottom-2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent"
-                    />
-                  )}
-                </>
-              )}
-            </NavLink>
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `text-sm tracking-wide transition-colors duration-300 ${
+                isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
+              }`
+            }
+            data-testid="nav-link-home"
+          >
+            Início
+          </NavLink>
+          {NAV_GROUPS.map((g) => (
+            <NavDropdown key={g.id} group={g} />
           ))}
+          <NavLink
+            to="/trends"
+            className={({ isActive }) =>
+              `text-sm tracking-wide transition-colors duration-300 inline-flex items-center gap-1.5 ${
+                isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
+              }`
+            }
+            data-testid="nav-link-trends"
+          >
+            <span
+              aria-hidden
+              className="inline-block w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_6px_rgba(212,178,96,0.7)]"
+            />
+            Tendências
+          </NavLink>
         </nav>
 
-        <Link
-          to="/studio"
-          className="hidden md:inline-flex btn-gold px-5 py-2.5 rounded-sm text-xs tracking-[0.18em] uppercase"
-          data-testid="cta-studio-nav"
-        >
-          ✦ Criar Paleta
-        </Link>
+        <div className="hidden md:flex items-center gap-2">
+          <Link
+            to="/studio"
+            className="btn-gold px-5 py-2.5 rounded-sm text-xs tracking-[0.18em] uppercase"
+            data-testid="cta-studio-nav"
+          >
+            ✦ Criar Paleta
+          </Link>
+          <button
+            type="button"
+            onClick={handleDownloadSource}
+            title="Baixar código-fonte (.zip)"
+            aria-label="Baixar código-fonte do LindArt em ZIP"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-sm border border-zinc-300/70 text-zinc-700 hover:text-ink-text hover:border-gold hover:bg-gold/5 transition-colors text-[10px] tracking-[0.22em] uppercase"
+            data-testid="download-source-btn"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Código
+          </button>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("lindart:open-tour"))}
+            title="Ver tour interativo"
+            aria-label="Abrir tour interativo do LindArt"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-sm border border-zinc-300/70 text-zinc-700 hover:text-ink-text hover:border-gold hover:bg-gold/5 transition-colors text-[10px] tracking-[0.22em] uppercase"
+            data-testid="open-tour-btn"
+          >
+            <Play className="w-3.5 h-3.5" />
+            Tour
+          </button>
+        </div>
 
+        {/* Mobile menu trigger */}
         <button
           type="button"
-          onClick={handleDownloadSource}
-          title="Baixar código-fonte (.zip)"
-          aria-label="Baixar código-fonte do LindArt em ZIP"
-          className="hidden md:inline-flex items-center gap-2 ml-3 px-3 py-2 rounded-sm border border-zinc-300/70 text-zinc-700 hover:text-ink-text hover:border-gold hover:bg-gold/5 transition-colors text-[10px] tracking-[0.22em] uppercase"
-          data-testid="download-source-btn"
+          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-sm border border-black/10 text-ink-text"
+          onClick={() => setMobileOpen((v) => !v)}
+          aria-label="Abrir menu"
+          data-testid="mobile-menu-toggle"
         >
-          <Download className="w-3.5 h-3.5" />
-          Código
-        </button>
-
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new Event("lindart:open-tour"))}
-          title="Ver tour interativo"
-          aria-label="Abrir tour interativo do LindArt"
-          className="hidden md:inline-flex items-center gap-2 ml-2 px-3 py-2 rounded-sm border border-zinc-300/70 text-zinc-700 hover:text-ink-text hover:border-gold hover:bg-gold/5 transition-colors text-[10px] tracking-[0.22em] uppercase"
-          data-testid="open-tour-btn"
-        >
-          <Play className="w-3.5 h-3.5" />
-          Tour
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="md:hidden border-t border-black/[0.06] bg-bone/95 backdrop-blur-md overflow-hidden"
+            data-testid="mobile-menu"
+          >
+            <div className="px-6 py-4 space-y-4">
+              <NavLink
+                to="/"
+                end
+                className="block text-sm tracking-wide text-zinc-700"
+                data-testid="mobile-nav-link-home"
+              >
+                Início
+              </NavLink>
+              <NavLink
+                to="/trends"
+                className="block text-sm tracking-wide text-zinc-700 inline-flex items-center gap-1.5"
+                data-testid="mobile-nav-link-trends"
+              >
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-gold" />
+                Tendências
+              </NavLink>
+              {NAV_GROUPS.map((g) => (
+                <div key={g.id} className="space-y-1.5">
+                  <div className="text-[10px] tracking-[0.22em] uppercase text-gold">{g.label}</div>
+                  <div className="pl-3 space-y-1.5 border-l border-gold/30">
+                    {g.items.map((it) => (
+                      <NavLink
+                        key={it.to}
+                        to={it.to}
+                        className="block text-sm text-zinc-700 hover:text-ink-text"
+                        data-testid={`mobile-nav-link-${it.to.replace("/", "") || "home"}`}
+                      >
+                        {it.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <Link
+                to="/studio"
+                className="btn-gold inline-flex px-5 py-2.5 rounded-sm text-xs tracking-[0.18em] uppercase"
+                data-testid="mobile-cta-studio"
+              >
+                ✦ Criar Paleta
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
