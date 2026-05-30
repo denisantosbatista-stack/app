@@ -11,6 +11,7 @@ const links = [
   { to: "/collections", label: "Coleções", ai: true },
   { to: "/feed", label: "Feed" },
   { to: "/marketplace", label: "Marketplace" },
+  { to: "/challenges", label: "Desafios" },
   { to: "/library", label: "Biblioteca" },
   { to: "/mixer", label: "Mixer" },
   { to: "/calculator", label: "Proporções" },

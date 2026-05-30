@@ -12,6 +12,7 @@ import {
   Layers,
   Rss,
   ShoppingBag,
+  Trophy,
 } from "lucide-react";
 
 // Mobile mostra TODAS as abas em scroll horizontal com fade lateral indicando
@@ -25,6 +26,7 @@ const items = [
   { to: "/collections", icon: Layers, label: "Coleções", ai: true },
   { to: "/feed", icon: Rss, label: "Feed" },
   { to: "/marketplace", icon: ShoppingBag, label: "Market" },
+  { to: "/challenges", icon: Trophy, label: "Desafios" },
   { to: "/library", icon: Heart, label: "Salvos" },
   { to: "/mixer", icon: Beaker, label: "Mixer" },
   { to: "/calculator", icon: Ruler, label: "Proporções" },

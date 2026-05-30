@@ -14,6 +14,7 @@ import Trends from "@/pages/Trends";
 import Collections from "@/pages/Collections";
 import Feed from "@/pages/Feed";
 import Marketplace from "@/pages/Marketplace";
+import Challenges from "@/pages/Challenges";
 import PublicProfile from "@/pages/PublicProfile";
 import PublicDNAPage from "@/pages/PublicDNAPage";
 import OpeningTour from "@/components/OpeningTour";
@@ -57,6 +58,7 @@ function App() {
           <Route path="/collections" element={<Collections />} />
           <Route path="/feed" element={<Feed />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/challenges" element={<Challenges />} />
           <Route path="/u/:handle" element={<PublicProfile />} />
         </Routes>
       </main>
