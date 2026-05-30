@@ -1,0 +1,47 @@
+{
+  "summary": "P2 refactor verified: SubmitChallengeModal extracted to /app/frontend/src/components/SubmitChallengeModal.jsx as pure controlled component {isOpen,onClose,onSubmit,themeColor} with NO internal fetch. Parent (ChallengeDetailModal inside Challenges.jsx) owns showSubmit state and performs POST /api/challenges/{id}/submissions via handleSubmitChallenge passed as onSubmit prop. All 10 acceptance criteria pass.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Contract correctly enforced: SubmitChallengeModal.jsx receives only {isOpen,onClose,onSubmit,themeColor}. Grep confirms zero 'fetch'/'/api/' usages inside the modal file. Form, file→base64 conversion, palette hex parsing, submitting state and resetForm() remain as presentation/UI concerns; POST is owned by the parent via onSubmit(payload). Matches the requested dumb-component separation.",
+    "ChallengeDetailModal.handleSubmitChallenge (Challenges.jsx:295-317) calls fetch(`${API_BASE}/api/challenges/${challengeId}/submissions`) with Authorization Bearer from localStorage, throws on !res.ok (so child can toast the message), prepends created submission to detail.submissions, closes modal via setShowSubmit(false) and toasts success — correct.",
+    "Auth gating works: handleOpenSubmit (Challenges.jsx:286-293) checks isAuthenticated and navigates to /login with toast — verified via UI redirect.",
+    "No leftover embedded SubmitModal in Challenges.jsx (grep for 'function SubmitModal'/'const SubmitModal' returns empty).",
+    "Regression OK: vote endpoint POST /api/challenges/{id}/submissions/{subId}/vote still fires from the submission card and votes counter updates."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (skipped per request)", "frontend": "100%" },
+  "test_credentials": "teste@lindart.app / Teste#2026 (from /app/memory/test_credentials.md). Token stored at localStorage 'lindart.auth.token'. Onboarding bypass: lindart.onboarding.v1.completed=1, lindart.tour.v1.seen=1.",
+  "seed_data_creation": "Created 1 challenge submission via UI in challenge '1771b5871c8b' (Oceano Mineral): caption=TEST_p2_refactor submission, palette=[#1b3a4b,#f4f1ea], image=1x1 PNG base64. Initial submissions=4 → final=5. Also incremented votes on first submission via challenge-vote-* regression check.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P2 refactor verified end-to-end. Network listener captured: 0 POSTs on close-X and Cancel-without-submit; 0 POSTs when submitting without image (toast 'Imagem é obrigatória' shown, modal stays open); exactly 1 POST /api/challenges/1771b5871c8b/submissions (status 200) when submitting with valid image — call originated from PARENT (Challenges.jsx > ChallengeDetailModal > handleSubmitChallenge), confirming child has no internal fetch. After success: modal closed (data-testid challenge-submit-modal removed from DOM), submission appended to gallery (count 4→5), toast 'Peça enviada! Boa sorte ✦' shown. Unauth flow: clicking challenge-open-submit while logged out redirected to /login with toast. Vote regression: POST /api/challenges/{id}/submissions/{subId}/vote still works. To reproduce: login via /api/auth/login, write access_token to localStorage 'lindart.auth.token', set onboarding flags, navigate /challenges, wait ~2.5s for AuthContext rehydrate, click first challenge-card-*, then challenge-open-submit.",
+  "playwright_test_evidence": {
+    "login_status": 200,
+    "login_token_present": true,
+    "challenges_page_visible": true,
+    "challenge_cards_count": 2,
+    "detail_modal_opens": true,
+    "unauth_redirected_to_login": true,
+    "submit_modal_opens_when_authed": true,
+    "modal_closed_via_X": true,
+    "no_api_call_on_close_X": true,
+    "modal_closed_via_Cancel": true,
+    "no_api_call_on_cancel": true,
+    "submit_without_image_toast": "Imagem é obrigatória",
+    "no_api_call_on_submit_without_image": true,
+    "modal_stays_open_on_validation_error": true,
+    "real_submit_post_url": "POST /api/challenges/1771b5871c8b/submissions",
+    "real_submit_status": 200,
+    "modal_closed_after_successful_submit": true,
+    "initial_submissions": 4,
+    "final_submissions": 5,
+    "vote_regression_post_url": "POST /api/challenges/1771b5871c8b/submissions/bd23ec1f73fe/vote"
+  }
+}
