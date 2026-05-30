@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -532,8 +532,8 @@ export default function Pricing() {
               </thead>
               <tbody>
                 {COMPARISON.map((group) => (
-                  <>
-                    <tr key={`g-${group.group}`} className="bg-gold/[0.04] border-b border-black/[0.04]">
+                  <React.Fragment key={group.group}>
+                    <tr className="bg-gold/[0.04] border-b border-black/[0.04]">
                       <td colSpan={5} className="py-3 px-5">
                         <div className="flex items-center gap-2 text-[11px] tracking-[0.22em] uppercase text-gold-deep">
                           <group.icon className="w-3.5 h-3.5" />
@@ -555,7 +555,7 @@ export default function Pricing() {
                         <td className="py-3.5 px-3 text-center"><Cell value={row.studio} /></td>
                       </tr>
                     ))}
-                  </>
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

@@ -16,6 +16,14 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P0 — Página de Pricing /planos (DONE em iter 29-fork, 2026-02)
+- **`/app/frontend/src/pages/Pricing.jsx`** (739 linhas, NOVO): hero (Cormorant Garamond), toggle Mensal/Anual com aba Anual visualmente desabilitada (badge "Em breve" + tooltip "Plano anual com 20% de desconto chegando em breve"), 4 cards de planos (Livre R$0 / Essencial R$29/m / Pro R$67/m "Mais popular" / Studio R$127/m). Math de preços anuais hard-coded (Essencial 23, Pro 54, Studio 102) para ativação futura via flag `ANNUAL_ENABLED`. Tabela comparativa desktop + accordion mobile, 5 FAQs (primeira destaca "Livre é grátis para sempre, sem cartão"), CTA final com fundo escuro. Paleta creme/dourado, fonte Outfit/Cormorant Garamond.
+- **`/app/frontend/src/App.js`**: rota `/planos` adicionada.
+- **`/app/frontend/src/components/Navbar.jsx`**: link "Ver planos" no dropdown "Minha conta" (`data-testid="nav-link-planos"`) + no menu hambúrguer mobile (`data-testid="mobile-nav-link-planos"`).
+- **`/app/frontend/src/components/MobileNav.jsx`**: revisado — barra inferior intencionalmente sem entrada de planos (entrada mobile fica no hambúrguer do Navbar).
+- **Testing agent frontend-only (iter 29)**: 17/17 (100%). Todos data-testids validados, tooltip do toggle Anual funciona ao hover, responsividade mobile OK.
+- **Fix pós-teste**: substituído fragmento `<>...</>` por `<React.Fragment key=...>` no `.map` de COMPARISON para eliminar warning de chave React (lint OK).
+
 ### ✅ P3 — Open Graph Marketplace endpoints (DONE em iter 28-fork, 2026-02)
 - **`/app/backend/routers/og.py`** (+~180 linhas): adicionados `GET /api/og/marketplace/{item_id}` (HTML Jinja2 com `og:*`/`twitter:*`/`product:price:*`, redirect humano para `/marketplace`, Cache-Control `max-age=600`) e `GET /api/og/marketplace/{item_id}/image.svg` (SVG 1200×630 com swatches, título do item, tipo, preço BRL, `@handle`; Cache-Control `max-age=86400`).
 - **Swatches (opção b)**: regex `#[0-9a-fA-F]{6}` extrai hexes embutidos em `tags`; fallback curado por `type` quando há <3 cores (`molde`→amadeirado, `curso`→quente, `preset`→frio, `default`→âmbar/areia/marfim).
