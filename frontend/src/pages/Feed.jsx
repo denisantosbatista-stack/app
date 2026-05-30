@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Heart, Plus, Loader2, X, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
+import { Field } from "../components/ui/Field";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const LIKED_KEY = "lindart.feed.liked.v1";
@@ -552,28 +553,4 @@ function CreatePostModal({ onClose, onCreated, user }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder, multiline, testId }) {
-  return (
-    <label className="block">
-      <span className="text-[10px] tracking-[0.22em] uppercase text-zinc-500">{label}</span>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={3}
-          className="block w-full mt-1.5 bg-ink-surface border border-black/[0.08] rounded-sm px-3 py-2 text-sm text-zinc-900 focus:border-gold focus:outline-none"
-          data-testid={testId}
-        />
-      ) : (
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="block w-full mt-1.5 bg-ink-surface border border-black/[0.08] rounded-sm px-3 py-2 text-sm text-zinc-900 focus:border-gold focus:outline-none"
-          data-testid={testId}
-        />
-      )}
-    </label>
-  );
-}
+// Field component centralized in /components/ui/Field.jsx
