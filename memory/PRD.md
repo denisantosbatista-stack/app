@@ -16,6 +16,13 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P1.5 — Modais "burros" (contrato controlado) (DONE em iter 24-fork, 2026-02)
+- **`CreatePostModal.jsx`** e **`CreateItemModal.jsx`** refatorados para contrato estrito: props apenas `{ isOpen, onClose, onSubmit }`. AnimatePresence interno. Sem `fetch` interno — apenas chamam `onSubmit(payload)` com os dados do formulário.
+- **`Feed.jsx`**: agora gerencia `showCreate` e implementa `onSubmit` fazendo `POST ${API_BASE}/api/feed` com `authHeaders()`. Em sucesso, prepende o novo post no state e fecha o modal. `useAuth` agora extrai `authHeaders` (não mais `user`). `AnimatePresence` removido do JSX (modal cuida disso).
+- **`Marketplace.jsx`**: mesma estrutura — `onSubmit` faz `POST ${API_BASE}/api/marketplace`, prepende item e fecha modal.
+- Correção importante: endpoints reais são `/api/feed` e `/api/marketplace` (não `/api/feed/posts` nem `/api/marketplace/items` como mencionado na conversa).
+- Testing agent (iter 24-fork): **100%** — 10/10 critérios. Network listener confirmou exatamente 1 `POST /api/feed` + 1 `POST /api/marketplace` apenas no submit; close via X/Cancel = 0 calls. Modal fecha após sucesso, item aparece no topo. Zero regressões.
+
 ### ✅ P1 — Extração de modais Feed/Marketplace (DONE em iter 23-fork, 2026-02)
 - **`/app/frontend/src/components/CreatePostModal.jsx`** (novo, default export): modal de novo post extraído de `Feed.jsx`. Props: `user`, `onClose`, `onCreated`. Mantém auth Bearer (`lindart.auth.token`), FileReader 4MB guard, parsing de tags/paleta hex, todos os `data-testid="feed-create-*"` originais.
 - **`/app/frontend/src/components/CreateItemModal.jsx`** (novo, default export): modal de novo item extraído de `Marketplace.jsx`. Props: `user`, `onClose`, `onCreated`. Mantém categorias TYPES locais, parsing de preço BRL, todos os `data-testid="market-create-*"` originais (inclui 6 chips de tipo).
