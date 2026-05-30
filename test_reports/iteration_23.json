@@ -1,0 +1,39 @@
+{
+  "summary": "Frontend regression test for P1 refactor: extraction of CreatePostModal (Feed) and CreateItemModal (Marketplace) to standalone components. Logged in as teste@lindart.app, exercised both /feed and /marketplace pages, opened the extracted modals, verified ALL required data-testids render, validated open/close (cancel + X) flows, validated marketplace type-chip activation, and smoke-tested GET /api/feed and GET /api/marketplace. No regressions detected — behavior is identical to pre-refactor baseline.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "CreatePostModal.jsx and CreateItemModal.jsx are clean default exports with the expected props (user, onClose, onCreated). Logic preserved (auth-token header, FileReader 4MB guard, hex palette parsing, optional fields).",
+    "Both files use process.env.REACT_APP_BACKEND_URL and TOKEN_KEY constant — consistent with the rest of the app.",
+    "Suggestion (non-blocking): the TYPES array in CreateItemModal could be moved to a shared constants module if the same list is referenced in Marketplace.jsx — not part of this refactor's scope.",
+    "Suggestion (non-blocking): both modals duplicate handleFile and the base64 image preview pattern; could be extracted into a useImageUpload hook in a future P2 pass."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "n/a (skipped)", "frontend": "100%" },
+  "test_credentials": "teste@lindart.app / Teste#2026 (from /app/memory/test_credentials.md). Onboarding bypass: localStorage 'lindart.onboarding.v1.completed'=1 and 'lindart.tour.v1.seen'=1 set BEFORE navigating to /login (must be set in-origin first, otherwise OnboardingFlow overlay intercepts clicks).",
+  "seed_data_creation": "None. Existing marketplace seed item TEST_e2e_market_item observed (count=1). Feed list count=0.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Refactor P1 (modal extraction) verified end-to-end. All 9 feed-create-* and all 17 market-create-* (including 6 type chips) data-testids render correctly inside the extracted modals. Open via feed-open-create / market-open-create, close via *-cancel or *-close. Important: when navigating between authenticated pages with networkidle wait, allow ~2.5s for AuthContext to re-hydrate before clicking auth-gated buttons (otherwise the create buttons redirect to /login). GET /api/feed and GET /api/marketplace both return 200.",
+  "playwright_test_evidence": {
+    "login_token_present": true,
+    "feed_page_loaded": true,
+    "feed_modal_opened": true,
+    "feed_modal_missing_testids": [],
+    "feed_modal_closed_via_cancel": true,
+    "feed_modal_closed_via_x": true,
+    "market_page_loaded": true,
+    "market_modal_opened": true,
+    "market_modal_missing_testids": [],
+    "market_chip_curso_active": true,
+    "market_modal_closed_via_cancel": true,
+    "GET_/api/feed": { "status": 200, "ok": true, "count": 0 },
+    "GET_/api/marketplace": { "status": 200, "ok": true, "count": 1 }
+  }
+}
