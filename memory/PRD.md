@@ -16,6 +16,11 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P2 — Extração SubmitChallengeModal (DONE em iter 25-fork, 2026-02)
+- **`/app/frontend/src/components/SubmitChallengeModal.jsx`** (novo, default export): componente controlado puro com contrato estrito `{ isOpen, onClose, onSubmit, themeColor }`. `AnimatePresence` interno. Sem `fetch` interno — apenas valida (imagem obrigatória, handle do usuário via `useAuth`), parseia hex da paleta e chama `onSubmit(payload)` com `{ caption, image_base64, palette_colors }`. Mantém todos os `data-testid="challenge-submit-*"` originais.
+- **`Challenges.jsx`** (`ChallengeDetailModal`): agora possui `handleSubmitChallenge(payload)` que faz `POST ${API_BASE}/api/challenges/${challengeId}/submissions` com `Authorization: Bearer` do `localStorage`. Em sucesso, prepende a submission criada em `detail.submissions`, fecha o modal e dispara toast. Função `SubmitModal` antiga embutida (≈180 linhas) e imports `Field`, `Image as ImageIcon` removidos.
+- Testing agent (iter 25-fork): **100%** — 10/10 critérios. Network listener confirmou exatamente 1 `POST /api/challenges/{id}/submissions` 200 no submit válido (chamada originada do PAI), 0 calls em close-X/Cancel/submit-sem-imagem. Modal fecha após sucesso, submissão entra na galeria (4→5), toast "Peça enviada!" exibido. Auth gating (redirect /login) e regressão de vote validados.
+
 ### ✅ P1.5 — Modais "burros" (contrato controlado) (DONE em iter 24-fork, 2026-02)
 - **`CreatePostModal.jsx`** e **`CreateItemModal.jsx`** refatorados para contrato estrito: props apenas `{ isOpen, onClose, onSubmit }`. AnimatePresence interno. Sem `fetch` interno — apenas chamam `onSubmit(payload)` com os dados do formulário.
 - **`Feed.jsx`**: agora gerencia `showCreate` e implementa `onSubmit` fazendo `POST ${API_BASE}/api/feed` com `authHeaders()`. Em sucesso, prepende o novo post no state e fecha o modal. `useAuth` agora extrai `authHeaders` (não mais `user`). `AnimatePresence` removido do JSX (modal cuida disso).
