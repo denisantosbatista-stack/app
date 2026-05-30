@@ -20,6 +20,31 @@ from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, ConfigDict, Field
 
+
+# ============================================================
+# Modelos Pydantic compartilhados (Palette, ColorSwatch)
+# Usados por ai.py (geração) e palettes.py (CRUD).
+# ============================================================
+class ColorSwatch(BaseModel):
+    hex: str
+    name: str
+    role: str  # principal | acento | detalhe | veios
+
+
+class Palette(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = ""
+    colors: List[ColorSwatch]
+    style: Optional[str] = "classic"
+    tags: List[str] = []
+    favorite: bool = False
+    source: str = "user"  # user | ai | preset
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = ROOT_DIR / "static_assets"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
