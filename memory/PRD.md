@@ -16,6 +16,15 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P2 — Backend Technical Cleanup (lifespan + system router + Pydantic shadow fix) (DONE em iter 32-fork, 2026-02)
+- **`/app/backend/server.py`**: **209 → 93 linhas** (–55%). Migrado `@app.on_event("startup")` + `@app.on_event("shutdown")` para `@asynccontextmanager async def lifespan(app)` passado como `FastAPI(lifespan=lifespan)`. `init_auth()` roda no startup, `client.close()` no shutdown (em bloco `finally`). Movidas as rotas `GET /api/` e `GET /api/download/source` (+ helpers `_should_skip`, `_build_source_zip`, constantes `_ZIP_*`) para o novo router. Server.py agora carrega env, configura logging, registra routers, monta `/api/static` e adiciona CORS — nada de lógica de negócio.
+- **`/app/backend/routers/system.py`** (132 linhas, NOVO): `APIRouter(prefix="/api", tags=["system"])` com `GET /` (healthcheck) e `GET /download/source` (ZIP do código-fonte sem segredos — exclui `node_modules`, `.git`, `__pycache__`, `.env*`).
+- **`/app/backend/routers/challenges.py`**: removida `@property def status` em `Challenge` (era redundante com `_status_for`). `ChallengeOut.status: str = "active"` agora é um campo Pydantic puro sem `UserWarning: Field name "status" in "ChallengeOut" shadows an attribute in parent "Challenge"`. Cálculo do status segue via `_status_for(starts_at, ends_at)` em list/detail.
+- **Logs limpos**: após restart, `backend.err.log` mostra apenas `Application startup complete.` — zero deprecation/shadow warnings.
+- **Testing agent backend-only (iter 32)**: **11/11 (100%)**. Suite `/app/backend/tests/test_p2_system_lifespan_refactor.py` cobre `/api/` healthcheck, ZIP download (content-type, content-disposition, integridade do zip, exclusão de `node_modules`/`.git`/`.env`/`__pycache__`), `/api/challenges` list+detail com campo `status`, smoke em `/api/feed`, `/api/marketplace`, `/api/palettes`, `/api/og/marketplace/{id}`, login seed admin (valida `init_auth` rodou pelo lifespan) e auto-geração de handle em `POST /api/auth/register`.
+
+
+
 ### ✅ P1 — Botão "Compartilhar" no Feed (DONE em iter 31-fork, 2026-02)
 - **`/app/frontend/src/pages/Feed.jsx`** `PostCard`: novo botão ícone (`Share2`) sobre a imagem, posição inferior-esquerda, simétrico ao botão de like. `data-testid="feed-share-{post.id}"`, `aria-label="Compartilhar post"`. Abre o **mesmo** `ShareSheet` reutilizável com URL `${REACT_APP_BACKEND_URL}/feed#post-{post.id}` (preview rico usa as og tags raiz; OG endpoint dedicado por post fica como melhoria P2 futura).
 - Pequena melhoria de a11y aplicada no `ShareSheet`: `role="dialog"` + `aria-modal="true"` + `aria-label="Compartilhar"`.
