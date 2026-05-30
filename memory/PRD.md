@@ -16,6 +16,14 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P3 — Open Graph Marketplace endpoints (DONE em iter 28-fork, 2026-02)
+- **`/app/backend/routers/og.py`** (+~180 linhas): adicionados `GET /api/og/marketplace/{item_id}` (HTML Jinja2 com `og:*`/`twitter:*`/`product:price:*`, redirect humano para `/marketplace`, Cache-Control `max-age=600`) e `GET /api/og/marketplace/{item_id}/image.svg` (SVG 1200×630 com swatches, título do item, tipo, preço BRL, `@handle`; Cache-Control `max-age=86400`).
+- **Swatches (opção b)**: regex `#[0-9a-fA-F]{6}` extrai hexes embutidos em `tags`; fallback curado por `type` quando há <3 cores (`molde`→amadeirado, `curso`→quente, `preset`→frio, `default`→âmbar/areia/marfim).
+- **404**: HTML básico com og:title "Item não encontrado" + meta refresh para `/marketplace`. SVG retorna 200 com paleta default (intencional — crawlers não quebram).
+- **`/app/backend/templates/market_og.html`** (novo): template dedicado com `og:type=product`, twitter card e `product:price:*` condicional.
+- **Testing agent backend-only (iter 28)**: 19/19 (100%). Suite `/app/backend/tests/test_og_marketplace.py` cobre HTML, SVG, regex de swatches, 4 fallbacks por type, 404 HTML/SVG, regressão DNA e smoke das rotas principais. Sem regressões.
+- **Issue minor (infra, fora de escopo)**: ingress público reescreve `Cache-Control` para `no-store`; app emite headers corretos em `localhost:8001`. Avaliar futuramente.
+
 ### ✅ P2 — Backend Modularization Phase 2 Step 2: Palettes + DNA Share router (DONE em iter 27-fork, 2026-02)
 - **`/app/backend/server.py`**: 340 → 209 linhas (–131). Removidos `ColorSwatch`, `Palette`, `PaletteCreate`, `PaletteUpdate`, `DNAShareIn` e todas as rotas `/api/palettes/*` + `/api/dna/share*`. Mantém apenas: `/api/` root, `/api/download/source`, montagem de `/api/static` e bootstrap (CORS, routers, lifespan).
 - **`/app/backend/routers/palettes.py`** (139 linhas, NOVO): `APIRouter(prefix="/api", tags=["palettes"])` com GET/POST/PATCH/DELETE `/palettes`, POST/GET `/dna/share`. Reusa `Palette`/`ColorSwatch`/`db`/`normalize_handle` de `_shared.py`.
