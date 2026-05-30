@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, Plus, Loader2, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck } from "lucide-react";
+import { Heart, Plus, Loader2, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck, Share2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import CreatePostModal from "../components/CreatePostModal";
+import ShareSheet from "../components/ShareSheet";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const LIKED_KEY = "lindart.feed.liked.v1";
@@ -341,6 +342,8 @@ function EmptyState({ onCreate }) {
 
 function PostCard({ post, liked, onLike }) {
   const colors = post.palette_colors || [];
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareUrl = `${API_BASE}/feed#post-${post.id}`;
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
@@ -365,6 +368,16 @@ function PostCard({ post, liked, onLike }) {
         >
           <Heart className={`w-3.5 h-3.5 ${liked ? "fill-gold" : ""}`} />
           {post.likes || 0}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          aria-label="Compartilhar post"
+          title="Compartilhar"
+          className="absolute bottom-2 left-2 inline-flex items-center justify-center backdrop-blur-md bg-black/40 text-white p-1.5 rounded-full border border-white/10 hover:bg-black/60 hover:text-gold transition-colors"
+          data-testid={`feed-share-${post.id}`}
+        >
+          <Share2 className="w-3.5 h-3.5" />
         </button>
       </div>
       <div className="p-3">
@@ -401,6 +414,14 @@ function PostCard({ post, liked, onLike }) {
           )}
         </div>
       </div>
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={shareUrl}
+        title={post.title}
+        description={post.description || `Post de @${post.handle} no LindArt`}
+      />
     </motion.article>
   );
 }
