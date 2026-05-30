@@ -345,12 +345,8 @@ async def onboarding_generate_welcome_video(background_tasks: BackgroundTasks):
     em `/app/backend/static_assets/onboarding-welcome.mp4` antes.
     """
     global _WELCOME_JOB
-    if not _fal_key():
-        raise HTTPException(
-            status_code=503,
-            detail="FAL_KEY não configurada (https://fal.ai/dashboard/keys).",
-        )
-
+    # Reorder: check existing file / running job BEFORE FAL_KEY — idempotência
+    # garante 200 mesmo sem FAL_KEY configurada quando o vídeo já foi gerado.
     if WELCOME_VIDEO_PATH.exists() and WELCOME_VIDEO_PATH.stat().st_size > 0:
         return {
             "already_exists": True,
@@ -358,6 +354,12 @@ async def onboarding_generate_welcome_video(background_tasks: BackgroundTasks):
         }
     if _WELCOME_JOB.get("status") == "processing":
         return {"status": "processing", "started_at": _WELCOME_JOB.get("started_at")}
+
+    if not _fal_key():
+        raise HTTPException(
+            status_code=503,
+            detail="FAL_KEY não configurada (https://fal.ai/dashboard/keys).",
+        )
 
     _WELCOME_JOB = {
         "status": "processing",

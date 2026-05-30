@@ -16,6 +16,12 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P1 — Fix FAL_KEY check order (DONE em iter 26-fork, 2026-02)
+- **`/app/backend/routers/svd_video.py`** (`POST /api/onboarding/generate-welcome-video`): reordenadas as checagens. Agora a ordem é: 1) arquivo `WELCOME_VIDEO_PATH` já existe no disco → `200 {already_exists:true, url:...}`; 2) `_WELCOME_JOB.status == "processing"` → 200 processing; 3) só então `_fal_key()` → 503 se ausente.
+- **Motivação**: antes, mesmo com o vídeo institucional já gerado e salvo em `/app/backend/static_assets/onboarding-welcome.mp4`, o endpoint retornava 503 quando `FAL_KEY` não estava no `.env`. Agora a idempotência é honrada.
+- **`/app/backend/tests/test_refactor_og_svd.py`**: ajustado `test_generate_welcome_video_behavior` para refletir o novo contrato (checa disco antes via `Path`). Import `Path` adicionado.
+- **Validação curl**: cenário 1 (sem FAL_KEY + sem arquivo) → 503 ✓; cenário 2 (sem FAL_KEY + arquivo presente) → 200 `already_exists:true` ✓; cenário 3 (cleanup) → 503 ✓. Pytest `TestOnboardingWelcomeVideo`: 2/2 passed.
+
 ### ✅ P2 — Extração SubmitChallengeModal (DONE em iter 25-fork, 2026-02)
 - **`/app/frontend/src/components/SubmitChallengeModal.jsx`** (novo, default export): componente controlado puro com contrato estrito `{ isOpen, onClose, onSubmit, themeColor }`. `AnimatePresence` interno. Sem `fetch` interno — apenas valida (imagem obrigatória, handle do usuário via `useAuth`), parseia hex da paleta e chama `onSubmit(payload)` com `{ caption, image_base64, palette_colors }`. Mantém todos os `data-testid="challenge-submit-*"` originais.
 - **`Challenges.jsx`** (`ChallengeDetailModal`): agora possui `handleSubmitChallenge(payload)` que faz `POST ${API_BASE}/api/challenges/${challengeId}/submissions` com `Authorization: Bearer` do `localStorage`. Em sucesso, prepende a submission criada em `detail.submissions`, fecha o modal e dispara toast. Função `SubmitModal` antiga embutida (≈180 linhas) e imports `Field`, `Image as ImageIcon` removidos.

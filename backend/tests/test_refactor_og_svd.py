@@ -7,6 +7,7 @@ and that the remaining (non-moved) routes in server.py still work.
 import os
 import re
 import time
+from pathlib import Path
 
 import pytest
 import requests
@@ -158,14 +159,19 @@ class TestOnboardingWelcomeVideo:
 
     def test_generate_welcome_video_behavior(self):
         r = requests.post(f"{API}/onboarding/generate-welcome-video", timeout=15)
-        if FAL_KEY_SET:
+        # Idempotência: se o vídeo já foi gerado no disco, retorna 200 com
+        # already_exists=True independente do FAL_KEY estar setado (fix iter 26).
+        video_path = Path("/app/backend/static_assets/onboarding-welcome.mp4")
+        already_on_disk = video_path.exists() and video_path.stat().st_size > 0
+        if already_on_disk:
+            assert r.status_code == 200, r.text[:300]
+            assert r.json().get("already_exists") is True
+        elif FAL_KEY_SET:
             assert r.status_code == 200
             data = r.json()
-            # ou já existe, ou está processing
             assert "already_exists" in data or data.get("status") in ("processing",)
         else:
-            # se vídeo já existe, retorna 200 com already_exists antes do check de FAL_KEY?
-            # Atualmente o código checa FAL_KEY antes de checar arquivo → 503 quando ausente.
+            # Sem FAL_KEY e sem vídeo no disco → 503 com mensagem clara
             assert r.status_code == 503, r.text[:300]
             err = r.json().get("detail", "")
             assert "FAL_KEY" in err
