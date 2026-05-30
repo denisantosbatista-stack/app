@@ -164,6 +164,9 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Testing agent iter18: backend 6/6 pytest 100%, frontend smoke 100%, console limpo
 
 ### 🟢 P2 — Backlog
+- [ ] **(P4) Versionamento de Paleta** — backend (histórico de mudanças por palette_id, endpoint GET/POST `/api/palettes/{id}/versions`) + frontend (UI para listar/restaurar versões em Studio/PaletteCard).
+- [ ] **(P4) Pricing "Antes/Depois Pro"** — visualização comparativa na página `/planos` (e.g., paletas/feed com vs sem Pro) para aumentar conversão.
+- [ ] **(P3) Refator final og.py** — `og_profile_image_svg` (linha 643) ainda reimplementa stops/swatches inline; migrar para `_build_og_palette_svg(extras_svg=stats_line)` para eliminar última duplicação.
 - [ ] **Challenge System** — temas semanais com submissões da comunidade (POST/vote já protegidos por JWT)
 - [x] ~~Auth real~~ — feito em iter20 (JWT)
 - [x] ~~Proteger endpoints de escrita (feed/marketplace/challenges) com Bearer~~ — feito em iter21
@@ -199,6 +202,13 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
+**Iter 36 (2026-02)** — Refator `og.py` (DRY) + OG Profile completo + OnboardingFlow desbloqueado em rotas públicas:
+1. Backend `/app/backend/routers/og.py`: extraídos helpers `_og_404_html(title, message, redirect_path)` e `_build_og_palette_svg(palette, title, subtitle, footer_left, footer_right, extras_svg, title_size, title_y, subtitle_y, subtitle_size)` reutilizados nas 4 famílias de rotas OG (DNA, Marketplace, Feed, Profile). Reduzida duplicação significativa de strings HTML 404 e blocos SVG inline. Parametrizado `og:image:alt` em `dna_og.html` (DNA: "X — DNA Visual em resina"; Feed: "X — Post no feed LindArt"; Profile: "Paleta assinatura de @h no LindArt").
+2. Backend novas rotas: `GET /api/og/profile/{handle}` (HTML c/ tags og:* + descrição baseada em estatísticas de posts/marketplace, redirect humano para `/u/{handle}`) + `GET /api/og/profile/{handle}/image.svg` (SVG 1200×630 com paleta assinatura agregada das últimas 24 posts/dnas/items do usuário, 24h cache). Helpers `_profile_signature_palette` e `_profile_summary` agregam dados de `feed_posts` + `marketplace_items` + `palettes`.
+3. Frontend `/app/frontend/src/App.js` + `/app/frontend/src/components/OpeningTour.jsx`: corrigido bug crítico — `OnboardingFlow` bloqueava visitantes anônimos em rotas públicas (`/u/{handle}`, `/feed`, etc). Agora ele só dispara para sessões autenticadas com flag de primeiro acesso, liberando preview de links compartilhados.
+4. Frontend `/app/frontend/src/pages/PublicProfile.jsx` + `Feed.jsx`: ShareSheet conectado às novas URLs OG (`/api/og/profile/{handle}` e `/api/og/feed/{post_id}`).
+Testing agent v3 iter 36: backend 12/12 pytest (`test_og_refactor.py` cobre 404 helper + SVG palette helper nas 4 rotas, regressão DNA/Marketplace) + frontend 100% (3 fluxos ShareSheet + 2 rotas públicas sem onboarding). Zero bugs. Refator opcional pendente (P3): `og_profile_image_svg` em og.py:643 ainda reimplementa stops/swatches inline — migrar para `_build_og_palette_svg` com `extras_svg` p/ stats_line elimina última duplicação.
+
 **Iter 35 (2026-02)** — ShareSheet `/u/{handle}` + OG endpoint para Feed posts:
 1. Backend `/app/backend/routers/og.py`: novas rotas `GET /api/og/feed/{post_id}` (HTML com OG tags absolutas — og:title, og:description com paleta, og:image absoluta SVG, og:url para `/feed#post-{id}`, og:locale pt_BR) e `GET /api/og/feed/{post_id}/image.svg` (1200×630, grain + swatches da paleta do post; fallback para paleta default em ID inexistente, sem crash). Reaproveita template `dna_og.html` (sem dívida de duplicação no template). 404 graceful para post inexistente.
 2. Frontend `/app/frontend/src/pages/Feed.jsx` linha 346: corrigida dívida técnica P1 — `shareUrl` agora aponta para `${API_BASE}/api/og/feed/${post.id}` (antes era `/feed#post-...` sem OG preview). WhatsApp/IG/FB agora geram preview rico de posts do feed.
