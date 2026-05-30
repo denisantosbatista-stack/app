@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, Link2, Loader2, Check } from "lucide-react";
+import { X, Download, Link2, Loader2, Check, MessageCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import html2canvas from "html2canvas";
 import DNAShareCard from "./DNAShareCard";
@@ -201,29 +201,42 @@ export default function DNAShareModal({ open, onClose, dna }) {
                   </button>
 
                   {shareUrl && (
-                    <div
-                      className="flex items-stretch gap-2"
-                      data-testid="dna-share-link-result"
-                    >
-                      <input
-                        readOnly
-                        value={shareUrl}
-                        className="flex-1 px-3 py-2 rounded-sm border border-zinc-300 bg-white text-xs font-mono text-zinc-700"
-                      />
+                    <>
+                      <div
+                        className="flex items-stretch gap-2"
+                        data-testid="dna-share-link-result"
+                      >
+                        <input
+                          readOnly
+                          value={shareUrl}
+                          className="flex-1 px-3 py-2 rounded-sm border border-zinc-300 bg-white text-xs font-mono text-zinc-700"
+                        />
+                        <button
+                          type="button"
+                          onClick={copyLink}
+                          className="px-3 rounded-sm bg-ink text-bone text-xs flex items-center gap-1.5 hover:bg-black"
+                          data-testid="dna-share-copy"
+                        >
+                          {copied ? (
+                            <Check className="w-3.5 h-3.5" />
+                          ) : (
+                            <Link2 className="w-3.5 h-3.5" />
+                          )}
+                          {copied ? "Copiado" : "Copiar"}
+                        </button>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={copyLink}
-                        className="px-3 rounded-sm bg-ink text-bone text-xs flex items-center gap-1.5 hover:bg-black"
-                        data-testid="dna-share-copy"
+                        onClick={shareWhatsApp}
+                        className="w-full py-3 rounded-sm text-[11px] tracking-[0.22em] uppercase flex items-center justify-center gap-2 text-white transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: "#25D366" }}
+                        data-testid="dna-share-whatsapp"
                       >
-                        {copied ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : (
-                          <Link2 className="w-3.5 h-3.5" />
-                        )}
-                        {copied ? "Copiado" : "Copiar"}
+                        <MessageCircle className="w-4 h-4" />
+                        Compartilhar no WhatsApp
                       </button>
-                    </div>
+                    </>
                   )}
                 </div>
 

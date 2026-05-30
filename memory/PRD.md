@@ -73,4 +73,4 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
-**Iter 18 (2026-02)** — Migração Sora 2 → SVD 2.0 + OG tags absolutas. Backend 6/6 e frontend smoke 100%. Sem bugs.
+**Iter 18 (2026-02)** — Migração Sora 2 → SVD 2.0 + OG tags absolutas + botão "Compartilhar no WhatsApp" no DNA Share Modal (usa URL `/api/og/dna/{id}` para preview com og:image; humanos são redirecionados para `/dna/{id}` via meta refresh). Backend 6/6 e frontend smoke 100%. Sem bugs.
