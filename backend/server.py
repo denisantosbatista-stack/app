@@ -25,29 +25,15 @@ import asyncio
 import math
 import urllib.request
 from PIL import Image, ImageDraw, ImageFilter
-import fal_client
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
-
-# Jinja2 env para templates HTML (cards OG, etc)
-_jinja_env = Environment(
-    loader=FileSystemLoader(str(ROOT_DIR / 'templates')),
-    autoescape=select_autoescape(['html', 'xml']),
-    trim_blocks=True,
-    lstrip_blocks=True,
-)
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-FAL_KEY = os.environ.get('FAL_KEY')
-if FAL_KEY:
-    # fal_client lê de os.environ['FAL_KEY'] — garantir disponibilidade
-    os.environ['FAL_KEY'] = FAL_KEY
 
 app = FastAPI(title="LindArt API")
 api_router = APIRouter(prefix="/api")
@@ -275,13 +261,6 @@ class ImageRequest(BaseModel):
     shape: Optional[str] = "gota"  # gota | bandeja | geodo | colar | anel
     style: Optional[str] = None  # geodo | marmore | oceano | galaxia | floral | metalico | pastel | boho | luxo | minimalista
     palette_name: Optional[str] = None
-
-
-class VideoRequest(BaseModel):
-    color_a: str
-    color_b: str
-    duration: Optional[int] = 4  # 4 | 8 | 12
-    size: Optional[str] = "1280x720"
 
 
 class CaptionRequest(BaseModel):
@@ -652,323 +631,11 @@ async def generate_image(req: ImageRequest):
     }
 
 
-# ===== Stable Video Diffusion 2.0 (fal.ai) — background job store (in-memory) =====
-# Substitui Sora 2. Mantém o mesmo contrato HTTP para o frontend:
-# POST /api/ai/generate-video → {job_id}; GET /api/ai/video-status/{id} → polling.
-_VIDEO_JOBS: dict[str, dict] = {}
-_VIDEO_JOB_TTL_SECONDS = 3600  # 1h: jobs concluídos/com erro são limpos depois disso
-_VIDEO_JOBS_MAX = 200  # hard cap para evitar leak de memória
-SVD_MODEL = "fal-ai/stable-video"  # Stable Video Diffusion 2.0 hospedado no fal.ai
-SVD_DEFAULT_SIZE = (1024, 576)  # 16:9, dentro do range suportado pelo SVD
+# ===== Stable Video Diffusion 2.0 (fal.ai) =====
+# Movido para routers/svd_video.py (endpoints + helpers + welcome video onboarding)
 
-
-def _cleanup_video_jobs() -> None:
-    """Remove jobs antigos (terminados há mais de TTL) ou enxuga se passar do cap."""
-    now = time.time()
-    to_remove: list[str] = []
-    for jid, job in _VIDEO_JOBS.items():
-        fin = job.get("finished_at_ts")
-        if fin and (now - fin) > _VIDEO_JOB_TTL_SECONDS:
-            to_remove.append(jid)
-    for jid in to_remove:
-        _VIDEO_JOBS.pop(jid, None)
-    # Hard cap: remove os mais antigos primeiro
-    if len(_VIDEO_JOBS) > _VIDEO_JOBS_MAX:
-        sorted_jobs = sorted(
-            _VIDEO_JOBS.items(),
-            key=lambda kv: kv[1].get("finished_at_ts") or kv[1].get("started_at_ts") or 0,
-        )
-        for jid, _ in sorted_jobs[: len(_VIDEO_JOBS) - _VIDEO_JOBS_MAX]:
-            _VIDEO_JOBS.pop(jid, None)
-
-
-def _hex_to_rgb(h: str) -> tuple[int, int, int]:
-    h = (h or "").lstrip("#").strip()
-    if len(h) == 3:
-        h = "".join(c * 2 for c in h)
-    if len(h) != 6:
-        return (200, 180, 120)
-    try:
-        return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
-    except ValueError:
-        return (200, 180, 120)
-
-
-def _make_swirl_image_png(color_a: str, color_b: str, size: tuple[int, int] = SVD_DEFAULT_SIZE) -> bytes:
-    """Gera um PNG cinematográfico de swirl entre duas cores — usado como
-    frame-inicial para o Stable Video Diffusion 2.0 animar."""
-    w, h = size
-    img = Image.new("RGB", size, (10, 10, 12))
-    draw = ImageDraw.Draw(img)
-    ra = _hex_to_rgb(color_a)
-    rb = _hex_to_rgb(color_b)
-    cx, cy = w / 2.0, h / 2.0
-    radius = min(w, h) * 0.42
-    # Desenha 2 blobs grandes
-    for cx_b, cy_b, rgb in (
-        (cx - radius * 0.45, cy - radius * 0.15, ra),
-        (cx + radius * 0.45, cy + radius * 0.15, rb),
-    ):
-        draw.ellipse(
-            (cx_b - radius, cy_b - radius, cx_b + radius, cy_b + radius),
-            fill=rgb,
-        )
-    # Veios dourados (mica)
-    gold = (212, 175, 55)
-    for i in range(160):
-        ang = (i / 160.0) * 2 * math.pi * 3
-        rr = radius * (0.4 + 0.55 * ((i * 13) % 100) / 100.0)
-        x = int(cx + math.cos(ang) * rr + ((i * 37) % 17 - 8))
-        y = int(cy + math.sin(ang * 1.4) * rr * 0.85 + ((i * 53) % 19 - 9))
-        sz = 1 + (i % 3)
-        draw.ellipse((x - sz, y - sz, x + sz, y + sz), fill=gold)
-    # Suaviza para parecer resina molhada
-    img = img.filter(ImageFilter.GaussianBlur(radius=14))
-    # Realça um brilho central glossy
-    overlay = Image.new("RGBA", size, (0, 0, 0, 0))
-    od = ImageDraw.Draw(overlay)
-    od.ellipse(
-        (cx - radius * 1.1, cy * 0.55 - radius * 0.5,
-         cx + radius * 1.1, cy * 0.55 + radius * 0.5),
-        fill=(255, 255, 255, 60),
-    )
-    overlay = overlay.filter(ImageFilter.GaussianBlur(radius=40))
-    img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
-    buf = io.BytesIO()
-    img.save(buf, format="PNG", optimize=True)
-    return buf.getvalue()
-
-
-def _svd_set_job_error(job_id: str, msg: str, status: int = 502) -> None:
-    _VIDEO_JOBS[job_id] = {
-        **_VIDEO_JOBS.get(job_id, {}),
-        "status": "error",
-        "error": msg[:240],
-        "http_status": status,
-        "finished_at_ts": time.time(),
-    }
-
-
-def _run_svd_job(job_id: str, color_a: str, color_b: str, duration: int, size: tuple[int, int]) -> None:
-    """Roda Stable Video Diffusion 2.0 (fal.ai) e atualiza _VIDEO_JOBS.
-
-    Pipeline: gera PNG-swirl (PIL) → upload fal storage → submete SVD →
-    aguarda → baixa MP4 → guarda base64.
-    """
-    try:
-        if not FAL_KEY:
-            _svd_set_job_error(
-                job_id,
-                "FAL_KEY não configurada. Adicione FAL_KEY em backend/.env para gerar vídeos com Stable Video Diffusion 2.0.",
-                status=500,
-            )
-            return
-        png_bytes = _make_swirl_image_png(color_a, color_b, size)
-        # Upload do frame-inicial para o storage do fal.ai
-        image_url = fal_client.upload(png_bytes, "image/png")
-        # Submete ao Stable Video Diffusion 2.0
-        # motion_bucket_id 90-180 controla intensidade do movimento;
-        # 127 é equilibrado para fluidos/líquidos.
-        result = fal_client.subscribe(
-            SVD_MODEL,
-            arguments={
-                "image_url": image_url,
-                "motion_bucket_id": 140,
-                "cond_aug": 0.02,
-                "fps": 8,
-                "seed": int(time.time()) & 0xFFFFFFFF,
-            },
-            with_logs=False,
-        )
-        video_url = (result or {}).get("video", {}).get("url") if isinstance(result, dict) else None
-        if not video_url:
-            raise RuntimeError("SVD 2.0 não retornou URL de vídeo")
-        # Baixa o MP4 e converte para base64 (mantém contrato atual do frontend)
-        with urllib.request.urlopen(video_url, timeout=120) as r:
-            video_bytes = r.read()
-        if not video_bytes:
-            raise RuntimeError("SVD 2.0 retornou vídeo vazio")
-        video_b64 = b64.b64encode(video_bytes).decode("ascii")
-        _VIDEO_JOBS[job_id] = {
-            **_VIDEO_JOBS.get(job_id, {}),
-            "status": "completed",
-            "video_base64": video_b64,
-            "mime_type": "video/mp4",
-            "finished_at": datetime.now(timezone.utc).isoformat(),
-            "finished_at_ts": time.time(),
-        }
-        logger.info(f"SVD job {job_id} ok: bytes={len(video_bytes)}")
-    except Exception as e:
-        logger.exception(f"SVD job {job_id} error")
-        _svd_set_job_error(job_id, f"Falha SVD 2.0: {e}", status=502)
-
-
-@api_router.post("/ai/generate-video")
-async def generate_video(req: VideoRequest, background_tasks: BackgroundTasks):
-    """Dispara geração de vídeo via Stable Video Diffusion 2.0 (fal.ai) em background.
-    Retorna {job_id} imediatamente.
-
-    O cliente deve fazer polling em GET /api/ai/video-status/{job_id}
-    a cada ~5s até receber status == 'completed' (com video_base64) ou 'error'.
-    """
-    if not FAL_KEY:
-        raise HTTPException(
-            status_code=503,
-            detail="FAL_KEY não configurada. Adicione FAL_KEY em backend/.env (obtenha em https://fal.ai/dashboard/keys) para gerar vídeos com Stable Video Diffusion 2.0.",
-        )
-
-    duration = req.duration if req.duration in (4, 8, 12) else 4
-    # Garante dimensões válidas para SVD (múltiplos de 64, até 1024x576)
-    size = SVD_DEFAULT_SIZE
-
-    job_id = str(uuid.uuid4())
-    _VIDEO_JOBS[job_id] = {
-        "status": "processing",
-        "color_a": req.color_a,
-        "color_b": req.color_b,
-        "duration": duration,
-        "size": f"{size[0]}x{size[1]}",
-        "model": SVD_MODEL,
-        "started_at": datetime.now(timezone.utc).isoformat(),
-        "started_at_ts": time.time(),
-    }
-    _cleanup_video_jobs()
-    background_tasks.add_task(_run_svd_job, job_id, req.color_a, req.color_b, duration, size)
-    logger.info(f"SVD job {job_id} queued: dur={duration} size={size}")
-    return {"job_id": job_id, "status": "processing", "model": "stable-video-diffusion-2.0"}
-
-
-@api_router.get("/ai/video-status/{job_id}")
-async def video_status(job_id: str):
-    """Retorna o status do job SVD 2.0 e, quando completo, o vídeo em base64."""
-    job = _VIDEO_JOBS.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job não encontrado")
-    status = job.get("status", "processing")
-    if status == "completed":
-        return {
-            "status": "completed",
-            "video_base64": job.get("video_base64"),
-            "mime_type": job.get("mime_type", "video/mp4"),
-            "duration": job.get("duration"),
-            "size": job.get("size"),
-            "model": job.get("model"),
-        }
-    if status == "error":
-        return {
-            "status": "error",
-            "detail": job.get("error", "Falha desconhecida"),
-            "http_status": job.get("http_status", 502),
-        }
-    return {
-        "status": "processing",
-        "started_at": job.get("started_at"),
-        "duration": job.get("duration"),
-        "size": job.get("size"),
-        "model": job.get("model"),
-    }
-
-
-# ===== Onboarding welcome video (SVD 2.0 swirl branded) =====
 STATIC_DIR = ROOT_DIR / "static_assets"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
-WELCOME_VIDEO_PATH = STATIC_DIR / "onboarding-welcome.mp4"
-_WELCOME_JOB: dict = {"status": "idle"}  # status: idle | processing | completed | error
-
-
-def _run_welcome_video_job() -> None:
-    """Gera vídeo institucional via SVD 2.0 para o onboarding e salva em static_assets."""
-    global _WELCOME_JOB
-    try:
-        if not FAL_KEY:
-            _WELCOME_JOB = {
-                "status": "error",
-                "error": "FAL_KEY não configurada para gerar o vídeo institucional.",
-            }
-            return
-        # Paleta-assinatura LindArt: champagne gold × emerald
-        png_bytes = _make_swirl_image_png("#D4AF37", "#0F4C3A", SVD_DEFAULT_SIZE)
-        image_url = fal_client.upload(png_bytes, "image/png")
-        result = fal_client.subscribe(
-            SVD_MODEL,
-            arguments={
-                "image_url": image_url,
-                "motion_bucket_id": 150,
-                "cond_aug": 0.02,
-                "fps": 8,
-                "seed": 7,
-            },
-            with_logs=False,
-        )
-        video_url = (result or {}).get("video", {}).get("url") if isinstance(result, dict) else None
-        if not video_url:
-            _WELCOME_JOB = {"status": "error", "error": "SVD 2.0 retornou sem URL de vídeo"}
-            return
-        with urllib.request.urlopen(video_url, timeout=120) as r:
-            video_bytes = r.read()
-        if not video_bytes:
-            _WELCOME_JOB = {"status": "error", "error": "SVD 2.0 retornou vídeo vazio"}
-            return
-        with open(WELCOME_VIDEO_PATH, "wb") as f:
-            f.write(video_bytes)
-        _WELCOME_JOB = {
-            "status": "completed",
-            "size_bytes": len(video_bytes),
-            "finished_at": datetime.now(timezone.utc).isoformat(),
-        }
-        logger.info(f"Welcome video (SVD 2.0) saved: {WELCOME_VIDEO_PATH} ({len(video_bytes)} bytes)")
-    except Exception as e:
-        logger.exception("welcome video generation failed")
-        _WELCOME_JOB = {"status": "error", "error": str(e)[:200]}
-
-
-@api_router.get("/onboarding/welcome-video")
-async def onboarding_welcome_video_status():
-    """Retorna o estado atual do vídeo de boas-vindas.
-
-    - exists=True + url disponível → frontend renderiza <video src>
-    - status=processing → frontend mostra placeholder + opcionalmente texto "gerando…"
-    - exists=False → frontend mostra placeholder estático
-    """
-    exists = WELCOME_VIDEO_PATH.exists() and WELCOME_VIDEO_PATH.stat().st_size > 0
-    return {
-        "exists": exists,
-        "url": "/api/static/onboarding-welcome.mp4" if exists else None,
-        "status": _WELCOME_JOB.get("status", "idle"),
-        "error": _WELCOME_JOB.get("error"),
-    }
-
-
-@api_router.post("/onboarding/generate-welcome-video")
-async def onboarding_generate_welcome_video(background_tasks: BackgroundTasks):
-    """Dispara geração do vídeo institucional via SVD 2.0 em background.
-
-    Idempotente: se um job já está em processamento, retorna o estado atual.
-    Se o vídeo já existe, retorna `already_exists=True`. Para regerar, deletar o arquivo
-    em `/app/backend/static_assets/onboarding-welcome.mp4` antes.
-    """
-    global _WELCOME_JOB
-    if not FAL_KEY:
-        raise HTTPException(
-            status_code=503,
-            detail="FAL_KEY não configurada (https://fal.ai/dashboard/keys).",
-        )
-
-    if WELCOME_VIDEO_PATH.exists() and WELCOME_VIDEO_PATH.stat().st_size > 0:
-        return {
-            "already_exists": True,
-            "url": "/api/static/onboarding-welcome.mp4",
-        }
-    if _WELCOME_JOB.get("status") == "processing":
-        return {"status": "processing", "started_at": _WELCOME_JOB.get("started_at")}
-
-    _WELCOME_JOB = {
-        "status": "processing",
-        "started_at": datetime.now(timezone.utc).isoformat(),
-    }
-    background_tasks.add_task(_run_welcome_video_job)
-    logger.info("Welcome video generation queued")
-    return {"status": "processing", "started_at": _WELCOME_JOB["started_at"]}
 
 
 @api_router.post("/ai/generate-caption")
@@ -1851,148 +1518,6 @@ async def get_dna_share(share_id: str):
     return doc
 
 
-def _html_escape(s: str) -> str:
-    return (
-        (s or "")
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&#39;")
-    )
-
-
-def _absolute_origin(request: Request) -> str:
-    """Resolve o origin público (https://host) preservando proxy headers.
-    Crawlers do WhatsApp/IG/FB exigem URLs absolutas em og:image e og:url.
-    """
-    fwd_proto = request.headers.get("x-forwarded-proto")
-    fwd_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
-    scheme = (fwd_proto or request.url.scheme or "https").split(",")[0].strip()
-    host = (fwd_host or request.url.netloc).split(",")[0].strip()
-    return f"{scheme}://{host}"
-
-
-def _render_dna_og_html(share_id: str, payload: dict, handle: Optional[str], origin: str = "") -> str:
-    """Renderiza HTML com OG tags dinâmicas via template Jinja2.
-    Crawlers (WhatsApp, IG, X, FB) leem os metatags; humanos são redirecionados
-    para /dna/{share_id} via meta refresh + JS."""
-    signature = (payload.get("signature") or "DNA Visual").strip()[:80] or "DNA Visual"
-    mood_list = payload.get("mood") or []
-    mood_txt = " · ".join([m for m in mood_list if isinstance(m, str)][:4])
-    colors = [
-        c for c in (payload.get("dominant_colors") or [])
-        if isinstance(c, str) and c.startswith("#")
-    ][:6]
-
-    author_txt = f" — @{handle}" if handle else ""
-    title = f"{signature} · DNA Visual{author_txt} — LindArt"
-
-    desc_parts = []
-    if mood_txt:
-        desc_parts.append(mood_txt)
-    if colors:
-        desc_parts.append("Paleta: " + " ".join(colors))
-    desc_parts.append("Descubra seu DNA Visual em resina no LindArt.")
-    description = " · ".join(desc_parts)[:280]
-
-    # URLs absolutas (obrigatório para crawlers WhatsApp/IG/FB)
-    redirect_path = f"/dna/{share_id}"
-    redirect_abs = f"{origin}{redirect_path}" if origin else redirect_path
-    og_image_abs = (
-        f"{origin}/api/og/dna/{share_id}/image.svg"
-        if origin
-        else f"/api/og/dna/{share_id}/image.svg"
-    )
-
-    template = _jinja_env.get_template("dna_og.html")
-    return template.render(
-        signature=signature,
-        title=title,
-        description=description,
-        colors=colors,
-        redirect_path=redirect_path,
-        redirect_abs=redirect_abs,
-        og_image_abs=og_image_abs,
-    )
-
-
-@app.get("/api/og/dna/{share_id}", response_class=HTMLResponse)
-async def og_dna_page(share_id: str, request: Request):
-    """Página HTML com Open Graph tags dinâmicas para compartilhamento social.
-    Crawlers (WhatsApp, Instagram, X, Facebook) pegam os metatags;
-    humanos são redirecionados para /dna/{share_id}."""
-    origin = _absolute_origin(request)
-    doc = await db.dna_shares.find_one({"id": share_id}, {"_id": 0})
-    if not doc:
-        # 404 ainda renderiza HTML básico para crawlers não quebrarem
-        html = (
-            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
-            '<title>DNA não encontrado · LindArt</title>'
-            '<meta property="og:title" content="DNA Visual não encontrado">'
-            '<meta property="og:description" content="Este DNA Visual expirou ou foi removido.">'
-            f'<meta property="og:url" content="{origin}/">'
-            '<meta http-equiv="refresh" content="0; url=/">'
-            "</head><body>DNA não encontrado.</body></html>"
-        )
-        return HTMLResponse(content=html, status_code=404)
-    payload = doc.get("payload") or {}
-    handle = doc.get("handle")
-    html = _render_dna_og_html(share_id, payload, handle, origin=origin)
-    return HTMLResponse(
-        content=html,
-        headers={"Cache-Control": "public, max-age=600, s-maxage=600"},
-    )
-
-
-@app.get("/api/og/dna/{share_id}/image.svg")
-async def og_dna_image_svg(share_id: str):
-    """Imagem OG (SVG) gerada a partir da paleta do DNA. 1200x630 para social."""
-    doc = await db.dna_shares.find_one({"id": share_id}, {"_id": 0})
-    payload = (doc or {}).get("payload") or {}
-    signature = (payload.get("signature") or "DNA Visual").strip()[:60] or "DNA Visual"
-    mood_list = payload.get("mood") or []
-    mood_txt = " · ".join([m for m in mood_list if isinstance(m, str)][:3])[:90]
-    colors = [c for c in (payload.get("dominant_colors") or []) if isinstance(c, str) and c.startswith("#")][:5]
-    if not colors:
-        colors = ["#1a1a1a", "#3b3b3b", "#9b8b6e", "#f4f1ea", "#c4b9a6"]
-    handle = (doc or {}).get("handle")
-    author = f"@{handle}" if handle else "LindArt"
-
-    # Gradiente vertical com as 5 primeiras cores em paradas igualmente espaçadas
-    stops = "".join(
-        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
-        for i, c in enumerate(colors)
-    )
-    swatch_w = 1080 // max(1, len(colors))
-    swatches = "".join(
-        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
-        for i, c in enumerate(colors)
-    )
-    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
-    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
-  <rect width="1200" height="630" filter="url(#grain)"/>
-  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
-    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · DNA VISUAL</text>
-    <text x="60" y="260" font-size="76" font-weight="300" letter-spacing="2">{_html_escape(signature)}</text>
-    <text x="60" y="320" font-size="30" opacity="0.85">{_html_escape(mood_txt)}</text>
-    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
-    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
-  </g>
-  {swatches}
-</svg>"""
-    return StreamingResponse(
-        iter([svg.encode("utf-8")]),
-        media_type="image/svg+xml",
-        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
-    )
-
 
 @api_router.get("/palettes", response_model=List[Palette])
 async def list_palettes(favorite: Optional[bool] = None):
@@ -2145,12 +1670,16 @@ from routers.marketplace import router as marketplace_router  # noqa: E402
 from routers.profiles import router as profiles_router  # noqa: E402
 from routers.challenges import router as challenges_router  # noqa: E402
 from routers.auth import router as auth_router, init_auth  # noqa: E402
+from routers.og import router as og_router  # noqa: E402
+from routers.svd_video import router as svd_video_router  # noqa: E402
 
 app.include_router(feed_router)
 app.include_router(marketplace_router)
 app.include_router(profiles_router)
 app.include_router(challenges_router)
 app.include_router(auth_router)
+app.include_router(og_router)
+app.include_router(svd_video_router)
 
 
 @app.on_event("startup")

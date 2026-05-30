@@ -1,0 +1,45 @@
+{
+  "summary": "Validated Phase-1 refactor (server.py → routers/og.py + routers/svd_video.py). 13/14 tests passed, 1 skipped (FAL_KEY absent — expected). OG HTML 404/200 contract preserved, OG SVG always returns 200 with dynamic palette + Cache-Control header, end-to-end POST /api/dna/share → GET /api/og/dna/{id} cycle still produces valid OG tags with correct signature/colors/handle. SVD endpoints return 503 when FAL_KEY missing (expected) and 404 for unknown job_id. Onboarding welcome-video status endpoint returns full contract {exists,url,status,error}. No regressions on remaining routes (auth/login, feed, marketplace, challenges, generate-caption, root). Backend started cleanly with no import errors after refactor.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/og/dna/{share_id}* (Cache-Control)",
+        "issue": "Backend correctly sets 'public, max-age=600' (HTML) and 'public, max-age=86400' (SVG) — verified via direct curl to http://localhost:8001. However, the public preview ingress overrides Cache-Control to 'no-store, no-cache, must-revalidate'. This blocks social-network crawler caching (WhatsApp/IG/FB) only on the preview URL; production may behave differently. Not a refactor bug — infra/proxy concern. Worth a note in deploy docs."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_refactor_og_svd.py",
+    "/app/test_reports/pytest/refactor_og_svd.xml"
+  ],
+  "action_items": [
+    "(Optional, non-blocking) Investigate preview ingress overriding Cache-Control on /api/og/* responses; verify production env preserves the router-set cache headers so social crawlers can cache previews.",
+    "Configure FAL_KEY in backend/.env to enable end-to-end SVD job validation (currently skipped). Without it, /api/ai/generate-video and POST /api/onboarding/generate-welcome-video correctly return 503 with PT-BR message."
+  ],
+  "critical_code_review_comments": [
+    "routers/og.py: clean extraction, uses isolated Jinja2 env (no global coupling). Good.",
+    "routers/svd_video.py: in-memory _VIDEO_JOBS + _WELCOME_JOB will not survive uvicorn workers >1 nor reloads — fine for current single-worker setup; noted in module docstring already.",
+    "routers/svd_video.py: POST /onboarding/generate-welcome-video checks FAL_KEY BEFORE checking if file already exists. If a previously generated welcome video exists but FAL_KEY is later removed, this endpoint returns 503 instead of 'already_exists=true'. Minor UX nit — consider swapping the order: file-exists check first.",
+    "server.py: imports for routers happen AFTER app.include_router(api_router) at line ~1665 (module-level imports below app instantiation). Works due to noqa: E402, but cleaner to consolidate router imports at top of file in a future pass.",
+    "server.py: still 1709 lines; Phase-1 reduction achieved (~470 lines extracted). P2 phases planned."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_refactor_og_svd.py (created)"
+  ],
+  "success_rate": {
+    "backend": "100% (13/13 executed passed, 1 skipped due to missing optional FAL_KEY)",
+    "frontend": "n/a (skipped per request)"
+  },
+  "test_credentials": "admin@lindart.app / Lindart#2026 (used for regression login test, from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created one transient dna_shares document (signature='Aurora Boreal Teste', handle='tester_refactor') to validate end-to-end OG render. Not cleaned up — does not affect production data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase-1 refactor (og.py + svd_video.py) is GREEN. Next phases per problem statement: P1 (extract frontend modals) and P2 (refactor Challenges.jsx) — NOT yet implemented. When testing future phases, reuse /app/backend/tests/test_refactor_og_svd.py as regression baseline for OG/SVD/onboarding contracts. Note that the preview ingress strips/overrides Cache-Control headers on /api/og/* responses — assert presence only, not exact value, in external tests. Feed list endpoint is GET /api/feed (no /posts suffix); marketplace list is GET /api/marketplace (no /items suffix).",
+  "rca of the issue": "n/a — no bugs found in the refactor itself. Two initial test failures were due to incorrect test assumptions: (a) tested endpoint paths /api/feed/posts and /api/marketplace/items don't exist (correct paths are /api/feed and /api/marketplace); (b) asserted exact Cache-Control values that the preview ingress overrides. Both fixed in the test file."
+}
