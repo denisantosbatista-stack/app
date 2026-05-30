@@ -26,9 +26,18 @@ import math
 import urllib.request
 from PIL import Image, ImageDraw, ImageFilter
 import fal_client
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Jinja2 env para templates HTML (cards OG, etc)
+_jinja_env = Environment(
+    loader=FileSystemLoader(str(ROOT_DIR / 'templates')),
+    autoescape=select_autoescape(['html', 'xml']),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -1865,83 +1874,47 @@ def _absolute_origin(request: Request) -> str:
 
 
 def _render_dna_og_html(share_id: str, payload: dict, handle: Optional[str], origin: str = "") -> str:
-    """Renderiza HTML com OG tags dinâmicas para preview em IG/WhatsApp/X/FB.
-    Humanos são redirecionados para /dna/{share_id} via meta refresh + JS."""
+    """Renderiza HTML com OG tags dinâmicas via template Jinja2.
+    Crawlers (WhatsApp, IG, X, FB) leem os metatags; humanos são redirecionados
+    para /dna/{share_id} via meta refresh + JS."""
     signature = (payload.get("signature") or "DNA Visual").strip()[:80] or "DNA Visual"
     mood_list = payload.get("mood") or []
     mood_txt = " · ".join([m for m in mood_list if isinstance(m, str)][:4])
-    colors = [c for c in (payload.get("dominant_colors") or []) if isinstance(c, str) and c.startswith("#")][:6]
-    colors_swatch = "".join(
-        f'<span style="display:inline-block;width:18px;height:18px;background:{_html_escape(c)};border:1px solid #0002;border-radius:3px;margin-right:4px"></span>'
-        for c in colors
-    )
-    author_txt = f" — @{_html_escape(handle)}" if handle else ""
-    title = f"{_html_escape(signature)} · DNA Visual{author_txt} — LindArt"
+    colors = [
+        c for c in (payload.get("dominant_colors") or [])
+        if isinstance(c, str) and c.startswith("#")
+    ][:6]
+
+    author_txt = f" — @{handle}" if handle else ""
+    title = f"{signature} · DNA Visual{author_txt} — LindArt"
+
     desc_parts = []
     if mood_txt:
-        desc_parts.append(_html_escape(mood_txt))
+        desc_parts.append(mood_txt)
     if colors:
-        desc_parts.append("Paleta: " + " ".join(_html_escape(c) for c in colors))
+        desc_parts.append("Paleta: " + " ".join(colors))
     desc_parts.append("Descubra seu DNA Visual em resina no LindArt.")
     description = " · ".join(desc_parts)[:280]
 
     # URLs absolutas (obrigatório para crawlers WhatsApp/IG/FB)
-    redirect_path = f"/dna/{_html_escape(share_id)}"
+    redirect_path = f"/dna/{share_id}"
     redirect_abs = f"{origin}{redirect_path}" if origin else redirect_path
     og_image_abs = (
-        f"{origin}/api/og/dna/{_html_escape(share_id)}/image.svg"
+        f"{origin}/api/og/dna/{share_id}/image.svg"
         if origin
-        else f"/api/og/dna/{_html_escape(share_id)}/image.svg"
+        else f"/api/og/dna/{share_id}/image.svg"
     )
 
-    return f"""<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{title}</title>
-<meta name="description" content="{description}">
-
-<meta property="og:type" content="article">
-<meta property="og:title" content="{title}">
-<meta property="og:description" content="{description}">
-<meta property="og:image" content="{og_image_abs}">
-<meta property="og:image:secure_url" content="{og_image_abs}">
-<meta property="og:image:type" content="image/svg+xml">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="{_html_escape(signature)} — DNA Visual em resina">
-<meta property="og:url" content="{redirect_abs}">
-<meta property="og:site_name" content="LindArt">
-<meta property="og:locale" content="pt_BR">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{title}">
-<meta name="twitter:description" content="{description}">
-<meta name="twitter:image" content="{og_image_abs}">
-<meta name="twitter:image:alt" content="{_html_escape(signature)} — DNA Visual em resina">
-
-<meta http-equiv="refresh" content="0; url={redirect_path}">
-<link rel="canonical" href="{redirect_abs or redirect_path}">
-<style>
-body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0f0f0f;color:#f4f1ea;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px}}
-.box{{max-width:520px}}
-h1{{font-weight:300;letter-spacing:.04em;margin:0 0 12px;font-size:22px}}
-p{{opacity:.8;line-height:1.5;margin:0 0 18px}}
-a{{color:#f4f1ea;border:1px solid #f4f1ea4d;padding:10px 16px;text-decoration:none;display:inline-block;border-radius:2px}}
-.sw{{margin:16px 0}}
-</style>
-</head>
-<body>
-<div class="box">
-<h1>{_html_escape(signature)} · DNA Visual</h1>
-<div class="sw">{colors_swatch}</div>
-<p>{description}</p>
-<a href="{redirect_path}">Abrir no LindArt →</a>
-</div>
-<script>setTimeout(function(){{window.location.replace({json.dumps(redirect_path)});}},80);</script>
-</body>
-</html>"""
+    template = _jinja_env.get_template("dna_og.html")
+    return template.render(
+        signature=signature,
+        title=title,
+        description=description,
+        colors=colors,
+        redirect_path=redirect_path,
+        redirect_abs=redirect_abs,
+        og_image_abs=og_image_abs,
+    )
 
 
 @app.get("/api/og/dna/{share_id}", response_class=HTMLResponse)

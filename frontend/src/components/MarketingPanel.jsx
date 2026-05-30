@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { copyToClipboard } from "@/utils/color";
 import AIErrorState from "./AIErrorState";
 import { chamarIA, ApiError, abrirUpgradePadrao } from "@/utils/api";
+import { Field } from "./ui/Field";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -502,14 +503,7 @@ function Metrics({ metrics }) {
 }
 
 // ===== Shared =====
-function Field({ label, children }) {
-  return (
-    <div>
-      <div className="label-eyebrow text-zinc-500 mb-1.5">{label}</div>
-      {children}
-    </div>
-  );
-}
+// Field component centralized in /components/ui/Field.jsx
 
 function ChipRow({ options, value, onChange, testid }) {
   return (

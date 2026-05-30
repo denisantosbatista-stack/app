@@ -16,6 +16,15 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P0 — Refactor _render_dna_og_html → Jinja2 template (DONE em iter 23, 2026-02)
+- **Backend** (`server.py`): adicionado `jinja2.Environment` com `FileSystemLoader(ROOT_DIR/'templates')` + `autoescape=select_autoescape(['html','xml'])` e `trim_blocks/lstrip_blocks`. `_render_dna_og_html` agora monta apenas as variáveis (signature, title, description, colors, redirect_path, redirect_abs, og_image_abs) e delega o markup ao template.
+- **Template** (`/app/backend/templates/dna_og.html`): card OG completo (title, description, og:*, twitter:*, og:image abs, meta refresh, canonical, swatches via `{% for color in colors %}`, JS redirect com `{{ redirect_path|tojson }}`). Autoescape Jinja2 substitui o `_html_escape` manual em todas as variáveis.
+- Smoke test (curl): seed dna_share com `signature="Aurora <Boreal>"` + `handle="ana<script>"` + 3 cores → HTTP 200, `<` escapado para `&lt;` em title/og:title/twitter:title (6 ocorrências), handle escapado (3 ocorrências), zero `<script>` cru injetado, swatches `background:#ff66aa…` corretos, JS redirect `window.location.replace("/dna/...")` com JSON encoding. Regressão `image.svg` HTTP 200 ✓.
+
+### ✅ P0 — Centralização do componente Field (DONE em iter 23, 2026-02)
+- **`/app/frontend/src/components/ui/Field.jsx`**: componente único com dois modos: (1) **input mode** (`value`+`onChange`, suporta `type`, `multiline`/`textarea`, `placeholder`, `hint`, `rows`, `testId`); (2) **children mode** (renderiza children dentro de wrapper com `.label-eyebrow`, usado por `MarketingPanel` para ChipRow e inputs custom). Detecção via `children !== undefined`.
+- Importado em `Feed.jsx`, `Marketplace.jsx`, `Challenges.jsx`, `MarketingPanel.jsx`; declarações `function Field(…)` inline removidas dos 4 arquivos. Lint limpo.
+
 ### ✅ P0 — FAL_KEY backend-only + 404 estruturado em /api/profile (DONE em iter 22, 2026-02)
 - **Backend** (`server.py` linhas 38-41): `FAL_KEY = os.environ.get('FAL_KEY')` + `os.environ['FAL_KEY'] = FAL_KEY` para `fal_client` pegar automaticamente; endpoints `/api/ai/generate-video` e `/api/onboarding/generate-welcome-video` retornam **503 com `detail` PT-BR** quando chave ausente (sem mais hardcode no frontend).
 - **Backend** (`routers/profiles.py`): `GET /api/profile/{handle}` agora retorna **404 estruturado** `{detail:{error:"profile_not_found", message, handle}}` quando o handle não tem presença em `feed_posts`, `dna_shares`, `marketplace_items` nem `challenge_submissions`. `400` (invalid_handle) também estruturado.
