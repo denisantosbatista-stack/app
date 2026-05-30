@@ -238,11 +238,21 @@ function PricingMode() {
         <NumberField label="Custo do pigmento (R$/Litro)" value={pigmentCostL} setValue={setPigmentCostL} min={0} step={50} testid="price-pigment-cost" />
         <NumberField label="Embalagem (R$)" value={packagingCost} setValue={setPackagingCost} min={0} step={0.5} testid="price-packaging" />
         <NumberField label="Outros materiais (R$)" value={extraCost} setValue={setExtraCost} min={0} step={0.5} testid="price-extra" />
-        <NumberField label="Horas de trabalho" value={hours} setValue={setHours} min={0} step={0.25} testid="price-hours" />
+        <div className="pb-3 border-b border-black/[0.06]">
+          <NumberField label="Horas de trabalho" value={hours} setValue={setHours} min={0} step={0.25} testid="price-hours" />
+        </div>
         <NumberField label="Valor da hora (R$)" value={hourlyRate} setValue={setHourlyRate} min={0} step={5} testid="price-hourly" />
 
         <div>
-          <label className="label-eyebrow block mb-3">Margem de lucro sobre o custo (%)</label>
+          <div className="flex items-center justify-between mb-3">
+            <label className="label-eyebrow">Margem de lucro sobre o custo</label>
+            <span
+              className="font-display text-2xl gold-text leading-none"
+              data-testid="price-margin-value"
+            >
+              {marginPct}%
+            </span>
+          </div>
           <div className="grid grid-cols-4 gap-2">
             {[100, 150, 200, 300].map((m) => (
               <button
