@@ -14,10 +14,12 @@ import {
   Wrench,
   ShoppingBag,
   BadgeCheck,
+  Share2,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import CreateItemModal from "../components/CreateItemModal";
+import ShareSheet from "../components/ShareSheet";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -270,6 +272,8 @@ function EmptyState({ onCreate }) {
 function ItemCard({ item, onOpen }) {
   const Icon = TYPE_ICON[item.type] || ShoppingBag;
   const price = formatBRL(item.price_brl);
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareUrl = `${API_BASE}/api/og/marketplace/${item.id}`;
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
@@ -312,16 +316,36 @@ function ItemCard({ item, onOpen }) {
             </span>
           )}
         </div>
-        <button
-          onClick={onOpen}
-          disabled={!item.link}
-          className="mt-1 w-full text-[10px] tracking-[0.22em] uppercase bg-zinc-900 text-bone hover:bg-zinc-800 px-3 py-2 rounded-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-          data-testid={`market-open-${item.id}`}
-        >
-          <ExternalLink className="w-3 h-3" />
-          {item.link ? "Ver no site" : "Sem link"}
-        </button>
+        <div className="mt-1 flex items-stretch gap-2">
+          <button
+            onClick={onOpen}
+            disabled={!item.link}
+            className="flex-1 text-[10px] tracking-[0.22em] uppercase bg-zinc-900 text-bone hover:bg-zinc-800 px-3 py-2 rounded-sm inline-flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            data-testid={`market-open-${item.id}`}
+          >
+            <ExternalLink className="w-3 h-3" />
+            {item.link ? "Ver no site" : "Sem link"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            aria-label="Compartilhar item"
+            title="Compartilhar"
+            className="px-3 py-2 rounded-sm border border-black/[0.08] text-zinc-700 hover:border-gold hover:text-gold transition-colors inline-flex items-center justify-center"
+            data-testid={`market-share-${item.id}`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={shareUrl}
+        title={item.title}
+        description={item.description || TYPE_LABEL[item.type] || "Item LindArt"}
+      />
     </motion.article>
   );
 }

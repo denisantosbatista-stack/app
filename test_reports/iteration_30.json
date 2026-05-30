@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only regression on /planos (Pricing refactor) + ShareSheet integration on /marketplace. Pricing.jsx (now 347 lines) imports PLANS from /data/pricingPlans and renders PricingComparison + PricingFAQ correctly. ShareSheet on every marketplace item card works end-to-end: open, URL matches REACT_APP_BACKEND_URL/api/og/marketplace/{id}, WhatsApp/Instagram/Copiar link buttons render, copy triggers 'Link copiado' toast, X-button and backdrop both close. All 21 assertions passed. No regressions, no console errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_30.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Pricing.jsx refactor is clean: 347 lines, data extracted into /data/pricingPlans.js, /data/pricingComparison.js, /data/pricingFaq.js; UI split into /components/pricing/PricingComparison.jsx + PricingFAQ.jsx. Prior React-key warning is now resolved — PricingComparison uses <React.Fragment key={group.group}>.",
+    "ShareSheet.jsx is reusable (portal-based, props: open/onClose/url/title/description). Good UX: WhatsApp via wa.me, Instagram falls back to clipboard+open instagram.com when Web Share API unavailable, clipboard with toast feedback. Backdrop close + X close both wired correctly via stopPropagation on inner sheet.",
+    "Marketplace ItemCard correctly composes shareUrl as `${API_BASE}/api/og/marketplace/${item.id}` and passes item.title + description into ShareSheet. data-testid='market-share-{itemId}' and aria-label='Compartilhar item' present as spec required.",
+    "Minor (non-blocking): ShareSheet's outer overlay also has onClick={onClose}; inner sheet stops propagation — verified working. Consider adding role='dialog' + aria-modal='true' on the inner sheet for a11y (currently only aria-label on close button)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100% (21/21 functional checks passed)"},
+  "test_credentials": "Not required — marketplace browsing and share are public. Anunciar correctly redirects unauthenticated users to /login (verified).",
+  "seed_data_creation": "None — used existing marketplace items.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Onboarding modal (data-testid='onboarding-flow', z-[130]) intercepts ALL clicks on first visit. Workaround that worked: navigate to '/' first, then set localStorage keys (onboarding_complete='true', lindart_onboarding_v1=JSON{complete:true,step:5}). For pages where the splash still appears, fallback: page.evaluate to remove the element node. Verified data-testids for ShareSheet: share-sheet-overlay (backdrop), share-sheet (inner), share-sheet-close (X), share-sheet-url (URL span), share-sheet-whatsapp, share-sheet-instagram, share-sheet-copy. Marketplace share buttons: market-share-{item_id}. Sample item IDs observed: 4725bf473a59, 7857a53c29dc. Copy-to-clipboard works in headless Chromium when navigator.clipboard.writeText is stubbed; toast 'Link copiado' appears via react-hot-toast.",
+  "rca of the issue": "N/A — no issues found in this iteration."
+}
