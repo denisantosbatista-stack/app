@@ -199,6 +199,13 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
+**Iter 34 (2026-02)** — Frontend UI/UX cleanup (4 fixes P0):
+1. `PieceShape.jsx` + `PaletteCard.jsx`: helper `safeHex()` substitui `#000`/`#000000`/vazio por fallback neutro (`#D4AF37` para veios, `#fff` para base, `#aaa` accent, `#eee` detalhe) — sem mais bloco preto.
+2. `Productions3D.jsx` recebe `palette={activePalette}` como prop em `Studio.jsx` e aplica `colors[0]` como base + `colors[1/2]` como emissive nas mesh 3D (Geodo/Bandeja/Colar). `useEffect([palette?.id])` reseta textureUrl ao trocar paleta.
+3. `PaletteGrid.jsx`: filtros de estilo agora em wrapper `relative` com `overflow-x-auto + scroll-smooth + scroll-behavior:smooth` + overlay de fade (linear-gradient, data-testid `palette-filters-fade`).
+4. `Navbar.jsx` (NAV_GROUPS.criar) + `MobileNav.jsx`: item `/mixer` renomeado de "Mixer" para "Criar Paleta" (desktop dropdown, mobile bottom bar e drawer mobile).
+Testing agent v3 (iter 33+34): 100% frontend, zero bugs.
+
 **Iter 21 (2026-02)** — JWT protege writes de Feed/Marketplace/Challenges. Frontend Marketplace.jsx e Challenges.jsx alinhados ao padrão do Feed.jsx: removidos inputs manuais de handle, modais gateados por login (toast + redirect `/login`), Bearer token + credentials:include nos POSTs, "Perfil Verificado" (BadgeCheck dourado) ao lado de @handle em cards de items/posts/submissions/winner. Testing agent 7/7 backend + 5/5 frontend, zero bugs.
 
 **Iter 20 (2026-02)** — Auth JWT (backend + frontend integrado no Navbar com dropdown desktop e seção mobile, persistência via localStorage). Páginas `/login` e `/register` funcionais, seed automático de `admin@lindart.app` e `teste@lindart.app`. P1 fix: chips de foco da página `/trends` agora rolam horizontalmente em mobile (era `flex-wrap` puro). Testing agent: 11/11 flows E2E auth, zero bugs.
