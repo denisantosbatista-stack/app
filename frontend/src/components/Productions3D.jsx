@@ -3,9 +3,12 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, ContactShadows, useTexture, Environment } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image as ImageIcon, Loader2, Sparkles, Box as BoxIcon, MousePointerClick, RefreshCw, AlertCircle } from "lucide-react";
+import { Loader2, Sparkles, Box as BoxIcon, MousePointerClick, RefreshCw, AlertCircle, Wand2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { chamarIA, ApiError } from "@/utils/api";
+
+// Timeout (ms) para fallback de UI caso a geração trave (Nano Banana ~30s típico).
+const RENDER_TIMEOUT_MS = 45000;
 
 // Detecta suporte a WebGL no device. Em mobile antigo o Canvas pode falhar silenciosamente.
 function detectWebGL() {
@@ -71,6 +74,15 @@ const SHAPES = [
   { id: "bandeja", label: "Bandeja" },
   { id: "colar", label: "Colar" },
 ];
+
+// Mapeia a categoria/forma da peça selecionada na biblioteca para uma das 3 variações 3D.
+// Joalheria → colar (gota/sphere) · Mesa & Casa → bandeja · Decorativo → geodo (icosaedro).
+function mapPieceTo3DShape(piece) {
+  if (!piece) return "geodo";
+  if (piece.category === "joalheria") return "colar";
+  if (piece.category === "mesa") return "bandeja";
+  return "geodo";
+}
 
 function GeodoMesh({ palette, texture }) {
   const ref = useRef();
@@ -190,8 +202,8 @@ function Piece({ shape, palette, textureUrl }) {
   return <GeodoMesh palette={palette} texture={null} />;
 }
 
-export default function Productions3D({ palette }) {
-  const [shape, setShape] = useState("geodo");
+export default function Productions3D({ palette, activePiece }) {
+  const [shape, setShape] = useState(() => mapPieceTo3DShape(activePiece));
   const [textureUrl, setTextureUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0); // 0–100 simulado
@@ -202,6 +214,20 @@ export default function Productions3D({ palette }) {
   useEffect(() => {
     setWebglReady(detectWebGL());
   }, []);
+
+  // Quando a paleta muda, limpa a textura gerada anteriormente (era da paleta antiga).
+  useEffect(() => {
+    setTextureUrl(null);
+    setError(null);
+  }, [palette?.id]);
+
+  // Sincroniza shape com a peça ativa selecionada na biblioteca da Studio.
+  useEffect(() => {
+    if (!activePiece) return;
+    const mapped = mapPieceTo3DShape(activePiece);
+    setShape((prev) => (prev === mapped ? prev : mapped));
+    setTextureUrl(null);
+  }, [activePiece?.id]);
 
   // Progresso simulado durante geração (~30s estimados). Para quando loading termina.
   useEffect(() => {
@@ -238,7 +264,8 @@ export default function Productions3D({ palette }) {
     if (loading) return;
     setLoading(true);
     setError(null);
-    const tid = toast.loading("Nano Banana renderizando peça… (~30s)", { icon: "🍌" });
+    const tid = toast.loading("Renderizando peça fotorrealista… (~30s)", { icon: "✨" });
+
     try {
       const data = await chamarIA("/ai/generate-image", {
         prompt: `Peça em formato de ${shape} aplicando a paleta "${palette.name}"`,
@@ -246,16 +273,20 @@ export default function Productions3D({ palette }) {
         shape,
         style: palette.style || null,
         palette_name: palette.name || null,
-      });
+      }, { timeoutMs: RENDER_TIMEOUT_MS, maxTentativas: 2 });
       const dataUrl = `data:${data.mime_type || "image/png"};base64,${data.image_base64}`;
       setProgress(100);
       setTextureUrl(dataUrl);
       toast.success("Render aplicado ao 3D!", { id: tid });
     } catch (e) {
-      const msg =
-        e instanceof ApiError && e.tipo === "saldo"
-          ? "Saldo do Universal Key esgotado. Recarregue para gerar renders."
-          : `Falha render: ${e?.message || "erro desconhecido"}`;
+      let msg;
+      if (e instanceof ApiError && e.tipo === "timeout") {
+        msg = "Renderização demorou mais que 45s. Tente novamente.";
+      } else if (e instanceof ApiError && e.tipo === "saldo") {
+        msg = "Saldo do Universal Key esgotado. Recarregue para gerar renders.";
+      } else {
+        msg = `Falha render: ${e?.message || "erro desconhecido"}`;
+      }
       setError(msg);
       toast.error(msg, { id: tid });
     } finally {
@@ -284,24 +315,30 @@ export default function Productions3D({ palette }) {
             </h3>
           </div>
           <div className="flex gap-1.5">
-            {SHAPES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setShape(s.id);
-                  setTextureUrl(null);
-                }}
-                className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] rounded-sm border transition-all ${
-                  shape === s.id
-                    ? "border-gold text-gold bg-gold/10"
-                    : "border-black/15 text-zinc-500 hover:border-gold/40"
-                }`}
-                data-testid={`prod3d-shape-${s.id}`}
-              >
-                {s.label}
-              </button>
-            ))}
+            {SHAPES.map((s) => {
+              const isActive = shape === s.id;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => {
+                    setShape(s.id);
+                    setTextureUrl(null);
+                  }}
+                  className={`relative px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] rounded-sm border transition-all ${
+                    isActive
+                      ? "border-gold text-ink bg-gold shadow-gold font-semibold"
+                      : "border-black/15 text-zinc-500 hover:border-gold/40"
+                  }`}
+                  data-testid={`prod3d-shape-${s.id}`}
+                >
+                  {s.label}
+                  {isActive && (
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -384,7 +421,7 @@ export default function Productions3D({ palette }) {
                 <Loader2 className="w-10 h-10 text-gold animate-spin" />
                 <div className="text-center">
                   <div className="text-sm text-zinc-100 font-medium tracking-wide">
-                    Nano Banana renderizando…
+                    Renderizando peça fotorrealista…
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-1 tracking-wide">
                     Isso leva cerca de 30 segundos
@@ -432,15 +469,16 @@ export default function Productions3D({ palette }) {
           type="button"
           onClick={handleGenerate}
           disabled={loading}
+          title="Cria uma imagem fotorrealista da peça com IA e aplica como textura no modelo 3D"
           className="btn-gold mt-5 w-full px-5 py-3 rounded-sm text-xs tracking-[0.18em] uppercase inline-flex items-center justify-center gap-2 disabled:opacity-60"
           data-testid="prod3d-generate-btn"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <ImageIcon className="w-4 h-4" />
+            <Wand2 className="w-4 h-4" />
           )}
-          {loading ? `Renderizando… ${Math.round(progress)}%` : "Gerar render fotorrealista (Nano Banana)"}
+          {loading ? `Renderizando… ${Math.round(progress)}%` : "✨ Gerar render fotorrealista"}
         </button>
 
         <div className="mt-4 flex items-start gap-2 text-xs text-zinc-300 leading-relaxed" data-testid="prod3d-instructions">

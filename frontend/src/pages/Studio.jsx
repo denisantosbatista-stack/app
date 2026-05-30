@@ -230,7 +230,7 @@ export default function Studio() {
 
           <PieceSelector activePieceId={activePieceId} onChange={setActivePiece} palette={activePalette} />
 
-          <Productions3D palette={activePalette} />
+          <Productions3D palette={activePalette} activePiece={activePiece} />
         </div>
       </div>
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Crown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Crown, Search, X } from "lucide-react";
 import PieceShape from "@/components/PieceShape";
 import { PIECES, PIECE_CATEGORIES, STYLES } from "@/data/palettes";
 
@@ -69,12 +69,58 @@ export function StyleSelector({ activeStyleId, onChange, activeStyle }) {
 }
 
 export function PieceSelector({ activePieceId, onChange, palette }) {
+  const [query, setQuery] = useState("");
+  const normalized = query.trim().toLowerCase();
+  const filteredPieces = useMemo(
+    () =>
+      normalized
+        ? PIECES.filter((p) => p.label.toLowerCase().includes(normalized) || p.shape.toLowerCase().includes(normalized))
+        : PIECES,
+    [normalized]
+  );
+  const hasResults = filteredPieces.length > 0;
+
   return (
     <div>
-      <h3 className="font-display text-xl tracking-tight mb-3">Tipo de peça</h3>
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <h3 className="font-display text-xl tracking-tight">Tipo de peça</h3>
+        <div className="relative flex-1 min-w-[180px] max-w-[260px]">
+          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar peça…"
+            aria-label="Buscar tipo de peça"
+            className="w-full bg-ink-surface border border-black/[0.08] rounded-sm pl-8 pr-7 py-1.5 text-[11px] tracking-wide text-ink-text placeholder:text-zinc-400 focus:outline-none focus:border-gold/50 transition-colors"
+            data-testid="piece-search-input"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Limpar busca"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-ink-text"
+              data-testid="piece-search-clear"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!hasResults && (
+        <div
+          className="text-[11px] text-zinc-500 italic px-1 py-3"
+          data-testid="piece-search-empty"
+        >
+          Nenhuma peça encontrada para "{query}".
+        </div>
+      )}
+
       <div className="space-y-4">
         {PIECE_CATEGORIES.map((cat) => {
-          const items = PIECES.filter((p) => p.category === cat.id);
+          const items = filteredPieces.filter((p) => p.category === cat.id);
           if (items.length === 0) return null;
           return (
             <div key={cat.id} data-testid={`piece-cat-${cat.id}`}>

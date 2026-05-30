@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, MessageCircle, Sparkles, RefreshCw, Image as ImageIcon, X } from "lucide-react";
+import { Send, Loader2, MessageCircle, Sparkles, RefreshCw, Image as ImageIcon, X, Check } from "lucide-react";
 import { toast } from "react-hot-toast";
+import ReactMarkdown from "react-markdown";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const STORAGE_KEY = "lindart.mentora.v1";
@@ -195,13 +196,26 @@ export default function Mentora() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"} gap-2`}
             >
+              {m.role === "assistant" && (
+                <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1">
+                  <div
+                    className="w-8 h-8 rounded-full bg-gradient-to-br from-gold via-gold to-amber-600 flex items-center justify-center shadow-gold"
+                    data-testid="mentora-avatar"
+                  >
+                    <Sparkles className="w-4 h-4 text-ink" />
+                  </div>
+                  <span className="text-[9px] tracking-[0.18em] uppercase text-gold font-medium">
+                    Mentora
+                  </span>
+                </div>
+              )}
               <div
-                className={`max-w-[88%] rounded-sm px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-[85%] rounded-sm px-4 py-3 text-sm leading-relaxed ${
                   m.role === "user"
-                    ? "bg-gold text-ink shadow-gold"
-                    : "bg-ink-surface border border-black/[0.06] text-ink-text"
+                    ? "bg-gold text-ink shadow-gold whitespace-pre-wrap"
+                    : "bg-ink-surface border border-black/[0.06] text-ink-text mentora-markdown"
                 }`}
                 data-testid={`mentora-msg-${m.role}`}
               >
@@ -212,7 +226,63 @@ export default function Mentora() {
                     className="rounded-sm mb-2 max-h-40 object-cover"
                   />
                 )}
-                {m.content}
+                {m.role === "assistant" ? (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                      ul: ({ node, ...props }) => (
+                        <ul className="list-disc pl-5 mb-2 space-y-1" {...props} />
+                      ),
+                      ol: ({ node, ...props }) => (
+                        <ol className="list-decimal pl-5 mb-2 space-y-1" {...props} />
+                      ),
+                      li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
+                      strong: ({ node, ...props }) => (
+                        <strong className="font-semibold text-gold" {...props} />
+                      ),
+                      em: ({ node, ...props }) => <em className="italic" {...props} />,
+                      h1: ({ node, ...props }) => (
+                        <h1 className="text-base font-display tracking-tight mt-2 mb-1" {...props} />
+                      ),
+                      h2: ({ node, ...props }) => (
+                        <h2 className="text-sm font-display tracking-tight mt-2 mb-1" {...props} />
+                      ),
+                      h3: ({ node, ...props }) => (
+                        <h3 className="text-sm font-medium mt-2 mb-1 text-gold" {...props} />
+                      ),
+                      code: ({ inline, ...props }) =>
+                        inline ? (
+                          <code
+                            className="px-1 py-0.5 bg-black/5 rounded text-[12px] font-mono"
+                            {...props}
+                          />
+                        ) : (
+                          <code
+                            className="block px-3 py-2 bg-black/5 rounded-sm text-[12px] font-mono whitespace-pre-wrap my-2"
+                            {...props}
+                          />
+                        ),
+                      a: ({ node, ...props }) => (
+                        <a
+                          className="text-gold underline underline-offset-2 hover:opacity-80"
+                          target="_blank"
+                          rel="noreferrer"
+                          {...props}
+                        />
+                      ),
+                      blockquote: ({ node, ...props }) => (
+                        <blockquote
+                          className="border-l-2 border-gold/60 pl-3 italic text-zinc-700 my-2"
+                          {...props}
+                        />
+                      ),
+                    }}
+                  >
+                    {m.content}
+                  </ReactMarkdown>
+                ) : (
+                  m.content
+                )}
               </div>
             </motion.div>
           ))}
@@ -229,19 +299,59 @@ export default function Mentora() {
 
       {/* Image preview */}
       {imagePreview && (
-        <div className="mb-3 flex items-center gap-3 bg-ink-surface border border-black/[0.06] rounded-sm p-2">
-          <img src={imagePreview} alt="preview" className="w-14 h-14 object-cover rounded-sm" />
-          <span className="text-xs text-zinc-600 flex-1">Foto anexada para análise</span>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="mb-3 flex items-center gap-3 bg-ink-surface border border-gold/40 rounded-sm p-3"
+          data-testid="mentora-image-preview"
+        >
+          <img
+            src={imagePreview}
+            alt="preview"
+            className="w-24 h-24 object-cover rounded-sm border border-black/10"
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 text-gold mb-1">
+              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+              <span className="text-xs font-medium tracking-wide">
+                Imagem pronta para análise
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              A Mentora analisará a peça anexada junto da sua próxima pergunta.
+            </p>
+          </div>
           <button
             onClick={() => {
               setImageB64(null);
               setImagePreview(null);
             }}
-            className="text-zinc-500 hover:text-ink-text"
+            className="self-start text-zinc-500 hover:text-ink-text p-1"
+            title="Remover imagem"
             data-testid="mentora-remove-image"
           >
             <X className="w-4 h-4" />
           </button>
+        </motion.div>
+      )}
+
+      {/* Suggestion chips above composer (after first message) */}
+      {messages.length > 0 && !loading && (
+        <div
+          className="mb-3 flex flex-wrap gap-2"
+          data-testid="mentora-suggestion-chips"
+        >
+          {QUICK_PROMPTS.slice(0, 3).map((q) => (
+            <button
+              key={q}
+              onClick={() => send(q)}
+              className="text-[11px] px-2.5 py-1.5 rounded-full bg-ink-surface border border-black/[0.08] hover:border-gold/50 hover:bg-gold/5 text-zinc-600 hover:text-ink-text transition-colors max-w-[260px] truncate"
+              data-testid="mentora-suggestion-chip"
+              title={q}
+            >
+              {q}
+            </button>
+          ))}
         </div>
       )}
 
@@ -256,7 +366,7 @@ export default function Mentora() {
               send();
             }
           }}
-          placeholder="Pergunte sobre proporções, bolhas, cura, pigmentos, acabamento…"
+          placeholder="Faça sua pergunta..."
           rows={2}
           className="flex-1 resize-none text-sm"
           data-testid="mentora-input"
@@ -293,7 +403,7 @@ export default function Mentora() {
       <div className="flex items-center justify-between mt-4 text-[11px] text-zinc-500">
         <span className="flex items-center gap-1.5">
           <Sparkles className="w-3 h-3 text-gold" />
-          Claude Sonnet 4.5 · contexto persistente
+          Mentora IA · contexto persistente
         </span>
         {messages.length > 0 && (
           <button
