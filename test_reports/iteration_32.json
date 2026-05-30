@@ -1,0 +1,37 @@
+{
+  "summary": "Backend P2 refactor regression — full pass. Validated (a) FastAPI lifespan migration, (b) Pydantic UserWarning resolution on routers/challenges.py (no more 'status shadows attribute' after @property removal), and (c) extraction of GET /api/ and GET /api/download/source into routers/system.py. New focused suite test_p2_system_lifespan_refactor.py: 11/11 passed in 1.44s. After clean backend restart, backend.err.log shows zero UserWarning / deprecation / on_event warnings — only WatchFiles reload notices. All smoke endpoints (/api/feed, /api/marketplace, /api/palettes, /api/og/marketplace/{id}) return 200, confirming routers still register correctly under the lifespan. Auth lifespan init verified by (1) admin seed login (admin@lindart.app) returning 200 with token, (2) POST /api/auth/register auto-generating a handle.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p2_system_lifespan_refactor.py",
+    "/app/test_reports/pytest/iteration_32.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py (93 lines) now exposes lifespan via @asynccontextmanager and closes the Mongo motor client on shutdown — clean, idiomatic FastAPI 0.110+ pattern.",
+    "routers/system.py /download/source correctly excludes node_modules, .git, __pycache__ and .env files (verified by inspecting zip namelist) — no secrets leak.",
+    "routers/challenges.py: ChallengeOut now declares 'status: str = active' as a real Pydantic field with the parent Challenge no longer carrying a status @property — UserWarning is gone after clean restart. status values still computed correctly via _status_for() at list/detail time (active/upcoming/ended).",
+    "Order of imports in server.py uses noqa: E402 because load_dotenv must run before routers import db — acceptable pattern given the env-driven Mongo client.",
+    "/api/download/source response uses StreamingResponse with iter([buf.getvalue()]) — works but materializes the full ZIP in memory; for very large repos consider yielding chunks. Not blocking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p2_system_lifespan_refactor.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (11/11)",
+    "frontend": "N/A (skipped per request)"
+  },
+  "test_credentials": "admin@lindart.app / Lindart#2026 — used to validate lifespan init_auth seed.",
+  "seed_data_creation": "Test created one ephemeral user via /api/auth/register (e2e_p2_lifespan_<ts>@lindartmail.io) to validate handle auto-generation. No other seed.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Suite reusable: pytest /app/backend/tests/test_p2_system_lifespan_refactor.py -v. It reads REACT_APP_BACKEND_URL via dotenv from /app/frontend/.env so it works standalone. Covers: root health, ZIP download (validates content-type, content-disposition, zip integrity, exclusion of node_modules/.git/.env/__pycache__), challenges list+detail with status field, smoke for feed/marketplace/palettes/og-marketplace, admin seed login, register handle generation.",
+  "rca of the issue": "N/A — pure refactor validation. No bug found."
+}

@@ -43,17 +43,9 @@ class Challenge(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
-    @property
-    def status(self) -> str:
-        now = datetime.now(timezone.utc).isoformat()
-        if now < self.starts_at:
-            return "upcoming"
-        if now > self.ends_at:
-            return "ended"
-        return "active"
-
 
 class ChallengeOut(Challenge):
+    # Campos computados na resposta — não existem no documento Mongo.
     status: str = "active"
     submissions_count: int = 0
 
