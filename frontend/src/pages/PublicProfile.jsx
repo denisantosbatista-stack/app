@@ -479,7 +479,7 @@ export default function PublicProfile() {
       <ShareSheet
         open={profileShareOpen}
         onClose={() => setProfileShareOpen(false)}
-        url={`${API_BASE}/u/${encodeURIComponent(data.handle || handle)}`}
+        url={`${API_BASE}/api/og/profile/${encodeURIComponent(data.handle || handle)}`}
         title={`@${data.handle || handle} — Artista LindArt`}
         description={`Portfólio de @${data.handle || handle} no LindArt.`}
       />

@@ -11,6 +11,8 @@ Rotas:
 - GET /api/og/marketplace/{item_id}/image.svg   → imagem SVG do item (cache 24h)
 - GET /api/og/feed/{post_id}                    → HTML com OG tags do post de feed
 - GET /api/og/feed/{post_id}/image.svg          → imagem SVG do post (cache 24h)
+- GET /api/og/profile/{handle}                  → HTML com OG tags do perfil público
+- GET /api/og/profile/{handle}/image.svg        → imagem SVG do perfil (cache 24h)
 """
 from __future__ import annotations
 
@@ -22,7 +24,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from ._shared import db
+from ._shared import db, normalize_handle
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -478,6 +480,193 @@ async def og_feed_image_svg(post_id: str):
     <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · FEED</text>
     <text x="60" y="280" font-size="64" font-weight="300" letter-spacing="2">{_html_escape(post_title)}</text>
     <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
+    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
+  </g>
+  {swatches}
+</svg>"""
+    return StreamingResponse(
+        iter([svg.encode("utf-8")]),
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+    )
+
+
+# ───────────────────────────── Profile OG ─────────────────────────────
+
+
+async def _profile_signature_palette(handle: str, limit_posts: int = 24) -> List[str]:
+    """Agrega top cores do handle (posts + DNAs). Mesma lógica de profiles.py
+    em escala reduzida para o crawler. Retorna até 6 hex únicos lowercase."""
+    color_counts: dict[str, int] = {}
+
+    posts = await db.feed_posts.find(
+        {"handle": handle}, {"_id": 0, "palette_colors": 1}
+    ).sort("created_at", -1).limit(limit_posts).to_list(limit_posts)
+    for p in posts:
+        for c in p.get("palette_colors", []) or []:
+            if isinstance(c, str) and _HEX_RE.fullmatch(c.strip()):
+                key = c.strip().lower()
+                color_counts[key] = color_counts.get(key, 0) + 1
+
+    dnas = await db.dna_shares.find(
+        {"handle": handle}, {"_id": 0, "payload": 1}
+    ).sort("created_at", -1).limit(6).to_list(6)
+    for d in dnas:
+        for c in (d.get("payload") or {}).get("dominant_colors", []) or []:
+            if isinstance(c, str) and _HEX_RE.fullmatch(c.strip()):
+                key = c.strip().lower()
+                color_counts[key] = color_counts.get(key, 0) + 2  # peso maior
+
+    if not color_counts:
+        return []
+    return [c for c, _ in sorted(color_counts.items(), key=lambda kv: -kv[1])[:6]]
+
+
+async def _profile_summary(handle: str) -> Optional[dict]:
+    """Retorna {posts, dnas, market, total_likes} ou None se handle inexistente em
+    todas as coleções."""
+    posts_count = await db.feed_posts.count_documents({"handle": handle})
+    dnas_count = await db.dna_shares.count_documents({"handle": handle})
+    market_count = await db.marketplace_items.count_documents({"handle": handle})
+    subs_count = await db.challenge_submissions.count_documents({"handle": handle})
+    if not any([posts_count, dnas_count, market_count, subs_count]):
+        return None
+    likes_agg = await db.feed_posts.aggregate([
+        {"$match": {"handle": handle}},
+        {"$group": {"_id": None, "total": {"$sum": "$likes"}}},
+    ]).to_list(1)
+    total_likes = int(likes_agg[0]["total"]) if likes_agg else 0
+    return {
+        "posts": posts_count,
+        "dnas": dnas_count,
+        "market": market_count,
+        "subs": subs_count,
+        "total_likes": total_likes,
+    }
+
+
+@router.get("/profile/{handle}", response_class=HTMLResponse)
+async def og_profile_page(handle: str, request: Request):
+    """Página HTML com Open Graph tags do perfil público @handle.
+    Crawlers leem os metatags; humanos são redirecionados para /u/{handle}."""
+    origin = _absolute_origin(request)
+    h = normalize_handle(handle)
+    if not h:
+        html = (
+            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+            "<title>Handle inválido · LindArt</title>"
+            '<meta property="og:title" content="Handle inválido">'
+            '<meta property="og:description" content="Esse identificador de artista não é válido.">'
+            f'<meta property="og:url" content="{origin}/feed">'
+            '<meta http-equiv="refresh" content="0; url=/feed">'
+            "</head><body>Handle inválido.</body></html>"
+        )
+        return HTMLResponse(content=html, status_code=400)
+
+    summary = await _profile_summary(h)
+    redirect_path = f"/u/{h}"
+    redirect_abs = f"{origin}{redirect_path}" if origin else redirect_path
+    og_image_abs = (
+        f"{origin}/api/og/profile/{h}/image.svg"
+        if origin
+        else f"/api/og/profile/{h}/image.svg"
+    )
+
+    if not summary:
+        html = (
+            f'<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+            f"<title>@{_html_escape(h)} — Perfil ainda vazio · LindArt</title>"
+            f'<meta property="og:title" content="@{_html_escape(h)} — Perfil ainda vazio">'
+            f'<meta property="og:description" content="Esse artista ainda não publicou peças, DNAs ou itens no LindArt.">'
+            f'<meta property="og:url" content="{redirect_abs}">'
+            f'<meta property="og:image" content="{og_image_abs}">'
+            f'<meta http-equiv="refresh" content="0; url={redirect_path}">'
+            f"</head><body>Perfil ainda vazio.</body></html>"
+        )
+        return HTMLResponse(content=html, status_code=404)
+
+    palette = await _profile_signature_palette(h)
+    if len(palette) < 3:
+        for c in _DEFAULT_PALETTE:
+            if c.lower() not in palette:
+                palette.append(c.lower())
+            if len(palette) >= 5:
+                break
+
+    title = f"@{h} — Artista LindArt"
+    parts: List[str] = []
+    if summary["posts"]:
+        parts.append(f"{summary['posts']} peça(s)")
+    if summary["dnas"]:
+        parts.append(f"{summary['dnas']} DNA(s)")
+    if summary["market"]:
+        parts.append(f"{summary['market']} no marketplace")
+    if summary["total_likes"]:
+        parts.append(f"{summary['total_likes']} curtidas")
+    parts.append("Veja o portfólio completo no LindArt.")
+    description = " · ".join(parts)[:280]
+
+    template = _jinja_env.get_template("dna_og.html")
+    html = template.render(
+        signature=f"@{h}",
+        title=title,
+        description=description,
+        colors=palette,
+        redirect_path=redirect_path,
+        redirect_abs=redirect_abs,
+        og_image_abs=og_image_abs,
+    )
+    return HTMLResponse(
+        content=html,
+        headers={"Cache-Control": "public, max-age=600, s-maxage=600"},
+    )
+
+
+@router.get("/profile/{handle}/image.svg")
+async def og_profile_image_svg(handle: str):
+    """Imagem OG (SVG) do perfil. 1200×630. Usa paleta assinatura agregada."""
+    h = normalize_handle(handle) or handle.strip().lower()
+    summary = await _profile_summary(h) if h else None
+    palette = (await _profile_signature_palette(h)) if h else []
+    if len(palette) < 3:
+        palette = palette + [c for c in _DEFAULT_PALETTE if c.lower() not in palette]
+    palette = palette[:6] or list(_DEFAULT_PALETTE)
+
+    stops = "".join(
+        f'<stop offset="{int(i / max(1, len(palette) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
+        for i, c in enumerate(palette)
+    )
+    swatch_w = 1080 // max(1, len(palette))
+    swatches = "".join(
+        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
+        for i, c in enumerate(palette)
+    )
+
+    stats_line = ""
+    if summary:
+        bits: List[str] = []
+        if summary["posts"]:
+            bits.append(f"{summary['posts']} peças")
+        if summary["dnas"]:
+            bits.append(f"{summary['dnas']} DNAs")
+        if summary["total_likes"]:
+            bits.append(f"{summary['total_likes']} curtidas")
+        stats_line = " · ".join(bits)
+
+    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
+  <rect width="1200" height="630" filter="url(#grain)"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
+    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · ARTISTA</text>
+    <text x="60" y="280" font-size="80" font-weight="300" letter-spacing="2">@{_html_escape(h)}</text>
+    <text x="60" y="340" font-size="26" opacity="0.75">{_html_escape(stats_line)}</text>
+    <text x="60" y="600" font-size="22" opacity="0.7">Paleta assinatura</text>
     <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
   </g>
   {swatches}
