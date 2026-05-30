@@ -18,15 +18,19 @@ import Challenges from "@/pages/Challenges";
 import PublicProfile from "@/pages/PublicProfile";
 import PublicDNAPage from "@/pages/PublicDNAPage";
 import Privacy from "@/pages/Privacy";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import UpgradeInfoModal from "@/components/UpgradeInfoModal";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
 function App() {
   const loadSaved = usePaletteStore((s) => s.loadSaved);
   const location = useLocation();
   const isPublic = location.pathname.startsWith("/dna/");
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   useEffect(() => {
     loadSaved();
@@ -34,50 +38,58 @@ function App() {
 
   if (isPublic) {
     return (
-      <div className="min-h-screen bg-bone text-ink-text" data-testid="app-public">
-        <Routes>
-          <Route path="/dna/:id" element={<PublicDNAPage />} />
-        </Routes>
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-bone text-ink-text" data-testid="app-public">
+          <Routes>
+            <Route path="/dna/:id" element={<PublicDNAPage />} />
+          </Routes>
+        </div>
+      </AuthProvider>
     );
   }
 
   return (
-    <div className="min-h-screen bg-ink text-ink-text relative overflow-x-hidden" data-testid="app-root">
-      <Navbar />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/studio" element={<Studio />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/calculator" element={<Calculator />} />
-          <Route path="/compare" element={<Compare />} />
-          <Route path="/mixer" element={<Mixer />} />
-          <Route path="/tips" element={<Tips />} />
-          <Route path="/mentora" element={<Mentora />} />
-          <Route path="/trends" element={<Trends />} />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/feed" element={<Feed />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/challenges" element={<Challenges />} />
-          <Route path="/u/:handle" element={<PublicProfile />} />
-          <Route path="/privacidade" element={<Privacy />} />
-        </Routes>
-      </main>
-      <footer className="border-t border-black/[0.06] py-6 md:py-10 px-6 pb-36 md:pb-10 text-center text-[10px] md:text-xs tracking-[0.2em] uppercase text-ink-muted">
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <span>LindArt · Studio de Resina Premium · © 2026</span>
-          <span className="text-gold">·</span>
-          <a href="/privacidade" className="hover:text-gold transition-colors" data-testid="footer-privacy-link">
-            Privacidade
-          </a>
-        </div>
-      </footer>
-      <MobileNav />
-      <OnboardingFlow />
-      <OpeningTour />
-      <UpgradeInfoModal />
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-ink text-ink-text relative overflow-x-hidden" data-testid="app-root">
+        {!isAuthPage && <Navbar />}
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/studio" element={<Studio />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/calculator" element={<Calculator />} />
+            <Route path="/compare" element={<Compare />} />
+            <Route path="/mixer" element={<Mixer />} />
+            <Route path="/tips" element={<Tips />} />
+            <Route path="/mentora" element={<Mentora />} />
+            <Route path="/trends" element={<Trends />} />
+            <Route path="/collections" element={<Collections />} />
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/challenges" element={<Challenges />} />
+            <Route path="/u/:handle" element={<PublicProfile />} />
+            <Route path="/privacidade" element={<Privacy />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </main>
+        {!isAuthPage && (
+          <footer className="border-t border-black/[0.06] py-6 md:py-10 px-6 pb-36 md:pb-10 text-center text-[10px] md:text-xs tracking-[0.2em] uppercase text-ink-muted">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <span>LindArt · Studio de Resina Premium · © 2026</span>
+              <span className="text-gold">·</span>
+              <a href="/privacidade" className="hover:text-gold transition-colors" data-testid="footer-privacy-link">
+                Privacidade
+              </a>
+            </div>
+          </footer>
+        )}
+        {!isAuthPage && <MobileNav />}
+        <OnboardingFlow />
+        <OpeningTour />
+        <UpgradeInfoModal />
+      </div>
+    </AuthProvider>
   );
 }
 

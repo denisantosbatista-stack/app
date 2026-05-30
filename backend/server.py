@@ -2171,11 +2171,18 @@ from routers.feed import router as feed_router  # noqa: E402
 from routers.marketplace import router as marketplace_router  # noqa: E402
 from routers.profiles import router as profiles_router  # noqa: E402
 from routers.challenges import router as challenges_router  # noqa: E402
+from routers.auth import router as auth_router, init_auth  # noqa: E402
 
 app.include_router(feed_router)
 app.include_router(marketplace_router)
 app.include_router(profiles_router)
 app.include_router(challenges_router)
+app.include_router(auth_router)
+
+
+@app.on_event("startup")
+async def _startup_auth():
+    await init_auth()
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).

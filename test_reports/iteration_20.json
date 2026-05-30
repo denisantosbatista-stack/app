@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend E2E auth integration testing for LindArt JWT auth (Navbar + Login/Register + AuthContext). All 11 critical flows passed: /login & /register render, navbar shows Entrar/Cadastrar when logged out, admin login works and renders user menu with initials+name, dropdown shows name/email and Logout/Coleção links, logout clears token and reverts UI, session persists after reload (token in localStorage 'lindart.auth.token'), invalid login shows red error toast and stays on /login, register flow creates user + auto-logs in, mobile (375x800) navbar correctly shows mobile-navbar-login-btn/register-btn when logged out and mobile-navbar-logout-btn when logged in.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) Update /app/memory/test_credentials.md or test guidance to suggest a non-reserved TLD for E2E user emails (e.g. @lindartmail.io or @lindart.dev). Pydantic EmailStr rejects .test/.invalid/.example/.localhost per RFC 2606. Current backend correctly returns 422 'value is not a valid email address: The part after the @-sign is a special-use or reserved name'. This is correct backend behavior — only the testing recipe in the request needs adjustment."
+  ],
+  "critical_code_review_comments": [
+    "AuthContext: setUser(false) is used to signal 'unauthenticated' while null means 'loading'. This works but mixing boolean-as-unauth with object-as-auth in the same state is fragile; consider an explicit { status: 'loading' | 'guest' | 'authed', user }. Low priority.",
+    "Navbar.jsx is ~470 lines and mixes nav config, dropdowns, mobile menu, auth UI, download-source logic. Consider extracting AuthMenu (desktop + mobile) into its own component to keep Navbar under ~300 lines.",
+    "AuthContext.fetchMe silently removes token on any error (including 5xx/network). A transient backend hiccup would log the user out unexpectedly. Consider only clearing the token on 401/403.",
+    "Both Login.jsx and Register.jsx duplicate the same shell layout, password show/eye toggle and error block — could be extracted into a shared AuthFormShell component."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% (11/11 critical flows)"},
+  "test_credentials": "admin@lindart.app / Lindart#2026 (admin) and teste@lindart.app / Teste#2026 (user) — both verified working. New register validated with e2e_<ts>@lindartmail.io.",
+  "seed_data_creation": "Created one transient registered user e2e_1780156006@lindartmail.io / Teste#2026 to validate register+auto-login flow.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Auth frontend is fully validated. Token persists in localStorage 'lindart.auth.token'. To bypass onboarding modal set localStorage 'lindart.onboarding.v1.completed'='1' and 'lindart.tour.v1.seen'='1' BEFORE navigating to '/'. Auth pages /login and /register intentionally hide the Navbar (App.js isAuthPage). To test the user-menu dropdown you must navigate to '/' (or any non-auth page) after login. Avoid .test/.invalid/.example TLDs in test emails — pydantic EmailStr rejects them with 422.",
+  "rca of the issue": "First register attempt failed with 422 because the suggested email domain '@lindart.test' is a reserved TLD per RFC 2606 and is rejected by Pydantic EmailStr. Retest with '@lindartmail.io' succeeded — registration creates user, returns access_token, stores it in localStorage, and the navbar immediately reflects the logged-in state via AuthContext. This is not a frontend or backend bug; only the test data recipe needs adjustment."
+}
