@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { Heart, Save, Download, Share2 } from "lucide-react";
+import { Heart, Save, Download, Share2, History } from "lucide-react";
 import { PRESET_PALETTES, STYLES, PIECES } from "@/data/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteGrid from "@/components/PaletteGrid";
@@ -9,6 +9,7 @@ import PieceShape from "@/components/PieceShape";
 import ResinVisualizer from "@/components/ResinVisualizer";
 import AIGenerator from "@/components/AIGenerator";
 import ExportModal from "@/components/ExportModal";
+import PaletteVersionsModal from "@/components/PaletteVersionsModal";
 import { StyleSelector, PieceSelector } from "@/components/PieceSelectors";
 import Productions3D from "@/components/Productions3D";
 import MarketingPanel from "@/components/MarketingPanel";
@@ -31,6 +32,7 @@ export default function Studio() {
   const [search, setSearch] = useState("");
   const [filterStyle, setFilterStyle] = useState("todos");
   const [exportOpen, setExportOpen] = useState(false);
+  const [versionsOpen, setVersionsOpen] = useState(false);
   const [aiPalette, setAiPalette] = useState(null);
   const [sharedPalette, setSharedPalette] = useState(null);
   const captureRef = useRef(null);
@@ -219,6 +221,8 @@ export default function Studio() {
             onFavorite={() => handleFavoriteToggle(activePalette)}
             onExport={() => setExportOpen(true)}
             onShare={handleShare}
+            onVersions={() => setVersionsOpen(true)}
+            isSaved={savedIds.has(activePalette.id)}
           />
 
           <StyleSelector activeStyleId={activeStyleId} onChange={setActiveStyle} activeStyle={activeStyle} />
@@ -243,11 +247,17 @@ export default function Studio() {
         open={exportOpen}
         onClose={() => setExportOpen(false)}
       />
+
+      <PaletteVersionsModal
+        palette={savedIds.has(activePalette.id) ? activePalette : null}
+        open={versionsOpen}
+        onClose={() => setVersionsOpen(false)}
+      />
     </div>
   );
 }
 
-function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport, onShare }) {
+function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport, onShare, onVersions, isSaved }) {
   return (
     <div className="glass rounded-sm p-5" ref={captureRef} data-testid="active-palette-display">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
@@ -259,6 +269,14 @@ function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport
         <div className="flex gap-2 flex-wrap">
           <HeaderButton onClick={onSave} icon={Save} label="Salvar" testid="save-palette-btn" />
           <HeaderButton onClick={onFavorite} icon={Heart} label="Favoritar" testid="fav-palette-btn" />
+          {isSaved && (
+            <HeaderButton
+              onClick={onVersions}
+              icon={History}
+              label="Versões"
+              testid="versions-palette-btn"
+            />
+          )}
           <HeaderButton onClick={onShare} icon={Share2} label="Compartilhar" testid="share-palette-btn" />
           <HeaderButton onClick={onExport} icon={Download} label="Exportar" testid="export-palette-btn" primary />
         </div>

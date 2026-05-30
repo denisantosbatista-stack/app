@@ -23,6 +23,11 @@ export const usePaletteStore = create(
       aiGenerating: false,
       aiResult: null,
 
+      // Versioning state (não persistido — recarrega sob demanda)
+      versions: [],
+      loadingVersions: false,
+      versionsPaletteId: null,
+
       // Onboarding state (persisted)
       onboardingCompleted: false,
       userSegment: null, // hobby | iniciante | profissional | empreendedor
@@ -154,6 +159,72 @@ export const usePaletteStore = create(
               ? { message: e.message, tipo: e.tipo, status: e.status, detail: e.detail }
               : { message: e?.message || "Falha desconhecida", tipo: "servidor" };
           set({ aiGenerating: false, lastError });
+          throw e;
+        }
+      },
+
+      // ===== Versioning ops =====
+      loadVersions: async (paletteId) => {
+        if (!paletteId) return;
+        set({ loadingVersions: true, versionsPaletteId: paletteId, lastError: null });
+        try {
+          const res = await axios.get(`${API}/palettes/${paletteId}/versions`);
+          set({
+            versions: res.data?.versions || [],
+            loadingVersions: false,
+          });
+        } catch (e) {
+          set({ loadingVersions: false, versions: [], lastError: e.message });
+          throw e;
+        }
+      },
+
+      saveManualVersion: async (paletteId, label) => {
+        if (!paletteId || !label?.trim()) return null;
+        try {
+          const res = await axios.post(`${API}/palettes/${paletteId}/versions`, {
+            label: label.trim(),
+          });
+          // Atualiza lista local mantendo ordem: manuais primeiro
+          set((s) => {
+            if (s.versionsPaletteId !== paletteId) return {};
+            const manual = [res.data, ...s.versions.filter((v) => v.kind === "manual")];
+            const auto = s.versions.filter((v) => v.kind === "auto");
+            return { versions: [...manual, ...auto] };
+          });
+          return res.data;
+        } catch (e) {
+          set({ lastError: e.message });
+          throw e;
+        }
+      },
+
+      restoreVersion: async (paletteId, versionId) => {
+        try {
+          const res = await axios.post(
+            `${API}/palettes/${paletteId}/versions/${versionId}/restore`
+          );
+          // Atualiza a paleta na lista saved com os novos campos
+          set((s) => ({
+            saved: s.saved.map((p) => (p.id === paletteId ? { ...p, ...res.data } : p)),
+          }));
+          // Recarrega versões (porque o restore cria auto-snapshot do estado anterior)
+          await get().loadVersions(paletteId);
+          return res.data;
+        } catch (e) {
+          set({ lastError: e.message });
+          throw e;
+        }
+      },
+
+      deleteVersion: async (paletteId, versionId) => {
+        const prev = get().versions;
+        // Optimistic
+        set((s) => ({ versions: s.versions.filter((v) => v.id !== versionId) }));
+        try {
+          await axios.delete(`${API}/palettes/${paletteId}/versions/${versionId}`);
+        } catch (e) {
+          set({ versions: prev, lastError: e.message });
           throw e;
         }
       },
