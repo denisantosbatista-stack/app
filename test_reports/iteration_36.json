@@ -1,0 +1,35 @@
+{
+  "summary": "Iteração 36 — Regressão pós-refator do og.py (helpers _og_404_html + _build_og_palette_svg) em 4 famílias de rotas + validação E2E do ShareSheet em rotas públicas SEM autenticação. 12/12 testes backend passed (1 skip esperado), 100% dos fluxos UI validados.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_og_refactor.py",
+    "/app/backend/tests/test_og_feed.py",
+    "/app/test_reports/pytest/iteration_36.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "og.py refator OK: helpers _og_404_html + _build_og_palette_svg reduziram duplicação em DNA/Market/Feed/Profile e padronizaram resposta 404 com og:title + og:url + meta refresh para todas as 4 famílias — crawlers nunca veem link quebrado.",
+    "og_alt agora é parametrizado em dna_og.html (DNA: 'X — DNA Visual em resina'; Feed: 'X — Post no feed LindArt'; Profile: 'Paleta assinatura de @h no LindArt') — semântica acessível correta por tipo.",
+    "OnboardingFlow/OpeningTour confirmadamente NÃO bloqueia rotas públicas anônimas (/u/teste e /feed sem auth token): visitante que clica em link compartilhado vê a PublicProfile/Feed direto sem fricção — objetivo do épico atingido.",
+    "ShareSheet montado em 3 contextos (profile, post-no-perfil, post-no-feed) com data-testids consistentes (share-sheet, share-sheet-url, share-sheet-copy, share-sheet-close, share-sheet-whatsapp, share-sheet-instagram). URLs constroem-se corretamente a partir de REACT_APP_BACKEND_URL.",
+    "_og_palette_svg combina 5+ args nomeados (extras_svg, footer_left, subtitle, title_size, title_y, subtitle_y, subtitle_size) — boa abstração, mas a função profile_image_svg em og.py:643 NÃO usa o helper (reimplementa stops/swatches inline). Considerar refatorar profile_image_svg também para usar _build_og_palette_svg com extras_svg p/ stats_line, eliminando última duplicação."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_og_refactor.py"
+  ],
+  "success_rate": {"backend": "100% (12/12 passed, 1 skipped)", "frontend": "100% (3/3 fluxos ShareSheet + 2 rotas públicas sem onboarding)"},
+  "test_credentials": "Não necessário — todos os fluxos testados são públicos (/u/teste, /feed, /api/og/*).",
+  "seed_data_creation": "Nenhum — utilizado post id=8bc927129698 já em banco (handle teste).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests reusáveis: /app/backend/tests/test_og_refactor.py (regressão das 4 rotas OG com 404+SVG fallback) e test_og_feed.py (cenários feed). data-testids do ShareSheet: share-sheet, share-sheet-url, share-sheet-copy, share-sheet-close, share-sheet-whatsapp, share-sheet-instagram, share-sheet-overlay. Gatilhos: profile-share-button (perfil), post-share-button-{id} (PublicProfile aba Feed), feed-share-{id} (Feed.jsx). Onboarding global confirmado NÃO interfere em rotas públicas anônimas.",
+  "rca of the issue": "n/a — todos os 11 cenários do review_request validados (5 backend OG + 6 frontend ShareSheet/Onboarding). Único skip: HTML do DNA OG com share válido — sem endpoint público para listar dna_shares (404 path já cobre _og_404_html)."
+}
