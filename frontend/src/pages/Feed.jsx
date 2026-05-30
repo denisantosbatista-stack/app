@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
-import { Heart, Plus, Loader2, X, Image as ImageIcon, RefreshCw, Hash, Crown } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Heart, Plus, Loader2, X, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const LIKED_KEY = "lindart.feed.liked.v1";
-const HANDLE_KEY = "lindart.author.handle.v1";
 
 function loadLiked() {
   try {
@@ -26,12 +26,23 @@ function saveLiked(set) {
 const POPULAR_TAGS = ["minimalista", "joalheria", "geode", "ocean", "petal", "fluido", "cosmico", "natural"];
 
 export default function Feed() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState(null);
   const [liked, setLiked] = useState(loadLiked());
   const [showCreate, setShowCreate] = useState(false);
   const [pick, setPick] = useState(null);
+
+  function handleOpenCreate() {
+    if (!isAuthenticated) {
+      toast("Faça login para publicar no feed", { icon: "🔒" });
+      navigate("/login", { state: { from: "/feed" } });
+      return;
+    }
+    setShowCreate(true);
+  }
 
   async function fetchPick() {
     try {
@@ -115,7 +126,7 @@ export default function Feed() {
               Atualizar
             </button>
             <button
-              onClick={() => setShowCreate(true)}
+              onClick={handleOpenCreate}
               className="text-[11px] tracking-[0.22em] uppercase border border-gold/60 text-gold hover:bg-gold/10 px-4 py-2 inline-flex items-center gap-2 rounded-sm"
               data-testid="feed-open-create"
             >
@@ -171,7 +182,7 @@ export default function Feed() {
           Carregando feed…
         </div>
       ) : posts.length === 0 ? (
-        <EmptyState onCreate={() => setShowCreate(true)} />
+        <EmptyState onCreate={handleOpenCreate} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {columns.map((col, ci) => (
@@ -192,6 +203,7 @@ export default function Feed() {
       <AnimatePresence>
         {showCreate && (
           <CreatePostModal
+            user={user}
             onClose={() => setShowCreate(false)}
             onCreated={(newPost) => {
               setPosts((arr) => [newPost, ...arr]);
@@ -250,10 +262,13 @@ function PickHero({ pick, liked, onLike }) {
             )}
             <Link
               to={`/u/${pick.handle}`}
-              className="text-xs tracking-[0.18em] uppercase text-zinc-700 hover:text-gold inline-flex items-center gap-1"
+              className="text-xs tracking-[0.18em] uppercase text-zinc-700 hover:text-gold inline-flex items-center gap-1.5"
               data-testid="feed-pick-handle"
             >
               @{pick.handle}
+              {pick.verified && (
+                <BadgeCheck className="w-3.5 h-3.5 text-gold" aria-label="Perfil verificado" />
+              )}
             </Link>
           </div>
 
@@ -344,10 +359,17 @@ function PostCard({ post, liked, onLike }) {
         <div className="flex items-center justify-between gap-2">
           <Link
             to={`/u/${encodeURIComponent(post.handle)}`}
-            className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-gold"
+            className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-gold inline-flex items-center gap-1"
             data-testid={`feed-author-${post.id}`}
           >
             @{post.handle}
+            {post.verified && (
+              <BadgeCheck
+                className="w-3.5 h-3.5 text-gold"
+                aria-label="Perfil verificado"
+                data-testid={`feed-verified-${post.id}`}
+              />
+            )}
           </Link>
           {colors.length > 0 && (
             <div className="flex gap-0.5">
@@ -367,8 +389,8 @@ function PostCard({ post, liked, onLike }) {
   );
 }
 
-function CreatePostModal({ onClose, onCreated }) {
-  const [handle, setHandle] = useState(() => localStorage.getItem(HANDLE_KEY) || "");
+function CreatePostModal({ onClose, onCreated, user }) {
+  const authorHandle = (user?.handle || "").replace(/^@/, "");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
@@ -394,14 +416,18 @@ function CreatePostModal({ onClose, onCreated }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!handle.trim() || !title.trim() || !imageBase64) {
-      toast.error("Handle, título e imagem são obrigatórios");
+    if (!authorHandle) {
+      toast.error("Sua conta não possui handle. Atualize seu perfil.");
+      return;
+    }
+    if (!title.trim() || !imageBase64) {
+      toast.error("Título e imagem são obrigatórios");
       return;
     }
     setSubmitting(true);
     try {
+      const token = localStorage.getItem("lindart.auth.token");
       const body = {
-        handle: handle.trim(),
         title: title.trim(),
         description: description.trim(),
         image_base64: imageBase64,
@@ -413,7 +439,11 @@ function CreatePostModal({ onClose, onCreated }) {
       };
       const res = await fetch(`${API_BASE}/api/feed`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -421,7 +451,6 @@ function CreatePostModal({ onClose, onCreated }) {
         throw new Error(j.detail || `HTTP ${res.status}`);
       }
       const created = await res.json();
-      localStorage.setItem(HANDLE_KEY, handle.trim().replace(/^@/, ""));
       onCreated(created);
     } catch (err) {
       console.error(err);
@@ -479,7 +508,21 @@ function CreatePostModal({ onClose, onCreated }) {
             </div>
           </label>
 
-          <Field label="Seu handle" placeholder="@suaarte" value={handle} onChange={setHandle} testId="feed-create-handle" />
+          <div className="block">
+            <span className="text-[10px] tracking-[0.22em] uppercase text-zinc-500">Autor</span>
+            <div
+              className="mt-1.5 flex items-center justify-between gap-2 bg-ink-surface border border-black/[0.08] rounded-sm px-3 py-2 text-sm text-zinc-900"
+              data-testid="feed-create-author"
+            >
+              <span className="inline-flex items-center gap-2">
+                <BadgeCheck className="w-4 h-4 text-gold" />
+                @{authorHandle || "—"}
+              </span>
+              <span className="text-[10px] tracking-[0.22em] uppercase text-gold">
+                Perfil Verificado
+              </span>
+            </div>
+          </div>
           <Field label="Título da peça" placeholder="Ex.: Geode Cosmos · azul cobalto" value={title} onChange={setTitle} testId="feed-create-title" />
           <Field label="Descrição (opcional)" placeholder="Conte o processo, mood, materiais…" value={description} onChange={setDescription} multiline testId="feed-create-desc" />
           <Field label="Tags (separadas por vírgula)" placeholder="geode, ocean, premium" value={tags} onChange={setTags} testId="feed-create-tags" />

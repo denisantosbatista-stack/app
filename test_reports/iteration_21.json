@@ -1,0 +1,28 @@
+{
+  "summary": "End-to-end testing of JWT-gated Marketplace and Challenges flows + 'Perfil Verificado' badge. Backend: 7/7 pytest tests pass (GET endpoints public + return verified field, POST /api/marketplace returns 401 without token & 201 with token returning handle='teste' and verified=true; same for POST /api/challenges/{id}/submissions). Frontend: all 5 E2E checks pass — (1) logged-out 'Enviar peça' redirects to /login and modal does NOT open, (2) logged-out 'Anunciar' redirects to /login and modal does NOT open, (3) logged-in submit modal shows 'Enviando como @teste' + 'Perfil Verificado' (data-testid=challenge-submit-author), challenge-submit-handle test-id no longer exists, image upload + caption + submit succeeds and the new submission appears with the gold BadgeCheck, (4) logged-in marketplace create modal shows 'Anunciando como @teste' + Perfil Verificado (data-testid=market-create-author), market-create-handle no longer exists, item creation succeeds and the new card renders with BadgeCheck next to @teste, (5) /feed regression OK.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_jwt_marketplace_challenges.py",
+    "/app/test_reports/pytest/iteration_21.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Challenges.jsx and Marketplace.jsx duplicate the same 'author block' UI (handle + BadgeCheck + Perfil Verificado label). Extract a shared <VerifiedAuthorChip user=.../> component to keep things DRY and consistent if the verified styling ever changes.",
+    "Both pages duplicate the bearer-token+credentials POST snippet (read localStorage 'lindart.auth.token', build headers, credentials: 'include'). Centralise into AuthContext (e.g. authFetch(url, opts)) so every protected POST handles token refresh/expiry consistently. Right now an expired token in localStorage will yield silent 401s.",
+    "Marketplace.jsx is approaching the 'split it' line (~530 lines) — CreateItemModal could live in its own file. Same for SubmitModal in Challenges.jsx.",
+    "On 401 from the protected POSTs the modals only show err.detail in a toast and stay open. Consider detecting 401 and redirecting to /login + closing modal so the UX matches the pre-submit gate."
+  ],
+  "updated_files": ["/app/backend/tests/test_jwt_marketplace_challenges.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% (5/5 critical flows)"},
+  "test_credentials": "teste@lindart.app / Teste#2026 — confirmed working; token in localStorage 'lindart.auth.token'.",
+  "seed_data_creation": "Created one challenge submission (caption='TEST_e2e_submission') and one marketplace item (title='TEST_e2e_market_item') under user 'teste' during E2E. Marketplace item left in DB (delete was attempted via DELETE /api/marketplace/{id} as best-effort cleanup in backend test only).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend POST /api/marketplace and POST /api/challenges/{id}/submissions are JWT-protected and ignore any client-supplied handle — they derive handle+verified from the authenticated user. Frontend uses data-testid 'challenge-submit-author' / 'market-create-author' for the read-only verified-author chip; old 'challenge-submit-handle' and 'market-create-handle' are gone. To bypass onboarding pre-set localStorage 'lindart.onboarding.v1.completed'='1' and 'lindart.tour.v1.seen'='1'.",
+  "rca of the issue": "Not applicable — no bugs found. Implementation matches the spec: gating, bearer header, verified badge, removal of handle inputs, and server-side enforcement of handle/verified from the JWT identity."
+}

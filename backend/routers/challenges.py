@@ -18,10 +18,11 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from ._shared import db, normalize_handle, save_base64_image
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/challenges", tags=["challenges"])
 
@@ -66,13 +67,13 @@ class ChallengeSubmission(BaseModel):
     image_url: str
     palette_colors: List[str] = Field(default_factory=list)
     votes: int = 0
+    verified: bool = False
     created_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
 
 
 class SubmissionCreate(BaseModel):
-    handle: str
     caption: Optional[str] = ""
     image_base64: Optional[str] = None
     image_url: Optional[str] = None
@@ -207,7 +208,11 @@ async def get_challenge(challenge_id: str):
 
 
 @router.post("/{challenge_id}/submissions", response_model=ChallengeSubmission)
-async def create_submission(challenge_id: str, req: SubmissionCreate):
+async def create_submission(
+    challenge_id: str,
+    req: SubmissionCreate,
+    user: dict = Depends(get_current_user),
+):
     ch = await db.challenges.find_one({"id": challenge_id}, {"_id": 0})
     if not ch:
         raise HTTPException(status_code=404, detail="Desafio não encontrado")
@@ -218,9 +223,9 @@ async def create_submission(challenge_id: str, req: SubmissionCreate):
     if status == "upcoming":
         raise HTTPException(status_code=400, detail="Este desafio ainda não começou")
 
-    h = normalize_handle(req.handle)
+    h = normalize_handle(user.get("handle") or "")
     if not h:
-        raise HTTPException(status_code=400, detail="Handle obrigatório (ex: @suaarte)")
+        raise HTTPException(status_code=400, detail="Sua conta não possui handle configurado")
 
     if req.image_base64:
         try:
@@ -246,6 +251,7 @@ async def create_submission(challenge_id: str, req: SubmissionCreate):
         caption=(req.caption or "").strip()[:280],
         image_url=image_url,
         palette_colors=colors,
+        verified=True,
     )
     await db.challenge_submissions.insert_one(sub.model_dump())
     return sub

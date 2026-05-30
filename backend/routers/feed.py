@@ -1,12 +1,13 @@
 """Feed estilo Pinterest — descoberta da comunidade.
 
 Endpoints:
-- GET    /api/feed                 (lista paginada, mais recentes primeiro)
-- POST   /api/feed                 (cria post)
+- GET    /api/feed                 (lista paginada, mais recentes primeiro) — público
+- POST   /api/feed                 (cria post) — exige JWT
 - POST   /api/feed/{id}/like       (incrementa contagem de likes — anônimo)
-- DELETE /api/feed/{id}            (apaga post — sem auth, simples)
+- DELETE /api/feed/{id}            (apaga post — exige JWT do autor)
 
-Como autenticação é mockada, o "autor" é o handle informado no body.
+O `handle` do post é sempre o do usuário autenticado (não aceita override).
+Posts criados via auth recebem `verified=True`.
 """
 from __future__ import annotations
 
@@ -14,10 +15,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from ._shared import db, normalize_handle, save_base64_image
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/feed", tags=["feed"])
 
@@ -32,11 +34,11 @@ class FeedPost(BaseModel):
     palette_colors: List[str] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
     likes: int = 0
+    verified: bool = False
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
 class FeedPostCreate(BaseModel):
-    handle: str
     title: str
     description: Optional[str] = ""
     # exatamente uma destas:
@@ -93,10 +95,10 @@ async def list_feed(
 
 
 @router.post("", response_model=FeedPost)
-async def create_post(req: FeedPostCreate):
-    h = normalize_handle(req.handle)
+async def create_post(req: FeedPostCreate, user: dict = Depends(get_current_user)):
+    h = normalize_handle(user.get("handle") or "")
     if not h:
-        raise HTTPException(status_code=400, detail="Handle obrigatório (ex: @suaarte)")
+        raise HTTPException(status_code=400, detail="Sua conta não possui handle configurado")
     title = (req.title or "").strip()
     if not title:
         raise HTTPException(status_code=400, detail="Título obrigatório")
@@ -123,6 +125,7 @@ async def create_post(req: FeedPostCreate):
         image_url=image_url,
         palette_colors=colors,
         tags=tags,
+        verified=True,
     )
     await db.feed_posts.insert_one(post.model_dump())
     return post
@@ -142,12 +145,16 @@ async def like_post(post_id: str):
 
 
 @router.delete("/{post_id}")
-async def delete_post(post_id: str, handle: str):
-    """Deleta um post — exige o handle correspondente (autoria simples)."""
-    h = normalize_handle(handle)
-    if not h:
-        raise HTTPException(status_code=400, detail="handle obrigatório")
-    result = await db.feed_posts.delete_one({"id": post_id, "handle": h})
+async def delete_post(post_id: str, user: dict = Depends(get_current_user)):
+    """Deleta um post — exige JWT do autor (ou admin)."""
+    h = normalize_handle(user.get("handle") or "")
+    is_admin = (user.get("role") == "admin")
+    query: dict = {"id": post_id}
+    if not is_admin:
+        if not h:
+            raise HTTPException(status_code=400, detail="Sua conta não possui handle configurado")
+        query["handle"] = h
+    result = await db.feed_posts.delete_one(query)
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Post não encontrado ou handle não confere")
+        raise HTTPException(status_code=404, detail="Post não encontrado ou sem permissão")
     return {"deleted": True, "id": post_id}

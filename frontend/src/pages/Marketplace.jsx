@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
   Loader2,
@@ -15,11 +15,13 @@ import {
   BookOpen,
   Wrench,
   ShoppingBag,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
-const HANDLE_KEY = "lindart.author.handle.v1";
+const TOKEN_KEY = "lindart.auth.token";
 
 const TYPES = [
   { id: "molde", label: "Moldes", icon: Package },
@@ -46,11 +48,22 @@ function formatBRL(value) {
 }
 
 export default function Marketplace() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState(null);
   const [q, setQ] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+
+  function handleOpenCreate() {
+    if (!isAuthenticated) {
+      toast("Faça login para anunciar", { icon: "🔒" });
+      navigate("/login", { state: { from: "/marketplace" } });
+      return;
+    }
+    setShowCreate(true);
+  }
 
   async function fetchItems(filterType = type, query = q) {
     setLoading(true);
@@ -113,7 +126,7 @@ export default function Marketplace() {
               Atualizar
             </button>
             <button
-              onClick={() => setShowCreate(true)}
+              onClick={handleOpenCreate}
               className="text-[11px] tracking-[0.22em] uppercase border border-gold/60 text-gold hover:bg-gold/10 px-4 py-2 inline-flex items-center gap-2 rounded-sm"
               data-testid="market-open-create"
             >
@@ -180,7 +193,7 @@ export default function Marketplace() {
           Carregando marketplace…
         </div>
       ) : items.length === 0 ? (
-        <EmptyState onCreate={() => setShowCreate(true)} />
+        <EmptyState onCreate={handleOpenCreate} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((item) => (
@@ -192,6 +205,7 @@ export default function Marketplace() {
       <AnimatePresence>
         {showCreate && (
           <CreateItemModal
+            user={user}
             onClose={() => setShowCreate(false)}
             onCreated={(created) => {
               setItems((arr) => [created, ...arr]);
@@ -271,10 +285,13 @@ function ItemCard({ item, onOpen }) {
         <div className="flex items-center justify-between gap-2 mt-auto pt-2">
           <Link
             to={`/u/${encodeURIComponent(item.handle)}`}
-            className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-gold"
+            className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-gold inline-flex items-center gap-1"
             data-testid={`market-author-${item.id}`}
           >
             @{item.handle}
+            {item.verified && (
+              <BadgeCheck className="w-3 h-3 text-gold" title="Perfil Verificado" />
+            )}
           </Link>
           {price && (
             <span className="text-sm font-display text-zinc-900" data-testid={`market-price-${item.id}`}>
@@ -296,8 +313,8 @@ function ItemCard({ item, onOpen }) {
   );
 }
 
-function CreateItemModal({ onClose, onCreated }) {
-  const [handle, setHandle] = useState(() => localStorage.getItem(HANDLE_KEY) || "");
+function CreateItemModal({ user, onClose, onCreated }) {
+  const authorHandle = (user?.handle || "").replace(/^@/, "");
   const [type, setType] = useState("molde");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -325,14 +342,18 @@ function CreateItemModal({ onClose, onCreated }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!handle.trim() || !title.trim() || !imageBase64) {
-      toast.error("Handle, título e imagem são obrigatórios");
+    if (!authorHandle) {
+      toast.error("Sua conta não possui handle. Atualize seu perfil.");
+      return;
+    }
+    if (!title.trim() || !imageBase64) {
+      toast.error("Título e imagem são obrigatórios");
       return;
     }
     setSubmitting(true);
     try {
+      const token = localStorage.getItem(TOKEN_KEY);
       const body = {
-        handle: handle.trim(),
         type,
         title: title.trim(),
         description: description.trim(),
@@ -343,7 +364,11 @@ function CreateItemModal({ onClose, onCreated }) {
       };
       const res = await fetch(`${API_BASE}/api/marketplace`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -351,7 +376,6 @@ function CreateItemModal({ onClose, onCreated }) {
         throw new Error(j.detail || `HTTP ${res.status}`);
       }
       const created = await res.json();
-      localStorage.setItem(HANDLE_KEY, handle.trim().replace(/^@/, ""));
       onCreated(created);
     } catch (err) {
       console.error(err);
@@ -432,7 +456,20 @@ function CreateItemModal({ onClose, onCreated }) {
             </div>
           </label>
 
-          <Field label="Seu handle" placeholder="@suaarte" value={handle} onChange={setHandle} testId="market-create-handle" />
+          <div className="rounded-sm border border-black/[0.08] bg-ink-surface px-3 py-2.5 flex items-center justify-between gap-3" data-testid="market-create-author">
+            <div>
+              <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500">
+                Anunciando como
+              </div>
+              <div className="font-display text-base mt-0.5 inline-flex items-center gap-1.5">
+                @{authorHandle || "—"}
+                <BadgeCheck className="w-4 h-4 text-gold" />
+              </div>
+            </div>
+            <span className="text-[10px] tracking-[0.22em] uppercase text-gold">
+              Perfil Verificado
+            </span>
+          </div>
           <Field label="Título" placeholder="Ex.: Molde Geode Ø8cm — silicone premium" value={title} onChange={setTitle} testId="market-create-title" />
           <Field label="Descrição (opcional)" placeholder="Conte o que o cliente leva, materiais, bônus…" value={description} onChange={setDescription} multiline testId="market-create-desc" />
           <div className="grid grid-cols-2 gap-3">

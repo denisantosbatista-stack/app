@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Trophy,
   Flame,
@@ -12,12 +13,13 @@ import {
   Image as ImageIcon,
   RefreshCw,
   Crown,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const VOTED_KEY = "lindart.challenges.voted.v1";
-const HANDLE_KEY = "lindart.author.handle.v1";
 
 function loadVoted() {
   try {
@@ -49,6 +51,8 @@ function daysLeft(endsAt) {
 }
 
 export default function Challenges() {
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -123,6 +127,9 @@ export default function Challenges() {
             challengeId={selected.id}
             onClose={() => setSelected(null)}
             onSubmitted={fetchChallenges}
+            isAuthenticated={isAuthenticated}
+            user={user}
+            navigate={navigate}
           />
         )}
       </AnimatePresence>
@@ -213,7 +220,7 @@ function EmptyState() {
   );
 }
 
-function ChallengeDetailModal({ challengeId, onClose, onSubmitted }) {
+function ChallengeDetailModal({ challengeId, onClose, onSubmitted, isAuthenticated, user, navigate }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [voted, setVoted] = useState(loadVoted());
@@ -239,6 +246,11 @@ function ChallengeDetailModal({ challengeId, onClose, onSubmitted }) {
   }, [challengeId]);
 
   async function vote(sub) {
+    if (!isAuthenticated) {
+      toast("Faça login para votar", { icon: "🔒" });
+      navigate?.("/login", { state: { from: "/challenges" } });
+      return;
+    }
     if (voted.has(sub.id)) {
       toast("Você já votou nesta peça ✦", { duration: 1400 });
       return;
@@ -258,12 +270,26 @@ function ChallengeDetailModal({ challengeId, onClose, onSubmitted }) {
     setVoted(next);
     saveVoted(next);
     try {
+      const token = localStorage.getItem("lindart.auth.token");
       await fetch(`${API_BASE}/api/challenges/${challengeId}/submissions/${sub.id}/vote`, {
         method: "POST",
+        credentials: "include",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
     } catch {
       /* rollback silencioso */
     }
+  }
+
+  function handleOpenSubmit() {
+    if (!isAuthenticated) {
+      toast("Faça login para enviar sua peça", { icon: "🔒" });
+      navigate?.("/login", { state: { from: "/challenges" } });
+      return;
+    }
+    setShowSubmit(true);
   }
 
   const ch = detail?.challenge;
@@ -349,7 +375,7 @@ function ChallengeDetailModal({ challengeId, onClose, onSubmitted }) {
               )}
               <div className="mt-6 flex items-center gap-3 flex-wrap">
                 <button
-                  onClick={() => setShowSubmit(true)}
+                  onClick={handleOpenSubmit}
                   disabled={!canSubmit}
                   className="text-[11px] tracking-[0.22em] uppercase bg-zinc-900 text-bone hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed px-5 py-2.5 inline-flex items-center gap-2 rounded-sm"
                   data-testid="challenge-open-submit"
@@ -378,7 +404,12 @@ function ChallengeDetailModal({ challengeId, onClose, onSubmitted }) {
                     className="w-20 h-20 object-cover rounded-sm border border-black/10"
                   />
                   <div>
-                    <div className="font-display text-lg">@{detail.winner.handle}</div>
+                    <div className="font-display text-lg inline-flex items-center gap-1.5">
+                      @{detail.winner.handle}
+                      {detail.winner.verified && (
+                        <BadgeCheck className="w-4 h-4 text-gold" title="Perfil Verificado" />
+                      )}
+                    </div>
                     <div className="text-xs text-zinc-600 mt-1">{detail.winner.votes} votos</div>
                   </div>
                 </div>
@@ -417,6 +448,7 @@ function ChallengeDetailModal({ challengeId, onClose, onSubmitted }) {
             <SubmitModal
               challengeId={ch.id}
               themeColor={ch.theme_color}
+              user={user}
               onClose={() => setShowSubmit(false)}
               onSubmitted={(newSub) => {
                 setDetail((d) =>
@@ -477,8 +509,11 @@ function SubmissionCard({ sub, rank, voted, onVote, voteEnabled }) {
         </button>
       </div>
       <div className="p-2.5">
-        <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-1">
+        <div className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-1 inline-flex items-center gap-1">
           @{sub.handle}
+          {sub.verified && (
+            <BadgeCheck className="w-3 h-3 text-gold" title="Perfil Verificado" />
+          )}
         </div>
         {sub.caption && (
           <p className="text-[11px] text-zinc-600 line-clamp-2 mb-1.5">{sub.caption}</p>
@@ -499,8 +534,8 @@ function SubmissionCard({ sub, rank, voted, onVote, voteEnabled }) {
   );
 }
 
-function SubmitModal({ challengeId, themeColor, onClose, onSubmitted }) {
-  const [handle, setHandle] = useState(() => localStorage.getItem(HANDLE_KEY) || "");
+function SubmitModal({ challengeId, themeColor, user, onClose, onSubmitted }) {
+  const authorHandle = (user?.handle || "").replace(/^@/, "");
   const [caption, setCaption] = useState("");
   const [palette, setPalette] = useState("");
   const [imageBase64, setImageBase64] = useState("");
@@ -524,14 +559,18 @@ function SubmitModal({ challengeId, themeColor, onClose, onSubmitted }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!handle.trim() || !imageBase64) {
-      toast.error("Handle e imagem são obrigatórios");
+    if (!authorHandle) {
+      toast.error("Sua conta não possui handle. Atualize seu perfil.");
+      return;
+    }
+    if (!imageBase64) {
+      toast.error("Imagem é obrigatória");
       return;
     }
     setSubmitting(true);
     try {
+      const token = localStorage.getItem("lindart.auth.token");
       const body = {
-        handle: handle.trim(),
         caption: caption.trim(),
         image_base64: imageBase64,
         palette_colors: palette
@@ -541,7 +580,11 @@ function SubmitModal({ challengeId, themeColor, onClose, onSubmitted }) {
       };
       const res = await fetch(`${API_BASE}/api/challenges/${challengeId}/submissions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       });
       if (!res.ok) {
@@ -549,7 +592,6 @@ function SubmitModal({ challengeId, themeColor, onClose, onSubmitted }) {
         throw new Error(j.detail || `HTTP ${res.status}`);
       }
       const created = await res.json();
-      localStorage.setItem(HANDLE_KEY, handle.trim().replace(/^@/, ""));
       onSubmitted(created);
     } catch (err) {
       console.error(err);
@@ -620,13 +662,20 @@ function SubmitModal({ challengeId, themeColor, onClose, onSubmitted }) {
             </div>
           </label>
 
-          <Field
-            label="Seu handle"
-            placeholder="@suaarte"
-            value={handle}
-            onChange={setHandle}
-            testId="challenge-submit-handle"
-          />
+          <div className="rounded-sm border border-black/[0.08] bg-ink-surface px-3 py-2.5 flex items-center justify-between gap-3" data-testid="challenge-submit-author">
+            <div>
+              <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500">
+                Enviando como
+              </div>
+              <div className="font-display text-base mt-0.5 inline-flex items-center gap-1.5">
+                @{authorHandle || "—"}
+                <BadgeCheck className="w-4 h-4 text-gold" />
+              </div>
+            </div>
+            <span className="text-[10px] tracking-[0.22em] uppercase text-gold">
+              Perfil Verificado
+            </span>
+          </div>
           <Field
             label="Legenda (opcional)"
             placeholder="Conte sobre a peça…"
