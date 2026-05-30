@@ -1,5 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Form, Request
+from fastapi.responses import StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -561,6 +561,28 @@ async def generate_image(req: ImageRequest):
 # Evita 502/proxy timeout: o endpoint retorna job_id imediatamente
 # e o cliente faz polling em /api/ai/video-status/{job_id}.
 _VIDEO_JOBS: dict[str, dict] = {}
+_VIDEO_JOB_TTL_SECONDS = 3600  # 1h: jobs concluídos/com erro são limpos depois disso
+_VIDEO_JOBS_MAX = 200  # hard cap para evitar leak de memória
+
+
+def _cleanup_video_jobs() -> None:
+    """Remove jobs antigos (terminados há mais de TTL) ou enxuga se passar do cap."""
+    now = time.time()
+    to_remove: list[str] = []
+    for jid, job in _VIDEO_JOBS.items():
+        fin = job.get("finished_at_ts")
+        if fin and (now - fin) > _VIDEO_JOB_TTL_SECONDS:
+            to_remove.append(jid)
+    for jid in to_remove:
+        _VIDEO_JOBS.pop(jid, None)
+    # Hard cap: remove os mais antigos primeiro
+    if len(_VIDEO_JOBS) > _VIDEO_JOBS_MAX:
+        sorted_jobs = sorted(
+            _VIDEO_JOBS.items(),
+            key=lambda kv: kv[1].get("finished_at_ts") or kv[1].get("started_at_ts") or 0,
+        )
+        for jid, _ in sorted_jobs[: len(_VIDEO_JOBS) - _VIDEO_JOBS_MAX]:
+            _VIDEO_JOBS.pop(jid, None)
 
 
 def _run_sora_job(job_id: str, prompt: str, size: str, duration: int) -> None:
@@ -573,6 +595,7 @@ def _run_sora_job(job_id: str, prompt: str, size: str, duration: int) -> None:
                 **_VIDEO_JOBS.get(job_id, {}),
                 "status": "error",
                 "error": "Sora 2 retornou vazio",
+                "finished_at_ts": time.time(),
             }
             return
         video_b64 = b64.b64encode(video_bytes).decode("ascii")
@@ -582,6 +605,7 @@ def _run_sora_job(job_id: str, prompt: str, size: str, duration: int) -> None:
             "video_base64": video_b64,
             "mime_type": "video/mp4",
             "finished_at": datetime.now(timezone.utc).isoformat(),
+            "finished_at_ts": time.time(),
         }
         logger.info(f"Sora2 job {job_id} ok: bytes={len(video_bytes)}")
     except Exception as e:
@@ -592,6 +616,7 @@ def _run_sora_job(job_id: str, prompt: str, size: str, duration: int) -> None:
             "status": "error",
             "error": mapped.detail,
             "http_status": mapped.status_code,
+            "finished_at_ts": time.time(),
         }
 
 
@@ -622,7 +647,9 @@ async def generate_video(req: VideoRequest, background_tasks: BackgroundTasks):
         "duration": duration,
         "size": size,
         "started_at": datetime.now(timezone.utc).isoformat(),
+        "started_at_ts": time.time(),
     }
+    _cleanup_video_jobs()
     background_tasks.add_task(_run_sora_job, job_id, prompt, size, duration)
     logger.info(f"Sora2 job {job_id} queued: dur={duration} size={size}")
     return {"job_id": job_id, "status": "processing"}
@@ -1574,15 +1601,42 @@ async def create_dna_share(req: DNAShareIn):
     """Salva um snapshot do DNA Visual para compartilhamento público."""
     if not req.payload or not isinstance(req.payload, dict):
         raise HTTPException(status_code=400, detail="payload inválido")
-    share_id = uuid.uuid4().hex[:10]
-    doc = {
-        "id": share_id,
-        "payload": req.payload,
-        "handle": (req.handle or "").strip()[:40] or None,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-    await db.dna_shares.insert_one(doc)
-    return {"id": share_id, "path": f"/dna/{share_id}"}
+    # Hardening: limite de tamanho do payload (~64KB JSON)
+    try:
+        payload_size = len(json.dumps(req.payload))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="payload não serializável")
+    if payload_size > 64 * 1024:
+        raise HTTPException(status_code=413, detail="payload muito grande (máx 64KB)")
+
+    # Garantir unique index em id (idempotente)
+    try:
+        await db.dna_shares.create_index("id", unique=True)
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Normaliza handle (remove @ extra, mantém só [a-z0-9._-])
+    raw_handle = (req.handle or "").strip().lstrip("@").lower()
+    raw_handle = re.sub(r"[^a-z0-9._-]", "", raw_handle)[:40]
+    handle = raw_handle or None
+
+    # Tenta até 3x em caso de colisão de id (extremamente improvável)
+    for _ in range(3):
+        share_id = uuid.uuid4().hex[:10]
+        doc = {
+            "id": share_id,
+            "payload": req.payload,
+            "handle": handle,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            await db.dna_shares.insert_one(doc)
+            return {"id": share_id, "path": f"/dna/{share_id}"}
+        except Exception as e:  # noqa: BLE001
+            if "duplicate" not in str(e).lower():
+                raise
+            continue
+    raise HTTPException(status_code=500, detail="não foi possível gerar id único")
 
 
 @api_router.get("/dna/share/{share_id}")
@@ -1591,6 +1645,161 @@ async def get_dna_share(share_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="DNA não encontrado")
     return doc
+
+
+def _html_escape(s: str) -> str:
+    return (
+        (s or "")
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
+
+
+def _render_dna_og_html(share_id: str, payload: dict, handle: Optional[str]) -> str:
+    """Renderiza HTML com OG tags dinâmicas para preview em IG/WhatsApp/X/FB.
+    Humanos são redirecionados para /dna/{share_id} via meta refresh + JS."""
+    signature = (payload.get("signature") or "DNA Visual").strip()[:80] or "DNA Visual"
+    mood_list = payload.get("mood") or []
+    mood_txt = " · ".join([m for m in mood_list if isinstance(m, str)][:4])
+    colors = [c for c in (payload.get("dominant_colors") or []) if isinstance(c, str) and c.startswith("#")][:6]
+    colors_swatch = "".join(
+        f'<span style="display:inline-block;width:18px;height:18px;background:{_html_escape(c)};border:1px solid #0002;border-radius:3px;margin-right:4px"></span>'
+        for c in colors
+    )
+    author_txt = f" — @{_html_escape(handle)}" if handle else ""
+    title = f"{_html_escape(signature)} · DNA Visual{author_txt} — LindArt"
+    desc_parts = []
+    if mood_txt:
+        desc_parts.append(_html_escape(mood_txt))
+    if colors:
+        desc_parts.append("Paleta: " + " ".join(_html_escape(c) for c in colors))
+    desc_parts.append("Descubra seu DNA Visual em resina no LindArt.")
+    description = " · ".join(desc_parts)[:280]
+
+    redirect_path = f"/dna/{_html_escape(share_id)}"
+    # Imagem OG: usa a primeira cor como placeholder de SVG (gera via endpoint dedicado)
+    og_image = f"/api/og/dna/{_html_escape(share_id)}/image.svg"
+
+    return f"""<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title>
+<meta name="description" content="{description}">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:image" content="{og_image}">
+<meta property="og:url" content="{redirect_path}">
+<meta property="og:site_name" content="LindArt">
+<meta property="og:locale" content="pt_BR">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{description}">
+<meta name="twitter:image" content="{og_image}">
+
+<meta http-equiv="refresh" content="0; url={redirect_path}">
+<link rel="canonical" href="{redirect_path}">
+<style>
+body{{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0f0f0f;color:#f4f1ea;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px}}
+.box{{max-width:520px}}
+h1{{font-weight:300;letter-spacing:.04em;margin:0 0 12px;font-size:22px}}
+p{{opacity:.8;line-height:1.5;margin:0 0 18px}}
+a{{color:#f4f1ea;border:1px solid #f4f1ea4d;padding:10px 16px;text-decoration:none;display:inline-block;border-radius:2px}}
+.sw{{margin:16px 0}}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>{_html_escape(signature)} · DNA Visual</h1>
+<div class="sw">{colors_swatch}</div>
+<p>{description}</p>
+<a href="{redirect_path}">Abrir no LindArt →</a>
+</div>
+<script>setTimeout(function(){{window.location.replace({json.dumps(redirect_path)});}},80);</script>
+</body>
+</html>"""
+
+
+@app.get("/api/og/dna/{share_id}", response_class=HTMLResponse)
+async def og_dna_page(share_id: str):
+    """Página HTML com Open Graph tags dinâmicas para compartilhamento social.
+    Crawlers (WhatsApp, Instagram, X, Facebook) pegam os metatags;
+    humanos são redirecionados para /dna/{share_id}."""
+    doc = await db.dna_shares.find_one({"id": share_id}, {"_id": 0})
+    if not doc:
+        # 404 ainda renderiza HTML básico para crawlers não quebrarem
+        html = (
+            '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+            '<title>DNA não encontrado · LindArt</title>'
+            '<meta property="og:title" content="DNA Visual não encontrado">'
+            '<meta property="og:description" content="Este DNA Visual expirou ou foi removido.">'
+            '<meta http-equiv="refresh" content="0; url=/">'
+            "</head><body>DNA não encontrado.</body></html>"
+        )
+        return HTMLResponse(content=html, status_code=404)
+    payload = doc.get("payload") or {}
+    handle = doc.get("handle")
+    html = _render_dna_og_html(share_id, payload, handle)
+    return HTMLResponse(
+        content=html,
+        headers={"Cache-Control": "public, max-age=600, s-maxage=600"},
+    )
+
+
+@app.get("/api/og/dna/{share_id}/image.svg")
+async def og_dna_image_svg(share_id: str):
+    """Imagem OG (SVG) gerada a partir da paleta do DNA. 1200x630 para social."""
+    doc = await db.dna_shares.find_one({"id": share_id}, {"_id": 0})
+    payload = (doc or {}).get("payload") or {}
+    signature = (payload.get("signature") or "DNA Visual").strip()[:60] or "DNA Visual"
+    mood_list = payload.get("mood") or []
+    mood_txt = " · ".join([m for m in mood_list if isinstance(m, str)][:3])[:90]
+    colors = [c for c in (payload.get("dominant_colors") or []) if isinstance(c, str) and c.startswith("#")][:5]
+    if not colors:
+        colors = ["#1a1a1a", "#3b3b3b", "#9b8b6e", "#f4f1ea", "#c4b9a6"]
+    handle = (doc or {}).get("handle")
+    author = f"@{handle}" if handle else "LindArt"
+
+    # Gradiente vertical com as 5 primeiras cores em paradas igualmente espaçadas
+    stops = "".join(
+        f'<stop offset="{int(i / max(1, len(colors) - 1) * 100)}%" stop-color="{_html_escape(c)}"/>'
+        for i, c in enumerate(colors)
+    )
+    swatch_w = 1080 // max(1, len(colors))
+    swatches = "".join(
+        f'<rect x="{60 + i * swatch_w}" y="470" width="{swatch_w - 12}" height="80" fill="{_html_escape(c)}" rx="4"/>'
+        for i, c in enumerate(colors)
+    )
+    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">{stops}</linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#000" opacity="0.45"/>
+  <rect width="1200" height="630" filter="url(#grain)"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#f4f1ea">
+    <text x="60" y="120" font-size="28" letter-spacing="6" opacity="0.65">LINDART · DNA VISUAL</text>
+    <text x="60" y="260" font-size="76" font-weight="300" letter-spacing="2">{_html_escape(signature)}</text>
+    <text x="60" y="320" font-size="30" opacity="0.85">{_html_escape(mood_txt)}</text>
+    <text x="60" y="600" font-size="24" opacity="0.7">{_html_escape(author)}</text>
+    <text x="1140" y="600" text-anchor="end" font-size="22" opacity="0.6">lindart · ateliê de resina</text>
+  </g>
+  {swatches}
+</svg>"""
+    return StreamingResponse(
+        iter([svg.encode("utf-8")]),
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400, s-maxage=86400"},
+    )
 
 
 @api_router.get("/palettes", response_model=List[Palette])
@@ -1737,6 +1946,15 @@ async def download_source_code():
 
 
 app.include_router(api_router)
+
+# Routers modulares (P2 — feed, marketplace, perfis públicos)
+from routers.feed import router as feed_router  # noqa: E402
+from routers.marketplace import router as marketplace_router  # noqa: E402
+from routers.profiles import router as profiles_router  # noqa: E402
+
+app.include_router(feed_router)
+app.include_router(marketplace_router)
+app.include_router(profiles_router)
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).
