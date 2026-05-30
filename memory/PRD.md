@@ -16,6 +16,16 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P4 — Versionamento de Paletas (Frontend) (DONE em iter 37-fork, 2026-02)
+- **`/app/frontend/src/store/usePaletteStore.js`**: novo bloco "Versioning ops" com estado `versions`, `loadingVersions`, `versionsPaletteId` e métodos `loadVersions(id)`, `saveManualVersion(id, label)`, `restoreVersion(id, vid)` (recarrega versões pois backend cria auto-snapshot pré-restore), `deleteVersion(id, vid)` (optimistic com rollback em erro — preserva `e.response.data.detail` para o toast de "última versão"). Estado NÃO persistido (zustand persist whitelist).
+- **`/app/frontend/src/components/PaletteVersionsModal.jsx`** (NOVO, ~290 linhas): modal glass com header (nome + contagem manual/auto + máx. 20 FIFO), bloco "Salvar versão atual" (input label máx. 80 chars + Enter atalho), lista scrollável com `VersionItem` (badge Manual/Auto, número da versão, label, data BR, strip de 8 swatches do snapshot, botões Restaurar + Excluir). Toasts PT-BR. Window.confirm para delete.
+- **`/app/frontend/src/pages/Studio.jsx`**: `ActivePaletteHeader` recebe `onVersions` + `isSaved`; botão "Versões" (ícone `History`, `data-testid="versions-palette-btn"`) só renderiza quando `savedIds.has(activePalette.id)`. Modal renderizado abaixo do `ExportModal`, alimentado apenas com paletas salvas.
+- **Backend**: já estava 100% pronto desde P4 backend (iter anterior). Smoke test curl confirmou: GET vazio, PATCH auto-snapshot, POST manual, restore com pré-snapshot, FIFO 20, guard "última versão".
+- **Testing agent both (iter 37)**: **backend 8/8 (100%) + frontend 10/10 (100%)**. Suite `/app/backend/tests/test_p4_palette_versions.py` cobre todo o ciclo + FIFO + last-version guard. Frontend valida visibilidade condicional, modal lifecycle, criar manual, restaurar, deletar, guard de última versão, fechar. Sem regressões.
+- **Polimentos cosméticos pós-testing**: pluralização "versão"/"versões" e "manual"/"manuais" corrigidas; `handleRestore` agora preserva `e.response.data.detail` do backend no toast em vez de mensagem genérica.
+
+
+
 ### ✅ P2 — Backend Technical Cleanup (lifespan + system router + Pydantic shadow fix) (DONE em iter 32-fork, 2026-02)
 - **`/app/backend/server.py`**: **209 → 93 linhas** (–55%). Migrado `@app.on_event("startup")` + `@app.on_event("shutdown")` para `@asynccontextmanager async def lifespan(app)` passado como `FastAPI(lifespan=lifespan)`. `init_auth()` roda no startup, `client.close()` no shutdown (em bloco `finally`). Movidas as rotas `GET /api/` e `GET /api/download/source` (+ helpers `_should_skip`, `_build_source_zip`, constantes `_ZIP_*`) para o novo router. Server.py agora carrega env, configura logging, registra routers, monta `/api/static` e adiciona CORS — nada de lógica de negócio.
 - **`/app/backend/routers/system.py`** (132 linhas, NOVO): `APIRouter(prefix="/api", tags=["system"])` com `GET /` (healthcheck) e `GET /download/source` (ZIP do código-fonte sem segredos — exclui `node_modules`, `.git`, `__pycache__`, `.env*`).

@@ -213,7 +213,7 @@ export const usePaletteStore = create(
           return res.data;
         } catch (e) {
           set({ lastError: e.message });
-          throw e;
+          throw e; // mantém objeto axios original para a UI extrair e.response.data.detail
         }
       },
 

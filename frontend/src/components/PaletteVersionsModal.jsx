@@ -169,8 +169,9 @@ export default function PaletteVersionsModal({ palette, open, onClose }) {
         `Versão "${version.label}" restaurada. Estado anterior salvo como auto-snapshot.`,
         { id, duration: 4000 }
       );
-    } catch {
-      toast.error("Falha ao restaurar versão", { id });
+    } catch (e) {
+      const msg = e?.response?.data?.detail || "Falha ao restaurar versão";
+      toast.error(msg, { id });
     } finally {
       setBusy(false);
     }
@@ -225,7 +226,7 @@ export default function PaletteVersionsModal({ palette, open, onClose }) {
                   {palette.name}
                 </h3>
                 <div className="text-[11px] text-zinc-500 mt-0.5">
-                  {manualCount} manual{manualCount === 1 ? "" : "is"} ·{" "}
+                  {manualCount} {manualCount === 1 ? "manual" : "manuais"} ·{" "}
                   {autoCount} auto · máx. 20 auto (FIFO)
                 </div>
               </div>
@@ -298,7 +299,8 @@ export default function PaletteVersionsModal({ palette, open, onClose }) {
 
             <footer className="flex items-center justify-between p-4 border-t border-black/[0.06] bg-ink-surface/50">
               <span className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                {versions.length} versõ{versions.length === 1 ? "" : "es"} no total
+                {versions.length}{" "}
+                {versions.length === 1 ? "versão" : "versões"} no total
               </span>
               <button
                 onClick={onClose}
