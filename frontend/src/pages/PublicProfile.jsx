@@ -136,7 +136,7 @@ export default function PublicProfile() {
           <div>
             <div className="label-eyebrow text-gold mb-1">Artista LindArt</div>
             <h1 className="font-display text-4xl md:text-5xl tracking-tight leading-[1.05] pb-1">
-              <span className="italic gold-shimmer">@{data.handle}</span>
+              <span className="italic gold-shimmer">@{data.handle || handle}</span>
             </h1>
             <p className="text-zinc-600 text-sm md:text-base mt-3 italic">
               Portfólio de processos, paletas e peças únicas.
