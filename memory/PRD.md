@@ -199,6 +199,12 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 - Auth: N/A (app público no MVP)
 
 ## Última iteração
+**Iter 35 (2026-02)** — ShareSheet `/u/{handle}` + OG endpoint para Feed posts:
+1. Backend `/app/backend/routers/og.py`: novas rotas `GET /api/og/feed/{post_id}` (HTML com OG tags absolutas — og:title, og:description com paleta, og:image absoluta SVG, og:url para `/feed#post-{id}`, og:locale pt_BR) e `GET /api/og/feed/{post_id}/image.svg` (1200×630, grain + swatches da paleta do post; fallback para paleta default em ID inexistente, sem crash). Reaproveita template `dna_og.html` (sem dívida de duplicação no template). 404 graceful para post inexistente.
+2. Frontend `/app/frontend/src/pages/Feed.jsx` linha 346: corrigida dívida técnica P1 — `shareUrl` agora aponta para `${API_BASE}/api/og/feed/${post.id}` (antes era `/feed#post-...` sem OG preview). WhatsApp/IG/FB agora geram preview rico de posts do feed.
+3. Frontend `/app/frontend/src/pages/PublicProfile.jsx`: integrado `<ShareSheet />` em dois pontos — botão "Compartilhar perfil" no header (data-testid `profile-share-button`, URL `/u/{handle}`) e botão "Compartilhar" em cada card de post da aba Feed (data-testid `post-share-button-{id}`, URL `/api/og/feed/{id}`). Estados `profileShareOpen` e `sharePost` controlam os dois ShareSheets renderizados no final do componente.
+Testing agent v3 iter 35: 8/8 backend (pytest), 5/5 frontend (E2E), zero bugs. Sem regressão.
+
 **Iter 34 (2026-02)** — Frontend UI/UX cleanup (4 fixes P0):
 1. `PieceShape.jsx` + `PaletteCard.jsx`: helper `safeHex()` substitui `#000`/`#000000`/vazio por fallback neutro (`#D4AF37` para veios, `#fff` para base, `#aaa` accent, `#eee` detalhe) — sem mais bloco preto.
 2. `Productions3D.jsx` recebe `palette={activePalette}` como prop em `Studio.jsx` e aplica `colors[0]` como base + `colors[1/2]` como emissive nas mesh 3D (Geodo/Bandeja/Colar). `useEffect([palette?.id])` reseta textureUrl ao trocar paleta.
