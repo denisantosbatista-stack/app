@@ -16,6 +16,14 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P2 — Backend Modularization Phase 2 Step 1: AI router (DONE em iter 26-fork, 2026-02)
+- **`/app/backend/server.py`**: removidas 1370 linhas (1708 → 340). Deletados todos os endpoints `/api/ai/*` e `/api/ai/mentora`, modelos AI (`AIPromptRequest`, `VoiceRequest`, `ImageRequest`, `CaptionRequest`, `LuxuryScoreRequest`, `VisualDNARequest`, `MentoraMessage`, `MentoraRequest`, `TrendsRequest`, `CollectionRequest`) e helpers (`_map_llm_exception`, `_parse_llm_json`, `_hex_to_rgb`, `_rgb_to_hsl`, `_compute_heuristic_luxury`, `_hex_distance`, `_cluster_dominant_colors`, `_compute_dna_metrics`).
+- **`/app/backend/server.py`**: adicionados `from routers.ai import router as ai_router` + `app.include_router(ai_router)`.
+- **`/app/backend/routers/ai.py`** (1388 linhas): contém todas as 10 rotas AI com `APIRouter(prefix="/api", tags=["ai"])`. Rotas duplicadas `/dna/share` foram removidas pelo testing agent (continuam apenas em `server.py`).
+- **Testing agent backend-only**: 23/23 testes passaram (100%). Zero regressões. Suite criada em `/app/backend/tests/test_p2_ai_refactor.py`.
+- **Próximo (Step 2)**: extrair `/api/palettes/*` e `/api/dna/*` para `routers/palettes.py`.
+
+
 ### ✅ P1 — Fix FAL_KEY check order (DONE em iter 26-fork, 2026-02)
 - **`/app/backend/routers/svd_video.py`** (`POST /api/onboarding/generate-welcome-video`): reordenadas as checagens. Agora a ordem é: 1) arquivo `WELCOME_VIDEO_PATH` já existe no disco → `200 {already_exists:true, url:...}`; 2) `_WELCOME_JOB.status == "processing"` → 200 processing; 3) só então `_fal_key()` → 503 se ausente.
 - **Motivação**: antes, mesmo com o vídeo institucional já gerado e salvo em `/app/backend/static_assets/onboarding-welcome.mp4`, o endpoint retornava 503 quando `FAL_KEY` não estava no `.env`. Agora a idempotência é honrada.
