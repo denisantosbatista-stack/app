@@ -16,6 +16,14 @@ Artistas autodidatas de resina (PT-BR), criadoras de paletas e peças, que quere
 
 ## Roadmap & Status
 
+### ✅ P2 — Backend Modularization Phase 2 Step 2: Palettes + DNA Share router (DONE em iter 27-fork, 2026-02)
+- **`/app/backend/server.py`**: 340 → 209 linhas (–131). Removidos `ColorSwatch`, `Palette`, `PaletteCreate`, `PaletteUpdate`, `DNAShareIn` e todas as rotas `/api/palettes/*` + `/api/dna/share*`. Mantém apenas: `/api/` root, `/api/download/source`, montagem de `/api/static` e bootstrap (CORS, routers, lifespan).
+- **`/app/backend/routers/palettes.py`** (139 linhas, NOVO): `APIRouter(prefix="/api", tags=["palettes"])` com GET/POST/PATCH/DELETE `/palettes`, POST/GET `/dna/share`. Reusa `Palette`/`ColorSwatch`/`db`/`normalize_handle` de `_shared.py`.
+- **Consolidação**: truncamento de handle padronizado em 32 chars (era 40 inline). Testado e documentado.
+- **Testing agent backend-only**: 21/21 (100%). Suite `/app/backend/tests/test_p2_palettes_refactor.py`. Sem duplicatas (verificado via OpenAPI + `app.routes`). Regressões cruzadas OK (`/api/`, `/api/download/source`, `/api/ai/luxury-score`).
+- **server.py total reduction**: 1708 → 209 linhas (–88%) somando Steps 1+2.
+
+
 ### ✅ P2 — Backend Modularization Phase 2 Step 1: AI router (DONE em iter 26-fork, 2026-02)
 - **`/app/backend/server.py`**: removidas 1370 linhas (1708 → 340). Deletados todos os endpoints `/api/ai/*` e `/api/ai/mentora`, modelos AI (`AIPromptRequest`, `VoiceRequest`, `ImageRequest`, `CaptionRequest`, `LuxuryScoreRequest`, `VisualDNARequest`, `MentoraMessage`, `MentoraRequest`, `TrendsRequest`, `CollectionRequest`) e helpers (`_map_llm_exception`, `_parse_llm_json`, `_hex_to_rgb`, `_rgb_to_hsl`, `_compute_heuristic_luxury`, `_hex_distance`, `_cluster_dominant_colors`, `_compute_dna_metrics`).
 - **`/app/backend/server.py`**: adicionados `from routers.ai import router as ai_router` + `app.include_router(ai_router)`.
