@@ -1,9 +1,9 @@
 import { Component, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, ContactShadows, useTexture } from "@react-three/drei";
+import { OrbitControls, ContactShadows, useTexture, Environment } from "@react-three/drei";
 import * as THREE from "three";
-import { motion } from "framer-motion";
-import { Image as ImageIcon, Loader2, Sparkles, Box as BoxIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Image as ImageIcon, Loader2, Sparkles, Box as BoxIcon, MousePointerClick, RefreshCw, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { chamarIA, ApiError } from "@/utils/api";
 
@@ -78,20 +78,23 @@ function GeodoMesh({ palette, texture }) {
     if (ref.current) ref.current.rotation.y += dt * 0.25;
   });
   const colors = palette.colors.map((c) => new THREE.Color(c.hex));
+  const hasTex = !!texture;
   return (
     <group ref={ref}>
       <mesh>
         <icosahedronGeometry args={[1.1, 1]} />
         <meshPhysicalMaterial
           map={texture || null}
-          color={texture ? "#ffffff" : colors[0]}
-          metalness={0.35}
-          roughness={0.15}
+          color={hasTex ? "#ffffff" : colors[0]}
+          metalness={hasTex ? 0.12 : 0.35}
+          roughness={hasTex ? 0.35 : 0.15}
           clearcoat={1}
           clearcoatRoughness={0.15}
           envMapIntensity={1.2}
-          emissive={colors[1]}
-          emissiveIntensity={0.12}
+          emissive={hasTex ? new THREE.Color("#ffffff") : colors[1]}
+          emissiveMap={texture || null}
+          emissiveIntensity={hasTex ? 0.35 : 0.12}
+          toneMapped={true}
         />
       </mesh>
       {/* Veios dourados sutis */}
@@ -109,18 +112,22 @@ function BandejaMesh({ palette, texture }) {
     if (ref.current) ref.current.rotation.y += dt * 0.2;
   });
   const colors = palette.colors.map((c) => new THREE.Color(c.hex));
+  const hasTex = !!texture;
   return (
     <group ref={ref}>
       <mesh rotation={[-0.25, 0, 0]}>
         <cylinderGeometry args={[1.3, 1.3, 0.18, 64]} />
         <meshPhysicalMaterial
           map={texture || null}
-          color={texture ? "#ffffff" : colors[0]}
-          metalness={0.4}
-          roughness={0.1}
+          color={hasTex ? "#ffffff" : colors[0]}
+          metalness={hasTex ? 0.1 : 0.4}
+          roughness={hasTex ? 0.3 : 0.1}
           clearcoat={1}
           clearcoatRoughness={0.08}
           envMapIntensity={1.4}
+          emissive={hasTex ? new THREE.Color("#ffffff") : new THREE.Color("#000000")}
+          emissiveMap={texture || null}
+          emissiveIntensity={hasTex ? 0.3 : 0}
         />
       </mesh>
       <mesh position={[0, 0.1, 0]} rotation={[-0.25, 0, 0]}>
@@ -137,6 +144,7 @@ function ColarMesh({ palette, texture }) {
     if (ref.current) ref.current.rotation.y += dt * 0.3;
   });
   const colors = palette.colors.map((c) => new THREE.Color(c.hex));
+  const hasTex = !!texture;
   return (
     <group ref={ref}>
       {/* gota principal */}
@@ -144,14 +152,15 @@ function ColarMesh({ palette, texture }) {
         <sphereGeometry args={[0.75, 64, 64]} />
         <meshPhysicalMaterial
           map={texture || null}
-          color={texture ? "#ffffff" : colors[0]}
-          metalness={0.3}
-          roughness={0.12}
+          color={hasTex ? "#ffffff" : colors[0]}
+          metalness={hasTex ? 0.1 : 0.3}
+          roughness={hasTex ? 0.28 : 0.12}
           clearcoat={1}
           clearcoatRoughness={0.1}
           envMapIntensity={1.3}
-          emissive={colors[2] || colors[1]}
-          emissiveIntensity={0.18}
+          emissive={hasTex ? new THREE.Color("#ffffff") : (colors[2] || colors[1])}
+          emissiveMap={texture || null}
+          emissiveIntensity={hasTex ? 0.35 : 0.18}
         />
       </mesh>
       {/* alça dourada */}
@@ -185,12 +194,29 @@ export default function Productions3D({ palette }) {
   const [shape, setShape] = useState("geodo");
   const [textureUrl, setTextureUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0); // 0–100 simulado
+  const [error, setError] = useState(null);
   const [webglReady, setWebglReady] = useState(null);
   const [canvasMounted, setCanvasMounted] = useState(false);
 
   useEffect(() => {
     setWebglReady(detectWebGL());
   }, []);
+
+  // Progresso simulado durante geração (~30s estimados). Para quando loading termina.
+  useEffect(() => {
+    if (!loading) {
+      setProgress(0);
+      return undefined;
+    }
+    const start = Date.now();
+    const total = 30000; // 30s de estimativa
+    const itv = setInterval(() => {
+      const pct = Math.min(95, ((Date.now() - start) / total) * 100);
+      setProgress(pct);
+    }, 250);
+    return () => clearInterval(itv);
+  }, [loading]);
 
   const hexColors = useMemo(
     () => (palette?.colors || []).map((c) => c.hex),
@@ -211,21 +237,26 @@ export default function Productions3D({ palette }) {
   const handleGenerate = async () => {
     if (loading) return;
     setLoading(true);
-    const tid = toast.loading("Nano Banana renderizando peça…", { icon: "🍌" });
+    setError(null);
+    const tid = toast.loading("Nano Banana renderizando peça… (~30s)", { icon: "🍌" });
     try {
       const data = await chamarIA("/ai/generate-image", {
-        prompt: `Peça em formato de ${shape}, paleta "${palette.name}" — estilo ${palette.style}`,
+        prompt: `Peça em formato de ${shape} aplicando a paleta "${palette.name}"`,
         colors: hexColors,
         shape,
+        style: palette.style || null,
+        palette_name: palette.name || null,
       });
       const dataUrl = `data:${data.mime_type || "image/png"};base64,${data.image_base64}`;
+      setProgress(100);
       setTextureUrl(dataUrl);
       toast.success("Render aplicado ao 3D!", { id: tid });
     } catch (e) {
       const msg =
         e instanceof ApiError && e.tipo === "saldo"
           ? "Saldo do Universal Key esgotado. Recarregue para gerar renders."
-          : `Falha render: ${e?.message || "erro"}`;
+          : `Falha render: ${e?.message || "erro desconhecido"}`;
+      setError(msg);
       toast.error(msg, { id: tid });
     } finally {
       setLoading(false);
@@ -307,17 +338,20 @@ export default function Productions3D({ palette }) {
                 camera={{ position: [0, 0.6, 3.4], fov: 38 }}
                 onCreated={() => setCanvasMounted(true)}
                 style={{ width: "100%", height: "100%" }}
+                gl={{ toneMappingExposure: 1.2 }}
               >
                 <color attach="background" args={["#0a0a0c"]} />
-                <ambientLight intensity={0.5} />
-                <directionalLight position={[2, 3, 2]} intensity={1.4} />
+                <ambientLight intensity={0.9} />
+                <hemisphereLight args={["#ffffff", "#1a1a1f", 0.55]} />
+                <directionalLight position={[2, 3, 2]} intensity={1.6} />
                 <directionalLight
                   position={[-3, 2, -1]}
-                  intensity={0.6}
+                  intensity={0.7}
                   color="#D4AF37"
                 />
-                <pointLight position={[0, 2, 2]} intensity={0.8} />
+                <pointLight position={[0, 2, 2]} intensity={0.9} />
                 <Suspense fallback={null}>
+                  <Environment preset="studio" background={false} />
                   <Piece shape={shape} palette={palette} textureUrl={textureUrl} />
                 </Suspense>
                 <ContactShadows
@@ -336,7 +370,63 @@ export default function Productions3D({ palette }) {
               </Canvas>
             </ThreeErrorBoundary>
           )}
+
+          {/* Overlay de loading sobre o canvas — feedback visível durante ~30s */}
+          <AnimatePresence>
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex flex-col items-center justify-center bg-ink/70 backdrop-blur-sm gap-4 px-6 z-10"
+                data-testid="prod3d-loading-overlay"
+              >
+                <Loader2 className="w-10 h-10 text-gold animate-spin" />
+                <div className="text-center">
+                  <div className="text-sm text-zinc-100 font-medium tracking-wide">
+                    Nano Banana renderizando…
+                  </div>
+                  <div className="text-[11px] text-zinc-400 mt-1 tracking-wide">
+                    Isso leva cerca de 30 segundos
+                  </div>
+                </div>
+                <div className="w-56 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-gold to-gold-hover"
+                    style={{ width: `${progress}%` }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        {/* Banner de erro com retry — substitui o silêncio anterior em caso de falha */}
+        <AnimatePresence>
+          {error && !loading && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="mt-3 flex items-start gap-3 p-3 rounded-sm border border-red-500/30 bg-red-500/10"
+              data-testid="prod3d-error-banner"
+            >
+              <AlertCircle className="w-4 h-4 text-red-300 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 text-xs text-red-100 leading-relaxed">
+                {error}
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                className="text-[10px] uppercase tracking-[0.18em] px-2.5 py-1 rounded-sm border border-red-300/40 text-red-100 hover:bg-red-500/20 inline-flex items-center gap-1.5"
+                data-testid="prod3d-retry-btn"
+              >
+                <RefreshCw className="w-3 h-3" /> Tentar novamente
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
           type="button"
@@ -350,13 +440,17 @@ export default function Productions3D({ palette }) {
           ) : (
             <ImageIcon className="w-4 h-4" />
           )}
-          {loading ? "Renderizando…" : "Gerar render fotorrealista (Nano Banana)"}
+          {loading ? `Renderizando… ${Math.round(progress)}%` : "Gerar render fotorrealista (Nano Banana)"}
         </button>
 
-        <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
-          Arraste o modelo para rotacionar · scroll para zoom. Ao gerar render IA,
-          a imagem é aplicada como textura na peça 3D em tempo real.
-        </p>
+        <div className="mt-4 flex items-start gap-2 text-xs text-zinc-300 leading-relaxed" data-testid="prod3d-instructions">
+          <MousePointerClick className="w-3.5 h-3.5 text-gold mt-0.5 flex-shrink-0" />
+          <p>
+            <span className="text-zinc-100 font-medium">Arraste</span> o modelo para rotacionar ·
+            <span className="text-zinc-100 font-medium"> Scroll</span> para zoom. Ao gerar o render IA,
+            a imagem fotorrealista é aplicada como textura na peça 3D em tempo real.
+          </p>
+        </div>
       </div>
     </motion.div>
   );

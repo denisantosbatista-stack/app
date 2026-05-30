@@ -1,0 +1,37 @@
+{
+  "summary": "Iter 19 — Validação dos fixes P0 do Visualizador 3D (Productions3D). Backend 8/8 pytest passando: POST /api/ai/generate-image agora aceita style + palette_name e retorna 200 com PNG base64 válido para style=geodo/marmore/oceano/galaxia (timings 13-22s cada, total 84.9s para 8 testes). Smoke /api/feed, /api/marketplace, /api/challenges → 200. Frontend Playwright em /studio: card data-testid='productions-3d-card' renderiza canvas 3D CLARO e visível (geodo branco com reflexos dourados — fix do Environment preset='studio' + ambient/hemisphere light funcionando). Botões SHAPES (prod3d-shape-geodo/bandeja/colar) presentes. Clique em prod3d-generate-btn dispara overlay prod3d-loading-overlay com texto 'Nano Banana renderizando…' + 'Isso leva cerca de 30 segundos' + barra de progresso preenchendo (6% → 17% em 4.5s). Botão durante loading mostra 'Renderizando… N%' corretamente (não vazio). Após ~25s a textura Nano Banana foi aplicada com sucesso ao 3D (peça pink/floral resin visível, screenshot prod3d_after.jpg). Texto prod3d-instructions confirmado com classe 'text-xs text-zinc-300' (não mais '[10px] text-zinc-500') e ícone MousePointerClick visível. Filtros de paleta em /studio (PaletteGrid): filter-todos (17), filter-geodo (1), filter-marmore (1), filter-oceano (3), filter-galaxia (1) — todos clicáveis com contagem correta. /library tem outros filtros (lib-filter-todos/favoritos/ai/user) — também funcionais. Zero console errors em /, /studio, /feed, /marketplace, /challenges, /library (apenas warnings esperados do THREE.Clock deprecation e GPU stall benigno).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter19_3d_image.py",
+    "/app/test_reports/pytest/iteration_19.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py em 2200 linhas — flag já reportado em iterações anteriores. /ai/generate-image (linhas 518-635) com SHAPE_DESCRIPTIONS + STYLE_DESCRIPTIONS poderia migrar para módulo /app/backend/services/image_prompts.py para reduzir tamanho do server.py.",
+    "Productions3D.jsx (458 linhas): tamanho aceitável, mas os 3 componentes Mesh (GeodoMesh, BandejaMesh, ColarMesh) compartilham a mesma estrutura de useFrame + meshPhysicalMaterial — extrair um <ResinMaterial palette texture hasTex /> reduziria ~80 linhas de duplicação.",
+    "Productions3D.jsx linha 215: progress simulado fixo em 30s. Se a chamada real demorar 45s+, o progresso fica travado em 95% por muito tempo. Sugestão: ao receber 95%, mostrar 'finalizando…' ao invés do percentual estático.",
+    "PaletteGrid.jsx — botões de filtro usam text-zinc-700 em light bg, mas inactive chips com border-black/10 podem ter contraste fraco em hover. Não bloqueia funcionalidade.",
+    "useTexture do drei (Productions3D.jsx l.176) faz fetch sincrono via Suspense — se a textura base64 for muito grande (>5MB), pode bloquear o thread. Acceptable para PNGs Nano Banana ~1-2MB."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter19_3d_image.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 pytest iter19; style=geodo/marmore/oceano/galaxia todos 200 + payload mínimo + 3 smoke routes)",
+    "frontend": "100% — Productions3D card claro, overlay loading com progress, texto instruções legível, retry banner não disparado (não houve erro real), filtros studio + library OK, zero console errors críticos"
+  },
+  "test_credentials": "N/A — app público com rate limit por IP",
+  "seed_data_creation": "Nenhuma seed criada. 1 imagem Nano Banana gerada e descartada (não persistida).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Para dismissar onboarding/tour antes de Playwright: localStorage.setItem('lindart.onboarding.v1.completed','1'); localStorage.setItem('lindart.tour.v1.seen','1'). Filtros de paleta por ESTILO (todos/geodo/marmore/oceano/galaxia) ficam em /studio via PaletteGrid (data-testid='filter-{id}'). Filtros de BIBLIOTECA (todos/favoritos/ai/user) ficam em /library com data-testid='lib-filter-{id}'. /api/ai/generate-image leva 13-25s — use timeout >= 60s. Backend logs sem warnings novos. Próximas validações sugeridas: testar Productions3D em mobile viewport (390px) para confirmar que canvas e overlay funcionam responsivamente, e validar acessibilidade do retry-btn em caso de erro real (forçar erro com saldo=0 ou prompt vazio).",
+  "rca of the issue": "Bugs P0 do usuário foram resolvidos pelo E1 antes desta iteração. RCA confirmado pelos screenshots: (1) cena escura/textura ausente — fix Environment preset='studio' + emissiveMap=texture + emissive=#ffffff quando hasTex foi efetivo (compare 2 screenshots: peça branca brilhante inicial vs peça floral colorida após render). (2) botão travado — agora mostra 'Renderizando… N%' dinâmico de 6% a 95%. (3) feedback insuficiente — overlay com spinner Loader2 + 'Nano Banana renderizando…' + 'Isso leva cerca de 30 segundos' + barra de progresso visual durante ~25s. (4) instrução pouco visível — text-xs text-zinc-300 com ícone MousePointerClick e <span text-zinc-100 font-medium> nos verbos 'Arraste' e 'Scroll' agora bem legível. Nenhum bug remanescente identificado."
+}

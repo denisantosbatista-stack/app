@@ -264,6 +264,8 @@ class ImageRequest(BaseModel):
     prompt: str
     colors: Optional[List[str]] = None  # hex strings to guide the palette
     shape: Optional[str] = "gota"  # gota | bandeja | geodo | colar | anel
+    style: Optional[str] = None  # geodo | marmore | oceano | galaxia | floral | metalico | pastel | boho | luxo | minimalista
+    palette_name: Optional[str] = None
 
 
 class VideoRequest(BaseModel):
@@ -528,11 +530,88 @@ async def generate_image(req: ImageRequest):
             "É PROIBIDO substituir, suavizar ou misturar com cores fora desta paleta."
         )
     shape = (req.shape or "gota").lower()
+
+    # Descrições visuais detalhadas por formato — orientam Nano Banana a produzir
+    # uma peça reconhecível em vez de uma textura abstrata.
+    SHAPE_DESCRIPTIONS = {
+        "geodo": (
+            "uma peça decorativa em formato de geodo natural irregular, bordas brutas "
+            "e orgânicas com acabamento dourado metálico fino, interior preenchido com "
+            "camadas de resina translúcida revelando cristais facetados e veios minerais, "
+            "vista de cima sobre superfície de mármore claro"
+        ),
+        "bandeja": (
+            "uma bandeja redonda catch-all de resina epóxi (cerca de 12cm de diâmetro), "
+            "bordas perfeitamente arredondadas com fio dourado polido, superfície "
+            "lisa e espelhada, vista em ângulo 3/4 sobre mesa de madeira escura, "
+            "pequena sombra projetada"
+        ),
+        "colar": (
+            "um pingente de resina em formato de gota suspenso por uma corrente "
+            "delicada de ouro 18k, a peça translúcida com profundidade de cor e "
+            "reflexos internos, fotografado contra fundo neutro com leve vinheta, "
+            "joalheria fine-art"
+        ),
+        "gota": (
+            "um pingente em formato de gota alongada de resina epóxi com fio "
+            "metálico dourado contornando a borda, translúcido com reflexos "
+            "internos visíveis, vista frontal sobre fundo escuro"
+        ),
+        "anel": (
+            "um anel statement de resina epóxi montado em base de prata 925 "
+            "polida, peça superior oval com profundidade translúcida, foco "
+            "macro com bokeh suave"
+        ),
+        "drop": "um pingente formato gota com fio dourado, joalheria fine-art",
+        "hex": "um pingente hexagonal geométrico com bordas douradas e superfície de resina translúcida",
+        "ring": "um anel statement com peça superior arredondada em resina translúcida",
+        "oval": "um brinco oval translúcido com fio metálico contornando a borda",
+        "bracelet": "um bracelete circular rígido em resina epóxi com inclusões metálicas",
+        "moon": "um pingente em formato de lua crescente com acabamento dourado nas pontas",
+        "star": "um pingente estrela de cinco pontas com bordas douradas e centro translúcido",
+        "heart": "um pingente coração de resina com gradiente interno e fio dourado",
+        "leaf": "um pingente em formato de folha com nervuras douradas e resina translúcida",
+        "feather": "um pingente pena alongado com detalhes finos e fio metálico",
+        "bookmark": "um marcador de livro retangular alongado de resina com fita dourada",
+        "circle": "um chaveiro circular de resina com argola metálica dourada",
+    }
+    shape_desc = SHAPE_DESCRIPTIONS.get(shape, f"uma peça artesanal de resina epóxi premium em formato de {shape}")
+
+    # Acabamento visual por estilo de paleta — instrui a IA sobre a "estética" final
+    STYLE_DESCRIPTIONS = {
+        "geodo": "acabamento estilo geodo: cristais facetados visíveis, bordas brutas, veios dourados percorrendo a peça",
+        "marmore": "acabamento estilo mármore: veios fluidos brancos e dourados se entrelaçando suavemente, superfície polida espelhada",
+        "oceano": "acabamento estilo oceano: ondas líquidas em camadas, transparência azul profunda com espuma branca cristalizada",
+        "galaxia": "acabamento estilo galáxia: nebulosa profunda com micro-glitter holográfico simulando estrelas, gradiente cósmico",
+        "floral": "acabamento estilo floral: flores secas naturais embebidas em resina cristalina, composição orgânica",
+        "metalico": "acabamento metálico: mica em pó com brilho intenso, reflexos cromados, superfície vibrante",
+        "acido": "acabamento ácido neon: cores vibrantes saturadas, gradiente psicodélico com alto contraste",
+        "pastel": "acabamento pastel suave: cores leves e leitosas, superfície fosca delicada",
+        "boho": "acabamento boho: tons terrosos naturais com inclusões orgânicas (flores secas, folhas), textura artesanal",
+        "luxo": "acabamento luxo joalheria: dourado profundo, alto brilho, reflexos espelhados, profundidade de cor intensa",
+        "minimalista": "acabamento minimalista: cristalino translúcido, formas limpas, sem inclusões, elegância silenciosa",
+        "pave-cristais": "acabamento pavé: strass minúsculos embutidos cobrindo toda a superfície como joalheria fine",
+        "foil-dourado": "acabamento foil dourado: folhas de ouro fragmentadas suspensas dentro da resina, texturas metálicas brilhantes",
+        "holografico": "acabamento holográfico: superfície iridescente com arco-íris suave que reflete diferentes cores conforme o ângulo",
+        "espelhado": "acabamento espelhado cromo: superfície totalmente reflexiva como metal polido",
+    }
+    style_part = ""
+    style_key = (req.style or "").lower().strip()
+    if style_key and style_key in STYLE_DESCRIPTIONS:
+        style_part = f" Acabamento: {STYLE_DESCRIPTIONS[style_key]}."
+
+    palette_label = (req.palette_name or "").strip()
+    palette_part = f" Paleta '{palette_label}'." if palette_label else ""
+
     prompt = (
-        f"Fotografia profissional de uma peça artesanal de resina epóxi premium em formato de {shape}. "
-        f"{req.prompt}.{colors_part} "
-        "Iluminação de estúdio suave, fundo neutro escuro, alto contraste, "
-        "reflexos dourados sutis, profundidade de campo rasa, hiper-realista, 4k, joalheria de luxo."
+        f"Fotografia profissional de produto, hiper-realista 4k, de {shape_desc}."
+        f"{palette_part}{style_part}{colors_part} "
+        "Iluminação de estúdio suave (softbox lateral + rim light dourado), "
+        "fundo neutro escuro com leve gradiente, profundidade de campo rasa, "
+        "reflexos sutis na superfície, sombra suave projetada, "
+        "estética de e-commerce de joalheria de luxo. "
+        "A peça DEVE ser claramente reconhecível como um objeto físico tridimensional, "
+        "NÃO uma textura abstrata, NÃO uma ilustração plana, NÃO arte digital."
     )
 
     chat = (
