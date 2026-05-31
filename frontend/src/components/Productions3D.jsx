@@ -10,6 +10,17 @@ import { chamarIA, ApiError } from "@/utils/api";
 // Timeout (ms) para fallback de UI caso a geração trave (Nano Banana ~30s típico).
 const RENDER_TIMEOUT_MS = 45000;
 
+// Fallback hex para quando a paleta vier vazia ou com < 4 cores — evita "blob branco"
+// porque Three.js usa #ffffff como cor padrão se a entrada for undefined.
+const FALLBACK_HEXES = ["#9B7B4A", "#D4AF37", "#1F2937", "#E5DCC9"];
+function paletteToColors(palette) {
+  const hexes = (palette?.colors || []).map((c) => c.hex);
+  while (hexes.length < FALLBACK_HEXES.length) {
+    hexes.push(FALLBACK_HEXES[hexes.length]);
+  }
+  return hexes.map((hex) => new THREE.Color(hex));
+}
+
 // Detecta suporte a WebGL no device. Em mobile antigo o Canvas pode falhar silenciosamente.
 function detectWebGL() {
   try {
