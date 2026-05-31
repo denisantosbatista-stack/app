@@ -16,7 +16,7 @@ import {
 import { chamarIA, ApiError } from "@/utils/api";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const SEEN_KEY = "lindart.tour.v1.seen";
 
 // Rotas públicas/anônimas — mesmo conjunto do OnboardingFlow.

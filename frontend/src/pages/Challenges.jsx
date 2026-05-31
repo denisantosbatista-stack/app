@@ -18,7 +18,7 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../contexts/AuthContext";
 import SubmitChallengeModal from "../components/SubmitChallengeModal";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const VOTED_KEY = "lindart.challenges.voted.v1";
 
 function loadVoted() {

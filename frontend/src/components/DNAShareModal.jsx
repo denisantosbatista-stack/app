@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import html2canvas from "html2canvas";
 import DNAShareCard from "./DNAShareCard";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
 export default function DNAShareModal({ open, onClose, dna }) {
   const cardRef = useRef(null);

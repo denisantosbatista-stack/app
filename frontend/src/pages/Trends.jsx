@@ -4,7 +4,7 @@ import { RefreshCw, TrendingUp, Flame, Copy, Loader2, Sparkles } from "lucide-re
 import { toast } from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const STORAGE_KEY = "lindart.trends.v1";
 
 const FOCUS_OPTIONS = [

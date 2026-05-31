@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -68,6 +69,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="LindArt API", lifespan=lifespan)
+
+
+@app.get("/ping")
+async def ping():
+    """Healthcheck endpoint para Railway (sem prefixo /api)."""
+    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+
 
 # Registro de routers (ordem importa apenas para legibilidade)
 app.include_router(system_router)

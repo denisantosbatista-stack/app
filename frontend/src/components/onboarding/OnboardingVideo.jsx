@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { PlayCircle, Sparkles, Loader2, RefreshCw, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const MANUAL_URL = process.env.REACT_APP_ONBOARDING_VIDEO_URL;
 
 /**

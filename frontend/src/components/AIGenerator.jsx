@@ -79,7 +79,7 @@ export default function AIGenerator({ onGenerated }) {
       const form = new FormData();
       form.append("file", blob, `voz.${ext}`);
       form.append("language", "pt");
-      const url = `${process.env.REACT_APP_BACKEND_URL}/api/ai/transcribe`;
+      const url = `${(process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL)}/api/ai/transcribe`;
       const res = await fetch(url, { method: "POST", body: form });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

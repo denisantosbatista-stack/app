@@ -7,7 +7,7 @@ import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import CreatePostModal from "../components/CreatePostModal";
 import ShareSheet from "../components/ShareSheet";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const LIKED_KEY = "lindart.feed.liked.v1";
 
 function loadLiked() {

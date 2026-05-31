@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import ShareSheet from "../components/ShareSheet";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
 function formatBRL(value) {
   if (value === null || value === undefined || value === "") return null;

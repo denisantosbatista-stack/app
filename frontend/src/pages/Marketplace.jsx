@@ -21,7 +21,7 @@ import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import CreateItemModal from "../components/CreateItemModal";
 import ShareSheet from "../components/ShareSheet";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
 const TYPES = [
   { id: "molde", label: "Moldes", icon: Package },

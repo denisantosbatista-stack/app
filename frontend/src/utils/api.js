@@ -3,7 +3,7 @@
 // e ApiError com `tipo` categorizado para a UI distinguir erro de saldo,
 // limite (rate-limit), timeout, rede e servidor.
 
-const API_BASE = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API_BASE = `${(process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL)}/api`;
 
 export class ApiError extends Error {
   constructor(message, { tipo, status, detail } = {}) {

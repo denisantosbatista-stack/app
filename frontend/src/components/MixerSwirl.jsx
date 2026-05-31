@@ -4,7 +4,7 @@ import { Loader2, Play, Sparkles, Video } from "lucide-react";
 import toast from "react-hot-toast";
 import { chamarIA, ApiError } from "@/utils/api";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
 /**
  * Simulação realista de mistura de tintas:

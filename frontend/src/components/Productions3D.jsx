@@ -60,7 +60,7 @@ function CanvasFallback({ palette, message }) {
   );
 }
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
 /**
  * Productions3D — viewer Three.js (react-three-fiber + drei) com 3 formatos de peça

@@ -4,7 +4,7 @@ import axios from "axios";
 import { PRESET_PALETTES, STYLES, PIECES } from "@/data/palettes";
 import { chamarIA, ApiError } from "@/utils/api";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${(process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL)}/api`;
 
 export const usePaletteStore = create(
   persist(

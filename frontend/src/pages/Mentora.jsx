@@ -4,7 +4,7 @@ import { Send, Loader2, MessageCircle, Sparkles, RefreshCw, Image as ImageIcon, 
 import { toast } from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const STORAGE_KEY = "lindart.mentora.v1";
 
 const QUICK_PROMPTS = [

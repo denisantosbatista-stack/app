@@ -14,7 +14,7 @@ import AIErrorState from "./AIErrorState";
 import { chamarIA, ApiError, abrirUpgradePadrao } from "@/utils/api";
 import { Field } from "./ui/Field";
 
-const API_BASE = process.env.REACT_APP_BACKEND_URL;
+const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
 const PLATFORMS = [
   { id: "instagram", label: "Instagram" },
