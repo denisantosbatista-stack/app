@@ -229,6 +229,9 @@ export const PIECES = [
   { id: "chaveiro", label: "Chaveiro", shape: "circle", category: "objetos-escolares" },
 ];
 
+// MOCKUPS — apenas peças reais de resina (imagens hospedadas no Emergent).
+// URLs aleatórias do Unsplash foram removidas porque retornavam fotos sem
+// relação com resina (estacionamento, óculos, prateleiras de quadros).
 export const MOCKUPS = [
   {
     id: "clock",
@@ -244,36 +247,6 @@ export const MOCKUPS = [
     id: "geode",
     label: "Geodo Decorativo",
     url: "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/558457381e345cb3c1c6c3d72bdad5af5a5268bc28780fa0de83d250e614c681.png",
-  },
-  {
-    id: "ring",
-    label: "Anel Premium",
-    url: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=800&q=80",
-  },
-  {
-    id: "earring",
-    label: "Brincos de Luxo",
-    url: "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?w=800&q=80",
-  },
-  {
-    id: "coaster",
-    label: "Porta-copos Artesanal",
-    url: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=800&q=80",
-  },
-  {
-    id: "pendant",
-    label: "Colar Pingente",
-    url: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&q=80",
-  },
-  {
-    id: "frame",
-    label: "Quadro Fluido",
-    url: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&q=80",
-  },
-  {
-    id: "cube",
-    label: "Cubo Cristal",
-    url: "https://images.unsplash.com/photo-1561518776-e76a5e48f731?w=800&q=80",
   },
 ];
 
