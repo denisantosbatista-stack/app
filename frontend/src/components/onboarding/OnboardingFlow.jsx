@@ -12,21 +12,26 @@ import RegisterStep from "./RegisterStep";
 import WelcomeStep from "./WelcomeStep";
 import { PRESET_PALETTES } from "@/data/palettes";
 
-// Mapeia o `style` da paleta escolhida para um descritor de peça (tipoPeca).
-// Usado no passo de Geração para personalizar texto + formato visual.
-// Mantemos uma escolha clara por estilo; default cobre paletas sem style.
+// Mapeia o `style` da paleta escolhida para um descritor de peça (tipoPeca) e
+// o formato visual (shape) usado no passo de Geração.
+// Mantemos duas fontes separadas: `label` (texto exibido) e `shape` (visual),
+// evitando regressões caso o label seja traduzido/editado no futuro.
 const PALETTE_TIPO_PECA = {
-  geodo: "geodo circular",
-  floral: "peça floral",
-  pastel: "peça pastel",
-  minimalista: "peça minimalista",
-  luxo: "bandeja luxuosa",
+  geodo: { label: "geodo circular", shape: "circle" },
+  floral: { label: "peça floral", shape: "circle" },
+  oceano: { label: "peça oceânica", shape: "circle" },
+  pastel: { label: "peça pastel", shape: "square" },
+  minimalista: { label: "peça minimalista", shape: "square" },
+  luxo: { label: "bandeja luxuosa", shape: "circle" },
 };
 
-function deriveTipoPeca(paletteId) {
+function derivePieceMeta(paletteId) {
   const palette = PRESET_PALETTES.find((p) => p.id === paletteId);
-  if (!palette) return "primeira peça";
-  return PALETTE_TIPO_PECA[palette.style] || "peça autoral";
+  if (!palette) return { tipoPeca: "primeira peça", shape: "circle" };
+  const entry = PALETTE_TIPO_PECA[palette.style];
+  return entry
+    ? { tipoPeca: entry.label, shape: entry.shape }
+    : { tipoPeca: "peça autoral", shape: "circle" };
 }
 
 const DONE_KEY = "lindart.onboarding.v1.completed";
@@ -238,14 +243,18 @@ export default function OnboardingFlow() {
                       onBack={back}
                     />
                   )}
-                  {current === "generation" && (
-                    <GenerationStep
-                      paletteId={data.paletteId}
-                      tipoPeca={deriveTipoPeca(data.paletteId)}
-                      onNext={next}
-                      onBack={back}
-                    />
-                  )}
+                  {current === "generation" && (() => {
+                    const meta = derivePieceMeta(data.paletteId);
+                    return (
+                      <GenerationStep
+                        paletteId={data.paletteId}
+                        tipoPeca={meta.tipoPeca}
+                        shape={meta.shape}
+                        onNext={next}
+                        onBack={back}
+                      />
+                    );
+                  })()}
                   {current === "register" && (
                     <RegisterStep
                       value={{ name: data.name, email: data.email }}

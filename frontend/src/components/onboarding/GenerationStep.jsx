@@ -11,14 +11,13 @@ const PHRASES = [
   "Finalizando sua primeira peça…",
 ];
 
-export default function GenerationStep({ paletteId, tipoPeca, onNext, onBack }) {
+export default function GenerationStep({ paletteId, tipoPeca, shape = "circle", onNext, onBack }) {
   const palette = PRESET_PALETTES.find((p) => p.id === paletteId) || PRESET_PALETTES[0];
   const tipo = tipoPeca || "primeira peça";
 
-  // Variação de formato conforme o tipo de peça derivado da paleta.
-  // - Geodo / floral / luxo / default = circular (rounded-full)
-  // - Pastel / minimalista = retangular suave (rounded-3xl) p/ remeter a bandeja
-  const isSquareLike = /minimalista|pastel/.test(tipo);
+  // Shape vem desacoplado do texto: "circle" = rounded-full, "square" = rounded-3xl
+  // (remete a bandeja para estilos pastel/minimalista).
+  const isSquareLike = shape === "square";
   const shapeRadiusClass = isSquareLike ? "rounded-3xl" : "rounded-full";
   const shadowRadiusClass = isSquareLike ? "rounded-2xl" : "rounded-full";
   const [loading, setLoading] = useState(true);
