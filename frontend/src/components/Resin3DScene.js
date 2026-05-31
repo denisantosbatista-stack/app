@@ -9,8 +9,17 @@ import { useTexture } from "@react-three/drei";
 
 const h = React.createElement;
 
+// Cores de fallback caso a paleta venha vazia (evita "blob branco" no canvas
+// quando colors[0] é undefined → Three.js usa #ffffff como cor padrão).
+const FALLBACK_HEXES = ["#9B7B4A", "#D4AF37", "#1F2937", "#E5DCC9"];
+
 function makeColors(palette) {
-  return (palette?.colors || []).map((c) => new THREE.Color(c.hex));
+  const hexes = (palette?.colors || []).map((c) => c.hex);
+  // Garante pelo menos 4 entradas para acessar colors[1]/colors[2] com segurança
+  while (hexes.length < FALLBACK_HEXES.length) {
+    hexes.push(FALLBACK_HEXES[hexes.length]);
+  }
+  return hexes.map((hex) => new THREE.Color(hex));
 }
 
 function GeodoMesh({ palette, texture }) {
