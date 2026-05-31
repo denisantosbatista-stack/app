@@ -6,6 +6,7 @@ import { PRESET_PALETTES } from "@/data/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import { hexToRgb, isDark, copyToClipboard } from "@/utils/color";
 import { encodePaletteToUrl } from "@/utils/share";
+import CompareView3D from "@/components/CompareView3D";
 
 // Luminância relativa (WCAG)
 function relLuminance(hex) {
@@ -130,6 +131,8 @@ export default function Compare() {
           testid="compare-b"
         />
       </div>
+
+      <CompareView3D paletteA={A} paletteB={B} />
 
       <ContrastMatrix A={A} B={B} />
     </div>
