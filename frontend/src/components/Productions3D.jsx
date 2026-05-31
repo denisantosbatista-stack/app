@@ -69,18 +69,22 @@ const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND
  * via /api/ai/generate-image e aplica a imagem como textura no modelo 3D.
  */
 
-const SHAPES = [
-  { id: "geodo", label: "Geodo" },
-  { id: "bandeja", label: "Bandeja" },
-  { id: "colar", label: "Colar" },
-];
-
-// Mapeia a categoria/forma da peça selecionada na biblioteca para uma das 3 variações 3D.
-// Joalheria → colar (gota/sphere) · Mesa & Casa → bandeja · Decorativo → geodo (icosaedro).
+// Mapeia a forma da peça selecionada na biblioteca para uma das 3 variações 3D.
+// O usuário escolhe a peça em "Tipo de peça" e o viewer 3D adapta automaticamente.
 function mapPieceTo3DShape(piece) {
   if (!piece) return "geodo";
-  if (piece.category === "joalheria") return "colar";
-  if (piece.category === "mesa") return "bandeja";
+  const s = piece.shape;
+  // Peças planas / horizontais → bandeja
+  if ([
+    "tray", "coaster", "sousplat", "bowl", "jewelry-box",
+    "planter", "book", "booklet", "ruler",
+  ].includes(s)) return "bandeja";
+  // Peças orgânicas / penduráveis → colar (gota/esfera)
+  if ([
+    "drop", "ring", "oval", "bracelet", "moon", "star",
+    "heart", "circle", "feather", "leaf", "pen", "bookmark",
+  ].includes(s)) return "colar";
+  // Geométrico / em pé → geodo (icosaedro)
   return "geodo";
 }
 
@@ -314,31 +318,12 @@ export default function Productions3D({ palette, activePiece }) {
               Produções em <span className="italic gold-shimmer">3D interativo</span>
             </h3>
           </div>
-          <div className="flex gap-1.5">
-            {SHAPES.map((s) => {
-              const isActive = shape === s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => {
-                    setShape(s.id);
-                    setTextureUrl(null);
-                  }}
-                  className={`relative px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] rounded-sm border transition-all ${
-                    isActive
-                      ? "border-gold text-ink bg-gold shadow-gold font-semibold"
-                      : "border-black/15 text-zinc-500 hover:border-gold/40"
-                  }`}
-                  data-testid={`prod3d-shape-${s.id}`}
-                >
-                  {s.label}
-                  {isActive && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold" />
-                  )}
-                </button>
-              );
-            })}
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm border border-gold/40 bg-gold/5 text-[10px] uppercase tracking-[0.18em] text-gold-deep"
+            data-testid="prod3d-active-piece"
+          >
+            <BoxIcon className="w-3 h-3" />
+            {activePiece?.label || "—"}
           </div>
         </div>
 

@@ -192,8 +192,8 @@ export const STYLES = [
 
 export const PIECE_CATEGORIES = [
   { id: "joalheria", label: "Joalheria" },
-  { id: "mesa", label: "Mesa & Casa" },
   { id: "decorativo", label: "Decorativo" },
+  { id: "objetos-escolares", label: "Objetos Escolares" },
 ];
 
 export const PIECES = [
@@ -205,19 +205,28 @@ export const PIECES = [
   { id: "bracelete", label: "Bracelete", shape: "bracelet", category: "joalheria" },
   { id: "lua", label: "Lua Crescente", shape: "moon", category: "joalheria" },
   { id: "estrela", label: "Estrela", shape: "star", category: "joalheria" },
-  // Decorativo
-  { id: "coracao", label: "Coração", shape: "heart", category: "decorativo" },
+  // Decorativo (inclui peças de mesa & casa)
+  { id: "bandeja", label: "Bandeja", shape: "tray", category: "decorativo" },
+  { id: "porta-copo", label: "Porta-copo", shape: "coaster", category: "decorativo" },
+  { id: "sousplat", label: "Sousplat", shape: "sousplat", category: "decorativo" },
+  { id: "luminaria", label: "Luminária", shape: "lamp", category: "decorativo" },
   { id: "folha", label: "Folha", shape: "leaf", category: "decorativo" },
   { id: "pena", label: "Pena", shape: "feather", category: "decorativo" },
-  { id: "marcador", label: "Marcador", shape: "bookmark", category: "decorativo" },
-  { id: "chaveiro", label: "Chaveiro", shape: "circle", category: "decorativo" },
+  { id: "coracao", label: "Coração", shape: "heart", category: "decorativo" },
   { id: "prisma", label: "Prisma", shape: "prism", category: "decorativo" },
   { id: "cubo", label: "Cubo", shape: "cube", category: "decorativo" },
-  // Mesa & Casa
-  { id: "porta-joias", label: "Bandeja", shape: "tray", category: "mesa" },
-  { id: "porta-copo", label: "Porta-copo", shape: "coaster", category: "mesa" },
-  { id: "sousplat", label: "Sousplat", shape: "sousplat", category: "mesa" },
-  { id: "luminaria", label: "Luminária", shape: "lamp", category: "mesa" },
+  { id: "vaso", label: "Vaso", shape: "vase", category: "decorativo" },
+  { id: "casticais", label: "Castiçal", shape: "candle-holder", category: "decorativo" },
+  { id: "tigela", label: "Tigela", shape: "bowl", category: "decorativo" },
+  { id: "porta-joias", label: "Porta-joias", shape: "jewelry-box", category: "decorativo" },
+  { id: "cachepo", label: "Cachepô", shape: "planter", category: "decorativo" },
+  // Objetos Escolares
+  { id: "caderno", label: "Caderno", shape: "book", category: "objetos-escolares" },
+  { id: "caderneta", label: "Caderneta", shape: "booklet", category: "objetos-escolares" },
+  { id: "caneta", label: "Caneta", shape: "pen", category: "objetos-escolares" },
+  { id: "regua", label: "Régua", shape: "ruler", category: "objetos-escolares" },
+  { id: "marcador", label: "Marcador", shape: "bookmark", category: "objetos-escolares" },
+  { id: "chaveiro", label: "Chaveiro", shape: "circle", category: "objetos-escolares" },
 ];
 
 export const MOCKUPS = [

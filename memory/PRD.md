@@ -13,6 +13,8 @@ Studio visual para resineiras: paletas, calculadora de proporções, comparador 
 - Dropdown "Minha conta" filtra itens por `authRequired` — para não autenticados mostra apenas "Ver planos" e "Privacidade".
 - Rotas `/compare` e `/collections` protegidas por `RequireAuth` com toast `react-hot-toast` "Faça login para acessar" e redirect `/login?next=...`.
 - CompareView3D existe mas testes automatizados ainda travam por causa do canvas 3D.
+- **Studio "Tipo de peça" reestruturado (Fev 2026)**: categoria `Mesa & Casa` removida; itens (Bandeja, Porta-copo, Sousplat, Luminária, Folha, Pena, Coração, Prisma, Cubo, Vaso, Castiçal, Tigela, Porta-joias, Cachepô) migrados para `Decorativo`; nova categoria `Objetos Escolares` (Caderno, Caderneta, Caneta, Régua, Marcador, Chaveiro — Marcador/Chaveiro só aqui). Thumbnails 48×48px com nome embaixo. Arquivos: `/app/frontend/src/data/palettes.js`, `/app/frontend/src/components/PieceSelectors.jsx`, `/app/frontend/src/components/PieceShape.jsx`.
+- **Galeria 3D dinâmica (Productions3D)**: tabs fixas Geodo/Bandeja/Colar removidas; o viewer mapeia automaticamente a peça selecionada na biblioteca para a melhor das 3 formas 3D (geodo/bandeja/colar) via `mapPieceTo3DShape()`; badge no canto exibe a peça ativa.
 
 ### 🔴 P0 — Pendente (recorrente)
 1. **Seed Content** (`/app/backend/routers/seed_content.py` vazio): 3 posts Feed + 2 itens Marketplace + badge "EXEMPLO" no Marketplace.jsx. Chamar no `lifespan` do `server.py`.

@@ -263,6 +263,127 @@ export default function PieceShape({ piece, palette, size = 320, animated = true
         <ellipse cx="135" cy="120" rx="18" ry="40" fill={`url(#hl-${piece.id})`} opacity="0.6" />
       </g>
     ),
+    vase: (
+      <g filter={`url(#${shadowId})`}>
+        <path
+          d="M120 50 L 200 50 L 195 95 Q 250 130 250 200 Q 250 270 160 280 Q 70 270 70 200 Q 70 130 125 95 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <ellipse cx="160" cy="50" rx="40" ry="8" fill={accent} opacity="0.7" />
+        <path d="M85 170 Q 160 210 235 165" fill="none" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.7" />
+        <ellipse cx="130" cy="160" rx="22" ry="55" fill={`url(#hl-${piece.id})`} opacity="0.55" />
+      </g>
+    ),
+    "candle-holder": (
+      <g filter={`url(#${shadowId})`}>
+        <rect x="148" y="40" width="24" height="60" rx="3" fill={detail} opacity="0.85" stroke={withAlpha(veins, 0.5)} strokeWidth="0.8" />
+        <ellipse cx="160" cy="40" rx="6" ry="10" fill="#FFB347" opacity="0.9" />
+        <path
+          d="M100 100 L 220 100 L 215 150 Q 240 165 240 210 Q 240 260 160 270 Q 80 260 80 210 Q 80 165 105 150 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <path d="M95 200 Q 160 240 225 195" fill="none" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.6" />
+        <ellipse cx="135" cy="180" rx="18" ry="40" fill={`url(#hl-${piece.id})`} opacity="0.5" />
+      </g>
+    ),
+    bowl: (
+      <g filter={`url(#${shadowId})`}>
+        <ellipse cx="160" cy="120" rx="120" ry="22" fill={accent} opacity="0.4" />
+        <path
+          d="M40 120 Q 40 250 160 270 Q 280 250 280 120 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <ellipse cx="160" cy="120" rx="110" ry="18" fill={detail} opacity="0.5" />
+        <path d="M65 170 Q 160 220 255 170" fill="none" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.7" />
+        <ellipse cx="125" cy="170" rx="30" ry="40" fill={`url(#hl-${piece.id})`} opacity="0.55" />
+      </g>
+    ),
+    "jewelry-box": (
+      <g filter={`url(#${shadowId})`}>
+        <rect x="50" y="120" width="220" height="140" rx="8" fill={`url(#${gradId})`} stroke={withAlpha(veins, 0.5)} strokeWidth="1.2" />
+        <path d="M50 120 Q 160 60 270 120 L 270 150 L 50 150 Z" fill={accent} opacity="0.8" stroke={withAlpha(veins, 0.4)} strokeWidth="1" />
+        <rect x="148" y="140" width="24" height="14" rx="2" fill={veins} opacity="0.85" />
+        <path d="M70 200 Q 160 230 250 200" fill="none" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.6" />
+        <path d="M50 120 Q 160 85 270 120" fill={`url(#hl-${piece.id})`} opacity="0.45" />
+      </g>
+    ),
+    planter: (
+      <g filter={`url(#${shadowId})`}>
+        <ellipse cx="160" cy="100" rx="110" ry="16" fill={accent} opacity="0.5" />
+        <path
+          d="M60 100 L 90 270 Q 90 280 100 280 L 220 280 Q 230 280 230 270 L 260 100 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <ellipse cx="160" cy="100" rx="100" ry="12" fill={detail} opacity="0.55" />
+        <path d="M75 180 Q 160 220 245 180" fill="none" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.65" />
+        <ellipse cx="125" cy="180" rx="22" ry="55" fill={`url(#hl-${piece.id})`} opacity="0.55" />
+      </g>
+    ),
+    book: (
+      <g filter={`url(#${shadowId})`}>
+        <rect x="60" y="50" width="200" height="220" rx="6" fill={`url(#${gradId})`} stroke={withAlpha(veins, 0.5)} strokeWidth="1.2" />
+        <line x1="80" y1="50" x2="80" y2="270" stroke={veins} strokeWidth="2" opacity="0.7" />
+        <line x1="85" y1="50" x2="85" y2="270" stroke={withAlpha(veins, 0.5)} strokeWidth="1" />
+        <path d="M110 100 L 240 100" stroke={`url(#${veinId})`} strokeWidth="2" opacity="0.6" />
+        <path d="M110 130 L 220 130" stroke={`url(#${veinId})`} strokeWidth="1.4" opacity="0.5" />
+        <path d="M110 160 L 230 160" stroke={`url(#${veinId})`} strokeWidth="1.4" opacity="0.5" />
+        <rect x="60" y="50" width="200" height="80" rx="6" fill={`url(#hl-${piece.id})`} opacity="0.4" />
+      </g>
+    ),
+    booklet: (
+      <g filter={`url(#${shadowId})`}>
+        <rect x="90" y="70" width="140" height="200" rx="4" fill={`url(#${gradId})`} stroke={withAlpha(veins, 0.5)} strokeWidth="1.2" />
+        <circle cx="160" cy="60" r="8" fill="none" stroke={veins} strokeWidth="2" />
+        <circle cx="120" cy="60" r="6" fill="none" stroke={veins} strokeWidth="1.5" />
+        <circle cx="200" cy="60" r="6" fill="none" stroke={veins} strokeWidth="1.5" />
+        <line x1="120" y1="68" x2="120" y2="80" stroke={veins} strokeWidth="1.5" />
+        <line x1="160" y1="70" x2="160" y2="80" stroke={veins} strokeWidth="2" />
+        <line x1="200" y1="68" x2="200" y2="80" stroke={veins} strokeWidth="1.5" />
+        <path d="M110 120 L 210 120" stroke={`url(#${veinId})`} strokeWidth="1.4" opacity="0.55" />
+        <path d="M110 150 L 200 150" stroke={`url(#${veinId})`} strokeWidth="1.2" opacity="0.5" />
+        <path d="M110 180 L 205 180" stroke={`url(#${veinId})`} strokeWidth="1.2" opacity="0.5" />
+        <rect x="90" y="70" width="140" height="60" rx="4" fill={`url(#hl-${piece.id})`} opacity="0.45" />
+      </g>
+    ),
+    pen: (
+      <g filter={`url(#${shadowId})`}>
+        <path
+          d="M210 40 L 260 90 L 110 240 Q 80 250 70 270 Q 80 250 90 220 Z"
+          fill={`url(#${gradId})`}
+          stroke={withAlpha(veins, 0.5)}
+          strokeWidth="1.2"
+        />
+        <path d="M70 270 L 95 245 L 115 265 Z" fill={veins} opacity="0.85" />
+        <rect x="208" y="48" width="55" height="20" rx="3" transform="rotate(45 210 40)" fill={accent} opacity="0.8" />
+        <line x1="200" y1="50" x2="100" y2="230" stroke={`url(#${veinId})`} strokeWidth="1.5" opacity="0.6" />
+      </g>
+    ),
+    ruler: (
+      <g filter={`url(#${shadowId})`}>
+        <rect x="30" y="130" width="260" height="60" rx="4" fill={`url(#${gradId})`} stroke={withAlpha(veins, 0.5)} strokeWidth="1.2" />
+        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
+          <line
+            key={i}
+            x1={50 + i * 20}
+            y1="130"
+            x2={50 + i * 20}
+            y2={i % 2 === 0 ? 160 : 150}
+            stroke={veins}
+            strokeWidth={i % 2 === 0 ? 1.5 : 1}
+            opacity="0.7"
+          />
+        ))}
+        <rect x="30" y="130" width="260" height="22" rx="4" fill={`url(#hl-${piece.id})`} opacity="0.45" />
+      </g>
+    ),
   };
 
   const shape = shapes[piece.shape] || shapes.drop;
