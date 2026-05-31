@@ -80,6 +80,7 @@ function App() {
             <Route path="/tips" element={<Tips />} />
             <Route path="/mentora" element={<Mentora />} />
             <Route path="/trends" element={<Trends />} />
+            <Route path="/tendencias" element={<Trends />} />
             <Route path="/collections" element={<Collections />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/marketplace" element={<Marketplace />} />

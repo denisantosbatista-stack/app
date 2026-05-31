@@ -38,26 +38,50 @@ function saveCache(data) {
 export default function Trends() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [focus, setFocus] = useState("geral");
   const savePalette = usePaletteStore((s) => s.savePalette);
 
   async function fetchTrends({ refresh = false, currentFocus = focus } = {}) {
     setLoading(true);
+    setRetryAttempt(0);
+    const MAX_ATTEMPTS = 3;
+    const RETRY_DELAY_MS = 2000;
+    let lastError = null;
     try {
-      const res = await fetch(`${API_BASE}/api/ai/trends`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh, focus: currentFocus }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = await res.json();
-      setData(j);
-      saveCache(j);
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        setRetryAttempt(attempt);
+        try {
+          const res = await fetch(`${API_BASE}/api/ai/trends`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh, focus: currentFocus }),
+          });
+          if (res.status === 503) {
+            lastError = new Error("Servidor acordando (503)");
+            if (attempt < MAX_ATTEMPTS) {
+              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+              continue;
+            }
+            throw lastError;
+          }
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const j = await res.json();
+          setData(j);
+          saveCache(j);
+          return;
+        } catch (innerErr) {
+          if (innerErr?.message !== "Servidor acordando (503)") throw innerErr;
+          lastError = innerErr;
+        }
+      }
+      throw lastError || new Error("Falha ao carregar tendências");
     } catch (e) {
       toast.error("Não foi possível carregar as tendências");
       console.error(e);
     } finally {
       setLoading(false);
+      setRetryAttempt(0);
     }
   }
 
@@ -150,10 +174,44 @@ export default function Trends() {
 
       {/* Grid */}
       {loading && !data && (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-ink-surface border border-black/[0.06] rounded-sm h-80 skeleton" />
-          ))}
+        <div data-testid="trends-loading">
+          <div
+            className="flex items-center justify-center gap-2 text-xs tracking-[0.22em] uppercase text-zinc-500 mb-6"
+            role="status"
+            aria-live="polite"
+            data-testid="trends-loading-text"
+          >
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-gold" />
+            {retryAttempt > 1
+              ? `Servidor acordando… (tentativa ${retryAttempt}/3)`
+              : "Carregando tendências..."}
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="bg-ink-surface border border-black/[0.06] rounded-sm overflow-hidden"
+                data-testid="trend-skeleton"
+              >
+                <div className="h-28 flex">
+                  {[0, 1, 2, 3, 4].map((j) => (
+                    <div key={j} className="flex-1 skeleton" />
+                  ))}
+                </div>
+                <div className="p-5 space-y-3">
+                  <div className="h-5 w-2/3 skeleton rounded-sm" />
+                  <div className="h-3 w-full skeleton rounded-sm" />
+                  <div className="h-3 w-5/6 skeleton rounded-sm" />
+                  <div className="flex gap-1.5 pt-1">
+                    <div className="h-4 w-12 skeleton rounded-sm" />
+                    <div className="h-4 w-16 skeleton rounded-sm" />
+                    <div className="h-4 w-10 skeleton rounded-sm" />
+                  </div>
+                  <div className="h-8 w-full skeleton rounded-sm mt-2" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       {data?.trends && (
@@ -219,6 +277,23 @@ export default function Trends() {
               </div>
             </motion.article>
           ))}
+        </div>
+      )}
+      {!loading && data && (!data.trends || data.trends.length === 0) && (
+        <div
+          className="text-center py-12 border border-dashed border-black/[0.08] rounded-sm"
+          data-testid="trends-empty"
+        >
+          <p className="text-sm text-zinc-600 mb-4">
+            Nenhuma tendência encontrada para este foco no momento.
+          </p>
+          <button
+            onClick={() => fetchTrends({ refresh: true })}
+            className="text-[10px] tracking-[0.22em] uppercase text-gold hover:underline inline-flex items-center gap-1.5"
+            data-testid="trends-empty-retry"
+          >
+            <RefreshCw className="w-3 h-3" /> Tentar novamente
+          </button>
         </div>
       )}
       {loading && data && (
