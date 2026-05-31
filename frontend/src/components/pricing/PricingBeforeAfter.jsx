@@ -33,7 +33,7 @@ const PRO_HIGHLIGHTS = PRO.perks;
 const FREE_LIMITATIONS = [
   "5 paletas / mês",
   "Sem Mentoria IA",
-  "Sem vídeo SVD 2.0",
+  "Sem vídeo IA",
   "Sem perfil verificado",
   "Sem versionamento Pro",
 ];
@@ -407,7 +407,7 @@ function ProPalettePreview() {
           IA ilimitada
         </div>
         <div className="px-2 py-0.5 rounded-full bg-gold/10 text-gold-deep text-[10px] tracking-[0.18em] uppercase">
-          Vídeo SVD 2.0
+          Vídeo IA
         </div>
       </div>
     </motion.div>

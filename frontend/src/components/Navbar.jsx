@@ -5,17 +5,10 @@ import { toast } from "react-hot-toast";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Grupos do menu — agrupa 14 itens em 4 dropdowns + 2 links diretos
+// Menu oficial — labels exatas conforme padrão LindArt:
+// Início, Stúdio de Criação, Criar Paleta, Tendências, Aprender,
+// Comunidade, Planos e Preços, Minha Conta.
 const NAV_GROUPS = [
-  {
-    id: "criar",
-    label: "Criar",
-    items: [
-      { to: "/studio", label: "Studio" },
-      { to: "/mixer", label: "Criar Paleta" },
-      { to: "/calculator", label: "Calculadora" },
-    ],
-  },
   {
     id: "aprender",
     label: "Aprender",
@@ -23,6 +16,7 @@ const NAV_GROUPS = [
       { to: "/mentora", label: "Mentoria", ai: true },
       { to: "/tips", label: "Técnicas" },
       { to: "/library", label: "Biblioteca" },
+      { to: "/calculadora", label: "Calculadora" },
     ],
   },
   {
@@ -36,11 +30,10 @@ const NAV_GROUPS = [
   },
   {
     id: "conta",
-    label: "Minha conta",
+    label: "Minha Conta",
     items: [
       { to: "/collections", label: "Coleção", ai: true, authRequired: true },
       { to: "/compare", label: "Comparador", authRequired: true },
-      { to: "/planos", label: "Ver planos" },
       { to: "/privacy", label: "Privacidade" },
     ],
   },
@@ -209,7 +202,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+        <nav className="hidden lg:flex items-center gap-4 xl:gap-6 whitespace-nowrap">
           <NavLink
             to="/"
             end
@@ -222,9 +215,28 @@ export default function Navbar() {
           >
             Início
           </NavLink>
-          {NAV_GROUPS.map((g) => (
-            <NavDropdown key={g.id} group={g} isAuthenticated={isAuthenticated} />
-          ))}
+          <NavLink
+            to="/studio"
+            className={({ isActive }) =>
+              `text-sm tracking-wide transition-colors duration-300 ${
+                isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
+              }`
+            }
+            data-testid="nav-link-studio"
+          >
+            Stúdio de Criação
+          </NavLink>
+          <NavLink
+            to="/mixer"
+            className={({ isActive }) =>
+              `text-sm tracking-wide transition-colors duration-300 ${
+                isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
+              }`
+            }
+            data-testid="nav-link-mixer"
+          >
+            Criar Paleta
+          </NavLink>
           <NavLink
             to="/trends"
             className={({ isActive }) =>
@@ -239,6 +251,20 @@ export default function Navbar() {
               className="inline-block w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_6px_rgba(212,178,96,0.7)]"
             />
             Tendências
+          </NavLink>
+          {NAV_GROUPS.map((g) => (
+            <NavDropdown key={g.id} group={g} isAuthenticated={isAuthenticated} />
+          ))}
+          <NavLink
+            to="/planos"
+            className={({ isActive }) =>
+              `text-sm tracking-wide transition-colors duration-300 ${
+                isActive ? "text-ink-text" : "text-zinc-600 hover:text-ink-text"
+              }`
+            }
+            data-testid="nav-link-planos"
+          >
+            Planos e Preços
           </NavLink>
         </nav>
 
@@ -387,6 +413,20 @@ export default function Navbar() {
                 Início
               </NavLink>
               <NavLink
+                to="/studio"
+                className="block text-sm tracking-wide text-zinc-700"
+                data-testid="mobile-nav-link-studio"
+              >
+                Stúdio de Criação
+              </NavLink>
+              <NavLink
+                to="/mixer"
+                className="block text-sm tracking-wide text-zinc-700"
+                data-testid="mobile-nav-link-mixer"
+              >
+                Criar Paleta
+              </NavLink>
+              <NavLink
                 to="/trends"
                 className="block text-sm tracking-wide text-zinc-700 inline-flex items-center gap-1.5"
                 data-testid="mobile-nav-link-trends"
@@ -411,6 +451,13 @@ export default function Navbar() {
                   </div>
                 </div>
               ))}
+              <NavLink
+                to="/planos"
+                className="block text-sm tracking-wide text-zinc-700"
+                data-testid="mobile-nav-link-planos"
+              >
+                Planos e Preços
+              </NavLink>
               <Link
                 to="/studio"
                 className="btn-gold inline-flex px-5 py-2.5 rounded-sm text-xs tracking-[0.18em] uppercase"

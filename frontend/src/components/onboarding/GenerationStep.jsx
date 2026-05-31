@@ -11,7 +11,7 @@ const PHRASES = [
   "Finalizando sua primeira peça…",
 ];
 
-export default function GenerationStep({ paletteId, onNext, onBack }) {
+export default function GenerationStep({ paletteId, tipoPeca = "geodo", onNext, onBack }) {
   const palette = PRESET_PALETTES.find((p) => p.id === paletteId) || PRESET_PALETTES[0];
   const [loading, setLoading] = useState(true);
   const [phraseIdx, setPhraseIdx] = useState(0);
@@ -42,7 +42,7 @@ export default function GenerationStep({ paletteId, onNext, onBack }) {
         </h2>
         <p className="text-ink-muted mt-4 max-w-md mx-auto">
           Criamos uma prévia da paleta <strong className="text-ink-text">{palette.name}</strong>{" "}
-          aplicada num geodo.
+          aplicada num {tipoPeca}.
         </p>
       </div>
 

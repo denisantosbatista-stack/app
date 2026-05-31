@@ -33,7 +33,7 @@ export const COMPARISON = [
     group: "Vídeo & Compartilhamento",
     icon: Video,
     rows: [
-      { label: "Vídeos SVD 2.0 (Fal.ai)", livre: false, essencial: false, pro: "20/mês", studio: "Ilimitado" },
+      { label: "Vídeos IA (Fal.ai)", livre: false, essencial: false, pro: "20/mês", studio: "Ilimitado" },
       { label: "DNA Share (link público)", livre: true, essencial: true, pro: true, studio: true },
       { label: "Marca branca no DNA", livre: false, essencial: false, pro: false, studio: true },
       { label: "Compartilhar no WhatsApp/IG", livre: true, essencial: true, pro: true, studio: true },

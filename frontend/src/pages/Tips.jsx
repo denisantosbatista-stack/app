@@ -55,7 +55,7 @@ const tips = [
 const levelColor = {
   Essencial: "text-gold border-gold/40",
   Pro: "text-zinc-700 border-black/25",
-  Avançado: "text-zinc-600 border-black/15",
+  Avançado: "text-gold border-gold/40",
   Crítico: "text-red-300 border-red-500/40",
 };
 
@@ -97,7 +97,7 @@ export default function Tips() {
                 {t.level}
               </span>
             </div>
-            <h3 className="font-display text-xl mb-2 tracking-tight">{t.title}</h3>
+            <h3 className="font-display text-xl mb-2 tracking-tight text-ink-text">{t.title}</h3>
             <p className="text-zinc-600 text-sm leading-relaxed">{t.desc}</p>
           </motion.div>
         ))}

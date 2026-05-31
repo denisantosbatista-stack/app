@@ -75,6 +75,8 @@ function App() {
               }
             />
             <Route path="/calculator" element={<Calculator />} />
+            <Route path="/calculadora" element={<Calculator />} />
+            <Route path="/calculadora/:tab" element={<Calculator />} />
             <Route
               path="/compare"
               element={

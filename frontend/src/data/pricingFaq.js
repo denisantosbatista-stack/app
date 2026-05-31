@@ -21,7 +21,7 @@ export const FAQ = [
     a: "Não. O plano Livre não pede cartão. Você só informa um cartão quando decidir assinar Essencial, Pro ou Studio — e mesmo assim pode cancelar a qualquer momento.",
   },
   {
-    q: "O vídeo SVD 2.0 está incluso em quais planos?",
+    q: "O vídeo IA está incluso em quais planos?",
     a: "O vídeo Stable Video Diffusion 2.0 (via Fal.ai) está disponível no Pro (20 gerações por mês) e no Studio (ilimitado). No Essencial e no Livre, você ainda usa imagem estática e o Mixer normalmente.",
   },
 ];

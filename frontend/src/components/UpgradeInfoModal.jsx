@@ -60,7 +60,7 @@ export default function UpgradeInfoModal() {
               </h2>
               <p className="text-sm text-zinc-600 leading-relaxed mb-5">
                 Todas as funcionalidades de IA do LindArt (paletas, Assinatura de Cor,
-                Luxury Score, Nano Banana 3D, SVD 2.0 e narração) usam o{" "}
+                Luxury Score, Nano Banana 3D, IA e narração) usam o{" "}
                 <strong>Universal Key da Emergent</strong>. Recarregue-a para
                 continuar criando.
               </p>

@@ -2,43 +2,32 @@ import { NavLink } from "react-router-dom";
 import {
   Home,
   Palette,
-  Heart,
-  GitCompare,
   Beaker,
-  Ruler,
-  Sparkles,
-  Brain,
   TrendingUp,
-  Layers,
-  Rss,
-  ShoppingBag,
-  Trophy,
+  Brain,
+  Users,
+  Crown,
+  User,
 } from "lucide-react";
 
-// Mobile mostra TODAS as abas em scroll horizontal com fade lateral indicando
-// que há mais conteúdo. Levantado acima do badge "Made with Emergent" (~64px)
-// para evitar sobreposição visual com a barra de navegação.
+// Menu oficial — labels exatas conforme padrão LindArt.
+// Mantido como scroll horizontal para caber em telas pequenas.
 const items = [
   { to: "/", icon: Home, label: "Início", end: true },
-  { to: "/studio", icon: Palette, label: "Studio" },
-  { to: "/mentora", icon: Brain, label: "Mentoria", ai: true },
-  { to: "/trends", icon: TrendingUp, label: "Tendências", ai: true },
-  { to: "/collections", icon: Layers, label: "Coleções", ai: true },
-  { to: "/feed", icon: Rss, label: "Feed" },
-  { to: "/marketplace", icon: ShoppingBag, label: "Market" },
-  { to: "/challenges", icon: Trophy, label: "Desafios" },
-  { to: "/library", icon: Heart, label: "Salvos" },
+  { to: "/studio", icon: Palette, label: "Stúdio" },
   { to: "/mixer", icon: Beaker, label: "Criar Paleta" },
-  { to: "/calculator", icon: Ruler, label: "Calculadora" },
-  { to: "/compare", icon: GitCompare, label: "A/B" },
-  { to: "/tips", icon: Sparkles, label: "Técnicas" },
+  { to: "/trends", icon: TrendingUp, label: "Tendências", ai: true },
+  { to: "/mentora", icon: Brain, label: "Aprender", ai: true },
+  { to: "/feed", icon: Users, label: "Comunidade" },
+  { to: "/planos", icon: Crown, label: "Planos" },
+  { to: "/collections", icon: User, label: "Minha Conta" },
 ];
 
 export default function MobileNav() {
   return (
     <nav
-      className="md:hidden fixed inset-x-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-2"
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 64px)" }}
+      className="md:hidden fixed inset-x-0 bottom-0 z-50 glass-strong border-t border-black/[0.08] pt-2 pb-2"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}
       data-testid="mobile-nav"
     >
       {/* Fade indicador de scroll na direita */}

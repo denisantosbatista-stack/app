@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Droplet, Sparkles, AlertCircle, DollarSign, Calculator as CalcIcon, TrendingUp, Ruler, Box } from "lucide-react";
 
@@ -11,8 +12,40 @@ const PRESETS = [
   { label: "Quadro grande", volume: 500 },
 ];
 
+// Mapeamento entre o segmento da URL e o modo interno da calculadora.
+// Usado para que /calculadora/proporcoes, /calculadora/precificacao
+// e /calculadora/medidas abram diretamente na aba certa (compartilhável).
+const TAB_FROM_PATH = {
+  proporcoes: "volume",
+  precificacao: "pricing",
+  medidas: "measure",
+};
+const PATH_FROM_TAB = {
+  volume: "proporcoes",
+  pricing: "precificacao",
+  measure: "medidas",
+};
+
 export default function Calculator() {
-  const [mode, setMode] = useState("volume"); // volume | pricing
+  const { tab: tabParam } = useParams();
+  const navigate = useNavigate();
+  const initialMode = TAB_FROM_PATH[tabParam] || "volume";
+  const [mode, setMode] = useState(initialMode); // volume | pricing | measure
+
+  // Mantém a URL em sincronia quando o usuário troca de aba.
+  useEffect(() => {
+    const expectedSlug = PATH_FROM_TAB[mode];
+    if (tabParam !== expectedSlug) {
+      navigate(`/calculadora/${expectedSlug}`, { replace: true });
+    }
+  }, [mode, tabParam, navigate]);
+
+  // Sincroniza estado interno quando o usuário navega pela URL (botão voltar).
+  useEffect(() => {
+    const nextMode = TAB_FROM_PATH[tabParam] || "volume";
+    if (nextMode !== mode) setMode(nextMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
 
   return (
     <div className="max-w-5xl mx-auto px-6 md:px-10 py-12" data-testid="calculator-page">
@@ -32,9 +65,9 @@ export default function Calculator() {
       </motion.div>
 
       <div className="flex gap-2 mb-6 flex-wrap" role="tablist">
-        <TabBtn active={mode === "volume"} onClick={() => setMode("volume")} icon={CalcIcon} label="Proporções" testid="calc-tab-volume" />
-        <TabBtn active={mode === "pricing"} onClick={() => setMode("pricing")} icon={DollarSign} label="Precificação" testid="calc-tab-pricing" />
-        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="Medidas 3D" testid="calc-tab-measure" />
+        <TabBtn active={mode === "volume"} onClick={() => setMode("volume")} icon={CalcIcon} label="PROPORÇÕES" testid="calc-tab-volume" />
+        <TabBtn active={mode === "pricing"} onClick={() => setMode("pricing")} icon={DollarSign} label="PRECIFICAÇÃO" testid="calc-tab-pricing" />
+        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="MEDIDAS 3D" testid="calc-tab-measure" />
       </div>
 
       {mode === "volume" && <VolumeMode />}

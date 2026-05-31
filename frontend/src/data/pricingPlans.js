@@ -68,7 +68,7 @@ export const PLANS = [
     perks: [
       "Paletas ilimitadas",
       "Mentoria IA ilimitada",
-      "Vídeo SVD 2.0 (20 gerações/mês)",
+      "Vídeo IA (20 gerações/mês)",
       "Coleções IA + Comparador A/B",
       "Perfil Verificado dourado",
       "Suporte prioritário",
@@ -88,7 +88,7 @@ export const PLANS = [
     badge: null,
     perks: [
       "Tudo do Pro, sem limites",
-      "Vídeo SVD 2.0 ilimitado",
+      "Vídeo IA ilimitado",
       "Até 5 contas/colaboradores",
       "Marca branca no DNA Share",
       "Destaque no Marketplace",

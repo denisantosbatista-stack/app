@@ -50,6 +50,7 @@ from routers.marketplace import router as marketplace_router  # noqa: E402
 from routers.og import router as og_router  # noqa: E402
 from routers.palettes import router as palettes_router  # noqa: E402
 from routers.profiles import router as profiles_router  # noqa: E402
+from routers.seed_content import ensure_seed_content  # noqa: E402
 from routers.svd_video import router as svd_video_router  # noqa: E402
 from routers.system import router as system_router  # noqa: E402
 
@@ -59,6 +60,7 @@ async def lifespan(app: FastAPI):
     """Ciclo de vida do app: inicializa auth e fecha o cliente Mongo."""
     await init_auth()
     await init_analytics()
+    await ensure_seed_content()
     try:
         yield
     finally:

@@ -72,7 +72,7 @@ const STEPS = [
     id: "mix",
     icon: Beaker,
     title: "Mistura realista de tintas",
-    subtitle: "Swirl 2D em tempo real + vídeo cinematográfico com SVD 2.0",
+    subtitle: "Swirl 2D em tempo real + vídeo cinematográfico com IA",
     body:
       "Veja duas cores se fundindo num canvas com veios dourados, e gere um vídeo realista da mistura com a IA de vídeo da OpenAI.",
     narration:

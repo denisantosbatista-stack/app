@@ -10,6 +10,7 @@ import { PLANS } from "../data/pricingPlans";
 import PricingComparison from "../components/pricing/PricingComparison";
 import PricingFAQ from "../components/pricing/PricingFAQ";
 import PricingBeforeAfter from "../components/pricing/PricingBeforeAfter";
+import FoundersOffer from "../components/pricing/FoundersOffer";
 
 /* Flag de ativação do plano anual (ver /app/frontend/src/data/pricingPlans.js).
    Quando o anual for liberado, trocar para true — o math já está pronto. */
@@ -92,7 +93,7 @@ export default function Pricing() {
             className="mt-5 text-base md:text-lg text-ink-muted max-w-2xl md:mx-auto"
           >
             Comece grátis, sem cartão. Suba para Essencial, Pro ou Studio
-            quando quiser destravar a IA, o vídeo SVD 2.0 e a comunidade
+            quando quiser destravar a IA, o vídeo IA e a comunidade
             verificada.
           </motion.p>
 
@@ -292,6 +293,9 @@ export default function Pricing() {
           Preços em reais (BRL). Sem trial enganoso, sem cobrança escondida — cancele quando quiser.
         </p>
       </section>
+
+      {/* ───────── OFERTA FUNDADORAS ───────── */}
+      <FoundersOffer />
 
       {/* ───────── ANTES / DEPOIS PRO ───────── */}
       <PricingBeforeAfter />
