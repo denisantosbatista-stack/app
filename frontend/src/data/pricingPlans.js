@@ -47,7 +47,7 @@ export const PLANS = [
     badge: null,
     perks: [
       "30 paletas por mês",
-      "Mentora IA (50 mensagens/mês)",
+      "Mentoria IA (50 mensagens/mês)",
       "Tendências da semana",
       "Postar no Feed e Marketplace",
       "Participar de Desafios",
@@ -67,7 +67,7 @@ export const PLANS = [
     badge: "Mais popular",
     perks: [
       "Paletas ilimitadas",
-      "Mentora IA ilimitada",
+      "Mentoria IA ilimitada",
       "Vídeo SVD 2.0 (20 gerações/mês)",
       "Coleções IA + Comparador A/B",
       "Perfil Verificado dourado",

@@ -5,12 +5,26 @@ Studio premium de resina para artesãs gerarem paletas, coleções e mockups com
 
 ## Tarefas em andamento / pendentes
 
-### ✅ P0 (concluído nesta sessão) — Bug: botão "Gerar Coleção"
+### ✅ P0 (concluído nesta sessão) — Padronização "Mentora → Mentoria" + Acessibilidade botão Anexar
+Página `/mentora` (`/app/frontend/src/pages/Mentora.jsx`):
+- Botão **Anexar foto** agora respeita WCAG 2.5.5: área clicável `min-h-[44px] min-w-[44px]`, ícone `w-6 h-6` (24px), label visível "Anexar foto", `aria-label` adicional
+Padronização de grafia em todos os textos visíveis (URL `/mentora` e testIDs preservados para não quebrar backend/testes):
+- `frontend/src/components/Navbar.jsx` (dropdown Aprender): "Mentora" → "Mentoria"
+- `frontend/src/components/pricing/PricingBeforeAfter.jsx`: "Sem Mentora IA" → "Sem Mentoria IA"
+- `frontend/src/data/pricingComparison.js`: "Mentora IA (mensagens/mês)" → "Mentoria IA …"
+- `frontend/src/data/pricingPlans.js` (2 ocorrências): "Mentora IA" → "Mentoria IA"
+- `frontend/src/components/onboarding/SegmentStep.jsx`: "Atelier" → "Ateliê" (padrão PT-BR)
+
+### ✅ P0 (concluído anteriormente) — Bug: botão "Gerar Coleção"
 Arquivo: `/app/frontend/src/pages/Collections.jsx`
 - `onClick={generate}` agora dispara mesmo com campos vazios (validação exibida ao usuário)
-- Validação inline + toast quando `theme` está vazio (`data-testid="collection-theme-error"`)
-- Loading state com spinner `Loader2` + texto exato "Gerando sua coleção..." (mostra "(tentativa N/3)" durante retries)
-- Retry automático 3x com delay de 1.5s para HTTP 503 na chamada `POST /api/ai/collection`
+- Validação inline + toast quando `theme` está vazio
+- Loading state com spinner + texto "Gerando sua coleção..." (com tentativa N/3)
+- Retry automático 3x com delay de 1.5s para HTTP 503
+
+### 🟡 P0 (em backlog, iniciado parcialmente) — Seed Content & Reformulação Pricing
+- Seed Content: arquivo `/app/backend/routers/seed_content.py` criado mas não plugado no `lifespan` do `server.py`; badge "EXEMPLO" no Marketplace pendente.
+- Pricing: reformulação visual completa (toggle, card Fundadoras 100/100 mockado, card Studio, tabela comparativa).
 
 ### 🔄 P2 — Analytics / Reach Tracking (retomar)
 - `POST /api/analytics/hit` (PUBLIC, filtra User-Agent bots) em `/app/backend/routers/analytics.py`

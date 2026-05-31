@@ -20,7 +20,7 @@ const SEGMENTS = [
     id: "profissional",
     icon: Briefcase,
     label: "Profissional",
-    description: "Atelier estabelecido, peças sob encomenda",
+    description: "Ateliê estabelecido, peças sob encomenda",
     accent: "from-amber-200/60 to-amber-100/20",
   },
   {

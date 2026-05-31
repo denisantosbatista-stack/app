@@ -32,7 +32,7 @@ const PRO = PLANS.find((p) => p.id === "pro");
 const PRO_HIGHLIGHTS = PRO.perks;
 const FREE_LIMITATIONS = [
   "5 paletas / mês",
-  "Sem Mentora IA",
+  "Sem Mentoria IA",
   "Sem vídeo SVD 2.0",
   "Sem perfil verificado",
   "Sem versionamento Pro",

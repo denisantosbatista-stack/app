@@ -23,7 +23,7 @@ export const COMPARISON = [
     group: "Inteligência Artificial",
     icon: Brain,
     rows: [
-      { label: "Mentora IA (mensagens/mês)", livre: "—", essencial: "50", pro: "Ilimitado", studio: "Ilimitado" },
+      { label: "Mentoria IA (mensagens/mês)", livre: "—", essencial: "50", pro: "Ilimitado", studio: "Ilimitado" },
       { label: "Coleções geradas por IA", livre: false, essencial: true, pro: true, studio: true },
       { label: "Tendências da semana", livre: false, essencial: true, pro: true, studio: true },
       { label: "Visualizador 3D (Nano Banana)", livre: false, essencial: "5/mês", pro: "Ilimitado", studio: "Ilimitado" },

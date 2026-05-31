@@ -382,11 +382,13 @@ export default function Mentora() {
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
+          aria-label="Anexar foto da peça"
           title="Anexar foto da peça"
-          className="p-3 rounded-sm bg-ink-surface border border-black/[0.08] hover:border-gold/50 text-zinc-600 hover:text-gold transition-colors"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 inline-flex items-center justify-center gap-2 rounded-sm bg-ink-surface border border-black/[0.08] hover:border-gold/50 text-zinc-600 hover:text-gold transition-colors text-[11px] tracking-[0.18em] uppercase font-medium"
           data-testid="mentora-attach-image"
         >
-          <ImageIcon className="w-4 h-4" />
+          <ImageIcon className="w-6 h-6" strokeWidth={1.5} aria-hidden="true" />
+          <span>Anexar foto</span>
         </button>
         <button
           type="button"

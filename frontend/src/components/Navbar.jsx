@@ -20,7 +20,7 @@ const NAV_GROUPS = [
     id: "aprender",
     label: "Aprender",
     items: [
-      { to: "/mentora", label: "Mentora", ai: true },
+      { to: "/mentora", label: "Mentoria", ai: true },
       { to: "/tips", label: "Técnicas" },
       { to: "/library", label: "Biblioteca" },
     ],
