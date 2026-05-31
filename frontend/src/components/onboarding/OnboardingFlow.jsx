@@ -10,6 +10,24 @@ import PaletteStep from "./PaletteStep";
 import GenerationStep from "./GenerationStep";
 import RegisterStep from "./RegisterStep";
 import WelcomeStep from "./WelcomeStep";
+import { PRESET_PALETTES } from "@/data/palettes";
+
+// Mapeia o `style` da paleta escolhida para um descritor de peça (tipoPeca).
+// Usado no passo de Geração para personalizar texto + formato visual.
+// Mantemos uma escolha clara por estilo; default cobre paletas sem style.
+const PALETTE_TIPO_PECA = {
+  geodo: "geodo circular",
+  floral: "peça floral",
+  pastel: "peça pastel",
+  minimalista: "peça minimalista",
+  luxo: "bandeja luxuosa",
+};
+
+function deriveTipoPeca(paletteId) {
+  const palette = PRESET_PALETTES.find((p) => p.id === paletteId);
+  if (!palette) return "primeira peça";
+  return PALETTE_TIPO_PECA[palette.style] || "peça autoral";
+}
 
 const DONE_KEY = "lindart.onboarding.v1.completed";
 const DATA_KEY = "lindart.onboarding.v1.data";
@@ -223,6 +241,7 @@ export default function OnboardingFlow() {
                   {current === "generation" && (
                     <GenerationStep
                       paletteId={data.paletteId}
+                      tipoPeca={deriveTipoPeca(data.paletteId)}
                       onNext={next}
                       onBack={back}
                     />

@@ -14,7 +14,7 @@ import {
 // Mantido como scroll horizontal para caber em telas pequenas.
 const items = [
   { to: "/", icon: Home, label: "Início", end: true },
-  { to: "/studio", icon: Palette, label: "Stúdio" },
+  { to: "/studio", icon: Palette, label: "Studio" },
   { to: "/mixer", icon: Beaker, label: "Criar Paleta" },
   { to: "/trends", icon: TrendingUp, label: "Tendências", ai: true },
   { to: "/mentora", icon: Brain, label: "Aprender", ai: true },

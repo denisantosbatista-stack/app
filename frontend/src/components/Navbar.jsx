@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Menu oficial — labels exatas conforme padrão LindArt:
-// Início, Stúdio de Criação, Criar Paleta, Tendências, Aprender,
+// Início, Studio de Criação, Criar Paleta, Tendências, Aprender,
 // Comunidade, Planos e Preços, Minha Conta.
 const NAV_GROUPS = [
   {
@@ -224,7 +224,7 @@ export default function Navbar() {
             }
             data-testid="nav-link-studio"
           >
-            Stúdio de Criação
+            Studio de Criação
           </NavLink>
           <NavLink
             to="/mixer"
@@ -417,7 +417,7 @@ export default function Navbar() {
                 className="block text-sm tracking-wide text-zinc-700"
                 data-testid="mobile-nav-link-studio"
               >
-                Stúdio de Criação
+                Studio de Criação
               </NavLink>
               <NavLink
                 to="/mixer"

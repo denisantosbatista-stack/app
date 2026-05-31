@@ -261,7 +261,7 @@ function PickHero({ pick, liked, onLike }) {
       <div className="relative grid md:grid-cols-2 gap-0">
         <Link
           to={`/u/${pick.handle}`}
-          className="block aspect-[4/3] md:aspect-auto md:min-h-[420px] overflow-hidden bg-black"
+          className="relative block aspect-[4/3] md:aspect-auto md:min-h-[420px] overflow-hidden bg-black"
         >
           <img
             src={pick.image_url}
@@ -270,6 +270,15 @@ function PickHero({ pick, liked, onLike }) {
             className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-[1.6s] ease-out"
             data-testid="feed-pick-image"
           />
+          {Array.isArray(pick.tags) && pick.tags.includes("exemplo") && (
+            <div
+              className="absolute top-3 left-3 bg-gold/95 text-ink-text text-[10px] tracking-[0.24em] uppercase px-2.5 py-1 rounded-sm shadow-sm"
+              data-testid={`feed-pick-example-badge-${pick.id}`}
+              title="Conteúdo de demonstração curado pela equipe LindArt"
+            >
+              Exemplo
+            </div>
+          )}
         </Link>
 
         <div className="p-7 md:p-10 flex flex-col justify-between gap-6">
@@ -370,6 +379,15 @@ function PostCard({ post, liked, onLike }) {
           loading="lazy"
           className="w-full h-auto object-cover block"
         />
+        {Array.isArray(post.tags) && post.tags.includes("exemplo") && (
+          <div
+            className="absolute top-2 left-2 bg-gold/95 text-ink-text text-[10px] tracking-[0.22em] uppercase px-2 py-0.5 rounded-sm shadow-sm"
+            data-testid={`feed-post-example-badge-${post.id}`}
+            title="Conteúdo de demonstração curado pela equipe LindArt"
+          >
+            Exemplo
+          </div>
+        )}
         <button
           onClick={onLike}
           className={`absolute bottom-2 right-2 inline-flex items-center gap-1.5 backdrop-blur-md bg-black/40 text-white text-xs px-2.5 py-1.5 rounded-full border border-white/10 transition-all ${

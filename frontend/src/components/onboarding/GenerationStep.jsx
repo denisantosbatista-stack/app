@@ -11,8 +11,16 @@ const PHRASES = [
   "Finalizando sua primeira peça…",
 ];
 
-export default function GenerationStep({ paletteId, tipoPeca = "geodo", onNext, onBack }) {
+export default function GenerationStep({ paletteId, tipoPeca, onNext, onBack }) {
   const palette = PRESET_PALETTES.find((p) => p.id === paletteId) || PRESET_PALETTES[0];
+  const tipo = tipoPeca || "primeira peça";
+
+  // Variação de formato conforme o tipo de peça derivado da paleta.
+  // - Geodo / floral / luxo / default = circular (rounded-full)
+  // - Pastel / minimalista = retangular suave (rounded-3xl) p/ remeter a bandeja
+  const isSquareLike = /minimalista|pastel/.test(tipo);
+  const shapeRadiusClass = isSquareLike ? "rounded-3xl" : "rounded-full";
+  const shadowRadiusClass = isSquareLike ? "rounded-2xl" : "rounded-full";
   const [loading, setLoading] = useState(true);
   const [phraseIdx, setPhraseIdx] = useState(0);
 
@@ -42,17 +50,17 @@ export default function GenerationStep({ paletteId, tipoPeca = "geodo", onNext, 
         </h2>
         <p className="text-ink-muted mt-4 max-w-md mx-auto">
           Criamos uma prévia da paleta <strong className="text-ink-text">{palette.name}</strong>{" "}
-          aplicada num {tipoPeca}.
+          aplicada numa <strong className="text-ink-text">{tipo}</strong>.
         </p>
       </div>
 
-      <div className="relative max-w-md mx-auto aspect-square">
+      <div className="relative max-w-md mx-auto aspect-square" data-testid={`onboarding-shape-${isSquareLike ? "square" : "circle"}`}>
         {/* Sombra no chão */}
-        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[78%] h-6 rounded-full bg-black/30 blur-xl opacity-50" />
+        <div className={`absolute -bottom-4 left-1/2 -translate-x-1/2 w-[78%] h-6 ${shadowRadiusClass} bg-black/30 blur-xl opacity-50`} />
 
-        {/* Geodo circular com veios dourados e profundidade */}
+        {/* Peça com veios dourados e profundidade — formato adaptado ao tipo */}
         <div
-          className="absolute inset-2 rounded-full overflow-hidden border border-black/10 shadow-[inset_0_8px_24px_rgba(255,255,255,0.18),inset_0_-12px_36px_rgba(0,0,0,0.45),0_24px_60px_rgba(60,50,30,0.28)]"
+          className={`absolute inset-2 ${shapeRadiusClass} overflow-hidden border border-black/10 shadow-[inset_0_8px_24px_rgba(255,255,255,0.18),inset_0_-12px_36px_rgba(0,0,0,0.45),0_24px_60px_rgba(60,50,30,0.28)]`}
           style={{
             background: `radial-gradient(circle at 32% 28%, ${detail} 0%, ${main} 28%, ${accent} 62%, ${vein} 100%)`,
           }}
@@ -166,7 +174,7 @@ export default function GenerationStep({ paletteId, tipoPeca = "geodo", onNext, 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="absolute inset-2 rounded-full bg-white/55 backdrop-blur-[3px] flex items-center justify-center"
+              className={`absolute inset-2 ${shapeRadiusClass} bg-white/55 backdrop-blur-[3px] flex items-center justify-center`}
               data-testid="onboarding-generation-loader"
             >
               <div className="text-center px-6">

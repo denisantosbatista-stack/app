@@ -34,7 +34,7 @@ _SEED_FEED_POSTS = [
         ),
         "image_url": "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=1200&q=80&auto=format&fit=crop",
         "palette_colors": ["#0B0B0B", "#1A1714", "#3A2F1E", "#8C6A2D", "#D4B260", "#F4E4B8"],
-        "tags": ["ouro", "abstrata", "premium"],
+        "tags": ["exemplo", "ouro", "abstrata", "premium"],
         "likes": 47,
     },
     {
@@ -46,7 +46,7 @@ _SEED_FEED_POSTS = [
         ),
         "image_url": "https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=1200&q=80&auto=format&fit=crop",
         "palette_colors": ["#08111A", "#1A2E44", "#3E5E78", "#7DA4C2", "#C9D9E5"],
-        "tags": ["oceano", "azul", "minimalista"],
+        "tags": ["exemplo", "oceano", "azul", "minimalista"],
         "likes": 33,
     },
     {
@@ -58,7 +58,7 @@ _SEED_FEED_POSTS = [
         ),
         "image_url": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=1200&q=80&auto=format&fit=crop",
         "palette_colors": ["#1C1109", "#4A2E14", "#8C6A2D", "#D4B260", "#EFD9A0", "#FFFFFF"],
-        "tags": ["geodo", "bandeja", "ouro"],
+        "tags": ["exemplo", "geodo", "bandeja", "ouro"],
         "likes": 62,
     },
 ]
@@ -101,7 +101,10 @@ def _iso_now() -> str:
 
 
 async def _seed_feed_if_empty() -> int:
-    count = await db.feed_posts.count_documents({})
+    # Idempotente: roda quando não há nenhum post oficial @lindart, mesmo que
+    # existam posts de usuários comuns. Isso garante que o badge "EXEMPLO" seja
+    # visível em qualquer ambiente sem reset manual do DB.
+    count = await db.feed_posts.count_documents({"handle": OFFICIAL_HANDLE})
     if count > 0:
         return 0
     now = _iso_now()
@@ -125,7 +128,7 @@ async def _seed_feed_if_empty() -> int:
 
 
 async def _seed_marketplace_if_empty() -> int:
-    count = await db.marketplace_items.count_documents({})
+    count = await db.marketplace_items.count_documents({"handle": OFFICIAL_HANDLE})
     if count > 0:
         return 0
     now = _iso_now()
@@ -151,16 +154,32 @@ async def _seed_marketplace_if_empty() -> int:
     return len(docs)
 
 
+async def _backfill_exemplo_tag_on_feed() -> int:
+    """Garante que posts seed antigos do @lindart tenham a tag 'exemplo'.
+
+    Idempotente: só atualiza posts oficiais que ainda não têm a tag.
+    Necessário porque os posts iniciais foram inseridos sem a tag em versões
+    anteriores e precisam exibir o badge EXEMPLO no Feed.
+    """
+    res = await db.feed_posts.update_many(
+        {"handle": OFFICIAL_HANDLE, "verified": True, "tags": {"$nin": ["exemplo"]}},
+        {"$push": {"tags": {"$each": ["exemplo"], "$position": 0}}},
+    )
+    return res.modified_count
+
+
 async def ensure_seed_content() -> None:
     """Garante que Feed e Marketplace tenham conteúdo de exemplo no primeiro boot."""
     try:
         feed_inserted = await _seed_feed_if_empty()
         market_inserted = await _seed_marketplace_if_empty()
-        if feed_inserted or market_inserted:
+        feed_backfilled = await _backfill_exemplo_tag_on_feed()
+        if feed_inserted or market_inserted or feed_backfilled:
             logger.info(
-                "seed_content: feed=%s post(s), marketplace=%s item(s) inseridos",
+                "seed_content: feed=%s post(s), marketplace=%s item(s), backfill_exemplo=%s",
                 feed_inserted,
                 market_inserted,
+                feed_backfilled,
             )
     except Exception as exc:  # noqa: BLE001
         # Nunca quebrar o startup por causa do seed.
