@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { PRESET_PALETTES, PALETTE_PHOTOS } from "@/data/palettes";
+import { PRESET_PALETTES, PALETTE_BACKDROPS } from "@/data/palettes";
 import { isDark } from "@/utils/color";
 import { Flame } from "lucide-react";
 
@@ -60,7 +60,7 @@ export default function TrendingPalettes() {
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         {featured.map((p) => {
-          const photo = PALETTE_PHOTOS[p.id];
+          const backdrop = PALETTE_BACKDROPS[p.id];
           return (
             <motion.div
               key={p.id}
@@ -83,25 +83,33 @@ export default function TrendingPalettes() {
                 className="group block bg-ink-surface rounded-sm overflow-hidden border border-black/[0.06] hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
                 data-testid={`trending-card-${p.id}`}
               >
-                {/* Atmospheric photo backdrop */}
+                {/* Atmospheric backdrop — gerado das próprias cores da paleta */}
                 <div className="relative h-44 overflow-hidden">
-                  {photo && (
-                    <img
-                      src={photo}
-                      alt={p.name}
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                      data-testid={`trending-photo-${p.id}`}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        const grad = `linear-gradient(135deg, ${p.colors.map((c) => c.hex).join(", ")})`;
-                        e.currentTarget.style.background = grad;
-                        e.currentTarget.removeAttribute("src");
-                      }}
-                    />
-                  )}
+                  <div
+                    aria-label={p.name}
+                    style={backdrop}
+                    className="absolute inset-0 w-full h-full transition-transform duration-1000 group-hover:scale-110"
+                    data-testid={`trending-photo-${p.id}`}
+                  />
+                  {/* Cristalline texture overlay para feel "resina premium" */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 pointer-events-none opacity-50 mix-blend-overlay"
+                    style={{
+                      backgroundImage:
+                        "repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 9px), repeating-linear-gradient(-30deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 7px)",
+                    }}
+                  />
                   {/* Subtle dark gradient for legibility */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                  {/* Badge EXEMPLO — conteúdo curado de demonstração */}
+                  <span
+                    className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30"
+                    style={{ background: "rgba(212, 175, 55, 0.85)", color: "#FFFFFF", textShadow: "0 1px 1px rgba(0,0,0,0.25)" }}
+                    data-testid={`exemplo-badge-${p.id}`}
+                  >
+                    Exemplo
+                  </span>
                   {/* Style badge */}
                   <div className="absolute top-3 right-3 text-[9px] tracking-[0.22em] uppercase px-2 py-1 bg-white/85 backdrop-blur-sm text-ink-text rounded-sm">
                     {p.style}

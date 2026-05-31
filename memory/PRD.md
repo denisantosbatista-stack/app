@@ -6,6 +6,8 @@ Studio visual para resineiras: paletas, calculadora de proporções, comparador 
 ## Status atual (Fev 2026)
 
 ### ✅ Implementado / Estável
+- **Backdrops atmosféricos das Paletas Trending (Fev 2026)**: removidas URLs externas do Unsplash que retornavam imagens não-relacionadas (profissional de laboratório, óculos, paisagens). `PALETTE_BACKDROPS` em `/app/frontend/src/data/palettes.js` gera gradientes radiais derivados das próprias cores da paleta + textura cristalina via `repeating-linear-gradient`. Coerência cromática 100% garantida.
+- **Badge "EXEMPLO" em conteúdo seed (Fev 2026)**: dourado semi-transparente `rgba(212,175,55,0.85)`, texto branco, canto superior-esquerdo. Aplicado em `TrendingPalettes.jsx` (6 cards) e `MockupShowcase.jsx` (3 cards). data-testid: `exemplo-badge-{id}` e `mockup-exemplo-badge-{id}`.
 - Visualizador 2D de resina (ResinVisualizer) — paletas claras corrigidas (sem blob branco).
 - ResinVisualizer canvas 2D com blend modes corretos.
 - Navbar com bloco condicional único `!isAuthenticated ? (Entrar+Cadastrar) : (Avatar+Menu)`.

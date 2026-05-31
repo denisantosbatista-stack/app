@@ -250,22 +250,35 @@ export const MOCKUPS = [
   },
 ];
 
-// Imagens reais associadas às paletas trending (atmospheric backgrounds)
-// Mapeia paleta id → URL de imagem fotorrealista
-export const PALETTE_PHOTOS = {
-  "rose-suave": "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=800&q=80",
-  "geodo-imperial": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/558457381e345cb3c1c6c3d72bdad5af5a5268bc28780fa0de83d250e614c681.png",
-  "lavanda-bruma": "https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=800&q=80",
-  "branco-cristal": "https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=800&q=80",
-  "pessego-aurora": "https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800&q=80",
-  "agua-marinha-imperial": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&q=80",
-  "menta-pastel": "https://images.unsplash.com/photo-1502810190503-8303352d0dd1?w=800&q=80",
-  "ametista-pastel": "https://images.unsplash.com/photo-1551018612-9715965c6742?w=800&q=80",
-  "azul-celeste": "https://images.unsplash.com/photo-1505765050516-f72dcac9c60e?w=800&q=80",
-  "marmore-preto": "https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=800&q=80",
-  "oceano-profundo": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&q=80",
-  "ambar-luxo": "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/85037f386f3c11bcbef00a23d72dd4714fccca1c20bc8bf141bab79348b3aa42.png",
-  "galaxia-cosmica": "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&q=80",
+// Backdrops atmosféricos derivados das próprias cores de cada paleta —
+// substituem URLs externas que retornavam fotos não-relacionadas (laboratório,
+// óculos, paisagens). Garantem 100% coerência cromática com a paleta.
+// Cada entrada é um objeto CSS pronto para aplicar via style={...}.
+// Os 13 ids cobrem todas as paletas trending exibidas na Home.
+const _buildAtmosphericBackdrop = (palette) => {
+  const hexes = palette.colors.map((c) => c.hex);
+  const [c1, c2, c3, c4] = [hexes[0], hexes[1] || hexes[0], hexes[2] || hexes[0], hexes[3] || hexes[1] || hexes[0]];
+  return {
+    backgroundImage: [
+      `radial-gradient(ellipse 70% 60% at 22% 28%, ${c3}EE, transparent 60%)`,
+      `radial-gradient(ellipse 60% 55% at 78% 72%, ${c2}DD, transparent 62%)`,
+      `radial-gradient(ellipse 55% 45% at 55% 100%, ${c4}AA, transparent 55%)`,
+      `linear-gradient(135deg, ${c1} 0%, ${c2} 55%, ${c4} 100%)`,
+    ].join(", "),
+    backgroundBlendMode: "screen, screen, multiply, normal",
+  };
 };
+
+// Mapa id → estilo CSS atmosférico (gerado on-the-fly a partir das cores)
+export const PALETTE_BACKDROPS = Object.fromEntries(
+  PRESET_PALETTES.map((p) => [p.id, _buildAtmosphericBackdrop(p)])
+);
+
+// Compat: mantemos o nome PALETTE_PHOTOS mas sem URLs externas. Apenas
+// referenciado em testes/legacy — agora retorna string vazia para que o
+// renderer caia no path de backdrop atmosférico.
+export const PALETTE_PHOTOS = Object.fromEntries(
+  PRESET_PALETTES.map((p) => [p.id, ""])
+);
 
 export const HERO_BG = "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/85037f386f3c11bcbef00a23d72dd4714fccca1c20bc8bf141bab79348b3aa42.png";
