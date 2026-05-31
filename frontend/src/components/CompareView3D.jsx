@@ -101,6 +101,7 @@ function PreviewCanvas({ palette, shape, label, testid }) {
             onCreated={() => setMounted(true)}
             style={{ width: "100%", height: "100%" }}
             gl={{ toneMappingExposure: 0.95 }}
+            frameloop="demand"
           >
             <color attach="background" args={["#0a0a0c"]} />
             <ambientLight intensity={0.35} />
