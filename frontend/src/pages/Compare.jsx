@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeftRight, Copy, Eye, Check, X } from "lucide-react";
+import { ArrowLeftRight, Copy, Eye, Check, X, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import { PRESET_PALETTES } from "@/data/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
@@ -260,11 +260,43 @@ function ContrastMatrix({ A, B }) {
   const baseA = A.colors[0];
   const baseB = B.colors[0];
 
+  // Verifica se NENHUMA combinação A×B atinge WCAG AA (4.5:1)
+  const maxPairContrast = useMemo(() => {
+    let max = 0;
+    for (const ca of A.colors) {
+      for (const cb of B.colors) {
+        const cr = contrastRatio(ca.hex, cb.hex);
+        if (cr > max) max = cr;
+      }
+    }
+    return max;
+  }, [A, B]);
+  const noAAPair = maxPairContrast < 4.5;
+
   return (
     <div className="mt-8 glass-strong rounded-sm p-6" data-testid="contrast-matrix">
       <div className="label-eyebrow text-gold mb-4 inline-flex items-center gap-2">
         <Eye className="w-3 h-3" /> Matriz de Contraste
       </div>
+
+      {noAAPair && (
+        <div
+          className="mb-5 p-4 rounded-sm border border-amber-500/40 bg-amber-50/70 flex items-start gap-3"
+          data-testid="compare-no-aa-warning"
+          role="alert"
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+          <div className="text-xs leading-relaxed text-amber-900">
+            <div className="font-semibold tracking-wide uppercase text-[10px] mb-1">
+              Nenhuma combinação atinge contraste WCAG AA
+            </div>
+            <div className="text-amber-800">
+              Ideal para peças decorativas, não para texto.
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-6">
         <MatrixRow base={baseA} label={`Base A (${baseA.hex})`} colors={B.colors} testid="matrix-a-vs-b" />
         <MatrixRow base={baseB} label={`Base B (${baseB.hex})`} colors={A.colors} testid="matrix-b-vs-a" />
