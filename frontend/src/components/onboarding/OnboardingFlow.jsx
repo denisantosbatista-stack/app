@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { usePaletteStore } from "@/store/usePaletteStore";
+import { useAuth } from "@/contexts/AuthContext";
 import SplashStep from "./SplashStep";
 import SegmentStep from "./SegmentStep";
 import PaletteStep from "./PaletteStep";
@@ -39,6 +40,7 @@ function isPublicPath(pathname) {
 
 export default function OnboardingFlow() {
   const location = useLocation();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [data, setData] = useState({
@@ -63,6 +65,11 @@ export default function OnboardingFlow() {
   // anônimos chegando via link.
   useEffect(() => {
     if (!hasHydrated) return;
+    if (authLoading) return;
+    // Tour de onboarding só dispara para usuários autenticados.
+    // Em rotas públicas (/, /pricing, /tendencias, /u/, /feed, etc.) e para
+    // visitantes anônimos vindos de links compartilhados, o modal nunca abre.
+    if (!isAuthenticated) return;
     if (isPublicPath(location.pathname)) return;
     try {
       const done = localStorage.getItem(DONE_KEY);
@@ -78,7 +85,7 @@ export default function OnboardingFlow() {
     } catch {
       if (!onboardingCompletedStore) setOpen(true);
     }
-  }, [hasHydrated, onboardingCompletedStore, location.pathname]);
+  }, [hasHydrated, onboardingCompletedStore, location.pathname, isAuthenticated, authLoading]);
 
   // Listener para reabrir manualmente (ex: via UI de configurações)
   useEffect(() => {
@@ -121,6 +128,9 @@ export default function OnboardingFlow() {
     }, 200);
   };
 
+  // Guard final: nunca renderiza nada para visitantes não autenticados,
+  // mesmo que um evento `lindart:open-onboarding` seja disparado.
+  if (!isAuthenticated) return null;
   if (!open) return null;
 
   const current = STEPS[step];

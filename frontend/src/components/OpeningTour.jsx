@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { chamarIA, ApiError } from "@/utils/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 const SEEN_KEY = "lindart.tour.v1.seen";
@@ -93,6 +94,7 @@ const STEPS = [
 
 export default function OpeningTour() {
   const location = useLocation();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -101,10 +103,13 @@ export default function OpeningTour() {
   const cacheRef = useRef(new Map()); // step.id -> objectURL
   const ttsDisabledRef = useRef(false); // circuit breaker quando saldo IA esgota
 
-  // Abre automaticamente na 1a visita — exceto em rotas públicas/compartilhadas,
-  // onde o visitante anônimo precisa ver o conteúdo direto. O evento
-  // `lindart:open-tour` continua disponível em qualquer rota.
+  // Abre automaticamente na 1a visita — apenas para usuários autenticados.
+  // Em rotas públicas (/, /pricing, /tendencias, /u/, /feed, etc.) e para
+  // visitantes anônimos, o tour nunca dispara sozinho. O evento manual
+  // `lindart:open-tour` continua disponível para usuários logados.
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     if (!isPublicPath(location.pathname)) {
       try {
         const seen = localStorage.getItem(SEEN_KEY);
@@ -119,7 +124,7 @@ export default function OpeningTour() {
     };
     window.addEventListener("lindart:open-tour", handler);
     return () => window.removeEventListener("lindart:open-tour", handler);
-  }, [location.pathname]);
+  }, [location.pathname, isAuthenticated, authLoading]);
 
   // Limpa cache de áudio no unmount
   useEffect(
@@ -197,6 +202,9 @@ export default function OpeningTour() {
   };
   const prev = () => setStep((s) => Math.max(0, s - 1));
 
+  // Guard final: nunca renderiza para visitantes não autenticados,
+  // mesmo que `lindart:open-tour` seja disparado.
+  if (!isAuthenticated) return null;
   if (!open) return null;
   const s = STEPS[step];
   const Icon = s.icon;
