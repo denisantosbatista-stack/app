@@ -3,14 +3,18 @@ import { Sparkles, Palette, Crown, Layers } from "lucide-react";
 /**
  * Planos do LindArt — preços mensais e anuais.
  *
+ * Preços oficiais de LANÇAMENTO (Founders pricing) — congelados pra
+ * sempre para as primeiras 100 assinantes. Após esgotarem as vagas,
+ * os valores são reajustados para o padrão de mercado.
+ *
  * Os preços anuais (annualMonthly / annualTotal) já estão definidos
  * para ativação futura. Quando o plano anual for liberado, basta trocar
  * ANNUAL_ENABLED para true em Pricing.jsx e o restante já está pronto.
  *
  * Math anual = mensal * 0.8 (20% off), arredondado para inteiro:
- *   Essencial: 29 → 23/mês  (278/ano)
- *   Pro:       67 → 54/mês  (643/ano)
- *   Studio:   127 → 102/mês (1219/ano)
+ *   Essencial: 47 → 38/mês  (451/ano)
+ *   Pro:       97 → 78/mês  (931/ano)
+ *   Studio:   197 → 158/mês (1891/ano)
  */
 export const PLANS = [
   {
