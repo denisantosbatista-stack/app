@@ -91,12 +91,22 @@ export default function Hero() {
               hidden: { opacity: 0, y: 28, filter: "blur(12px)" },
               visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] } },
             }}
-            className="font-display font-light text-[2rem] leading-[1.08] sm:text-5xl md:text-6xl lg:text-7xl sm:leading-[1.05] tracking-tight mb-5 md:mb-6 text-white"
+            className="font-display font-light text-[2rem] leading-[1.08] sm:text-5xl md:text-6xl lg:text-7xl sm:leading-[1.05] tracking-tight mb-4 md:mb-5 text-white"
+            data-testid="hero-h1"
           >
-            Transforme cores em
-            <br />
-            <span className="italic gold-shimmer">arte com resina</span>
+            Crie. Visualize. <span className="italic gold-shimmer">Exporte.</span>
           </motion.h1>
+
+          <motion.h2
+            variants={{
+              hidden: { opacity: 0, y: 22, filter: "blur(10px)" },
+              visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 1, ease: [0.22, 1, 0.36, 1] } },
+            }}
+            className="font-display font-light text-lg md:text-2xl lg:text-3xl tracking-tight text-bone/90 mb-5 md:mb-6 max-w-2xl"
+            data-testid="hero-h2"
+          >
+            Transforme cores em arte com <span className="italic text-gold-hover">resina epóxi</span>
+          </motion.h2>
 
           <motion.p
             variants={{
@@ -104,10 +114,11 @@ export default function Hero() {
               visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
             }}
             className="text-zinc-200 text-sm md:text-lg max-w-xl leading-relaxed mb-7 md:mb-8"
+            data-testid="hero-description"
           >
             Visualize paletas em peças reais, gere combinações com IA, calcule
             proporções com precisão e exporte em qualquer formato — tudo em um
-            só atelier digital.
+            só ateliê digital.
           </motion.p>
 
           <motion.div
@@ -123,7 +134,7 @@ export default function Hero() {
                 className="btn-gold px-6 py-3.5 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center justify-center gap-2"
                 data-testid="hero-cta-studio"
               >
-                ✦ Criar paleta com IA
+                ✦ Criar minha primeira paleta
                 <motion.span
                   animate={{ x: [0, 4, 0] }}
                   transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
