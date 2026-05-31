@@ -17,6 +17,10 @@ module.exports = {
           text: "#141414",
           muted: "#6B6B5C",
         },
+        bone: {
+          DEFAULT: "#F4EFE6",
+          warm: "#EFE6D4",
+        },
         gold: {
           DEFAULT: "#B8954A",
           hover: "#D4AF37",

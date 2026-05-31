@@ -38,8 +38,8 @@ const NAV_GROUPS = [
     id: "conta",
     label: "Minha conta",
     items: [
-      { to: "/collections", label: "Coleção", ai: true },
-      { to: "/compare", label: "Comparador" },
+      { to: "/collections", label: "Coleção", ai: true, authRequired: true },
+      { to: "/compare", label: "Comparador", authRequired: true },
       { to: "/planos", label: "Ver planos" },
       { to: "/privacy", label: "Privacidade" },
     ],
@@ -73,11 +73,12 @@ async function handleDownloadSource() {
   }
 }
 
-function NavDropdown({ group }) {
+function NavDropdown({ group, isAuthenticated }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const location = useLocation();
-  const groupActive = group.items.some((i) => location.pathname.startsWith(i.to));
+  const visibleItems = group.items.filter((i) => !i.authRequired || isAuthenticated);
+  const groupActive = visibleItems.some((i) => location.pathname.startsWith(i.to));
 
   useEffect(() => {
     setOpen(false);
@@ -90,6 +91,8 @@ function NavDropdown({ group }) {
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
+
+  if (visibleItems.length === 0) return null;
 
   return (
     <div
@@ -123,7 +126,7 @@ function NavDropdown({ group }) {
             data-testid={`nav-dropdown-${group.id}`}
           >
             <div className="min-w-[190px] glass-strong border border-black/[0.08] rounded-sm shadow-[0_12px_32px_rgba(0,0,0,0.10)] p-1.5">
-              {group.items.map((it) => (
+              {visibleItems.map((it) => (
                 <NavLink
                   key={it.to}
                   to={it.to}
@@ -158,7 +161,7 @@ export default function Navbar() {
   const [userOpen, setUserOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout, loading } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -220,7 +223,7 @@ export default function Navbar() {
             Início
           </NavLink>
           {NAV_GROUPS.map((g) => (
-            <NavDropdown key={g.id} group={g} />
+            <NavDropdown key={g.id} group={g} isAuthenticated={isAuthenticated} />
           ))}
           <NavLink
             to="/trends"
@@ -270,8 +273,8 @@ export default function Navbar() {
             Tour
           </button>
 
-          {/* Auth area (desktop) */}
-          {!loading && !isAuthenticated && (
+          {/* Auth area (desktop) — bloco condicional único */}
+          {!isAuthenticated ? (
             <div className="flex items-center gap-1.5 pl-1.5 ml-1 border-l border-zinc-300/70">
               <Link
                 to="/login"
@@ -289,8 +292,7 @@ export default function Navbar() {
                 Cadastrar
               </Link>
             </div>
-          )}
-          {!loading && isAuthenticated && (
+          ) : (
             <div ref={userMenuRef} className="relative pl-1.5 ml-1 border-l border-zinc-300/70" data-testid="navbar-user-menu">
               <button
                 type="button"
@@ -417,9 +419,9 @@ export default function Navbar() {
                 ✦ Criar Paleta
               </Link>
 
-              {/* Auth area (mobile) */}
+              {/* Auth area (mobile) — bloco condicional único */}
               <div className="pt-3 mt-2 border-t border-black/[0.06] space-y-2">
-                {!loading && !isAuthenticated && (
+                {!isAuthenticated ? (
                   <div className="flex items-center gap-2">
                     <Link
                       to="/login"
@@ -437,8 +439,7 @@ export default function Navbar() {
                       Cadastrar
                     </Link>
                   </div>
-                )}
-                {!loading && isAuthenticated && (
+                ) : (
                   <div className="space-y-2" data-testid="mobile-navbar-user-section">
                     <div className="flex items-center gap-3 px-1">
                       <span className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-hover via-gold to-gold-deep text-ink text-sm font-semibold inline-flex items-center justify-center shadow-gold">

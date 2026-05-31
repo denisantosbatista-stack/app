@@ -1,23 +1,48 @@
-# LindArt — PRD (resumo curto)
+# PRD — LindArt Studio Premium (Resin Studio)
 
-## Estado atual (Fev/2026)
-App React + FastAPI + MongoDB para criação de paletas de resina, marketplace, feed e desafios.
+## Problema original
+Studio visual para resineiras: paletas, calculadora de proporções, comparador (A vs B), IA mentora, feed/marketplace/desafios, planos pagos. Stack: React (frontend) + FastAPI (backend) + MongoDB.
 
-## Implementações recentes
-- **Fix Visualizador Líquido (Hero "Em Destaque" + Studio)**: `ResinVisualizer.jsx` agora aplica corretamente as cores da paleta. Antes usava `globalCompositeOperation = "screen"` que somava cores claras a branco. Agora o fundo é derivado da cor mais escura da paleta, os blobs são ordenados por luminância e mesclados com `source-over` + alpha proporcional. Validado com paleta Geodo Imperial → resultado dourado/bronze.
-- Tradução de hashtags PT-BR (`#OCEANO`, `#GEODO`, `#CÓSMICO`, `#FLORAL`).
-- `CompareView3D.jsx` criado para visualização 3D no Comparador A vs B.
-- `routers/seed_content.py` implementado (pendente: plugar no lifespan).
+## Status atual (Fev 2026)
 
-## Backlog priorizado
-- **P0** Plugar `ensure_seed_content()` no lifespan do `server.py` + badge "EXEMPLO" no Marketplace.
-- **P0** Reformulação da página `/pricing` (toggle mensal/anual, card Fundadoras 100/100, tabela comparativa).
-- **P1** Validar Compare 3D end-to-end com testing_agent.
-- **P2** Analytics `?ref=share`.
-- **P2** Chip "v{n}" no Studio.
-- **P3** `RequireAuth` em `/studio`, `/collections`, `/calculator`, `/mixer`.
-- **P3** Centralizar `authFetch()`.
+### ✅ Implementado / Estável
+- Visualizador 2D de resina (ResinVisualizer) — paletas claras corrigidas (sem blob branco).
+- ResinVisualizer canvas 2D com blend modes corretos.
+- Navbar com bloco condicional único `!isAuthenticated ? (Entrar+Cadastrar) : (Avatar+Menu)`.
+- Cor `bone` adicionada ao tailwind (`#F4EFE6` / `bone-warm #EFE6D4`) — corrige botão "Cadastrar" que renderizava preto.
+- Dropdown "Minha conta" filtra itens por `authRequired` — para não autenticados mostra apenas "Ver planos" e "Privacidade".
+- Rotas `/compare` e `/collections` protegidas por `RequireAuth` com toast `react-hot-toast` "Faça login para acessar" e redirect `/login?next=...`.
+- CompareView3D existe mas testes automatizados ainda travam por causa do canvas 3D.
 
-## Integrações
-- fal.ai (Stable Video Diffusion 2.0) — chave do usuário
-- Claude Sonnet 4.5, Gemini Nano Banana, OpenAI Whisper — Emergent LLM Key
+### 🔴 P0 — Pendente (recorrente)
+1. **Seed Content** (`/app/backend/routers/seed_content.py` vazio): 3 posts Feed + 2 itens Marketplace + badge "EXEMPLO" no Marketplace.jsx. Chamar no `lifespan` do `server.py`.
+2. **Reformulação `/pricing`**: toggle mensal/anual, card "Fundadoras" destacado, tabela comparativa. Editar `pricingPlans.js` + `Pricing.jsx`.
+
+### 🟡 P1
+- Testes automatizados do Compare.jsx travando por causa do canvas Three.js (timeout 30s).
+
+### 🟢 P2/P3 — Backlog
+- Analytics `?ref=share` tracking.
+- Chip "v{n}" nas paletas do Studio.
+- Aplicar `RequireAuth` em `/studio`, `/calculator`, `/mixer` (decisão de produto).
+- Refatorar `Navbar.jsx` (470 linhas → quebrar em subcomponentes).
+- Centralizar `authFetch()`.
+
+## Integrações 3rd-party
+- fal.ai (Stable Video Diffusion 2.0) — chave do usuário.
+- Claude Sonnet 4.5 / Gemini Nano Banana / OpenAI Whisper — Emergent LLM Key.
+
+## Arquivos chave
+- `/app/frontend/src/components/Navbar.jsx` (470 linhas — candidato a refactor)
+- `/app/frontend/src/components/RequireAuth.jsx`
+- `/app/frontend/src/contexts/AuthContext.jsx`
+- `/app/frontend/tailwind.config.js`
+- `/app/frontend/src/App.js`
+- `/app/backend/routers/seed_content.py` (vazio)
+
+## Modelo de dados (Mongo)
+- `feed_posts`: `{ author_id, content, image, likes }`
+- `marketplace_items`: `{ title, price, tags, author_id }`
+
+## Endpoints relevantes
+- `GET /api/auth/me`, `GET /api/feed`, `GET /api/marketplace`

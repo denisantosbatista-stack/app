@@ -75,13 +75,27 @@ function App() {
               }
             />
             <Route path="/calculator" element={<Calculator />} />
-            <Route path="/compare" element={<Compare />} />
+            <Route
+              path="/compare"
+              element={
+                <RequireAuth>
+                  <Compare />
+                </RequireAuth>
+              }
+            />
             <Route path="/mixer" element={<Mixer />} />
             <Route path="/tips" element={<Tips />} />
             <Route path="/mentora" element={<Mentora />} />
             <Route path="/trends" element={<Trends />} />
             <Route path="/tendencias" element={<Trends />} />
-            <Route path="/collections" element={<Collections />} />
+            <Route
+              path="/collections"
+              element={
+                <RequireAuth>
+                  <Collections />
+                </RequireAuth>
+              }
+            />
             <Route path="/feed" element={<Feed />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/challenges" element={<Challenges />} />
