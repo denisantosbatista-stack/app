@@ -25,7 +25,7 @@ export default function Mixer() {
   const savePalette = usePaletteStore((s) => s.savePalette);
   const setActivePalette = usePaletteStore((s) => s.setActivePalette);
 
-  const t = ratio / 100;
+  const t = 1 - ratio / 100;
   const mixedPerceptual = useMemo(() => mixOklab(colorA, colorB, t), [colorA, colorB, t]);
   const mixedLinear = useMemo(() => mixRgbLinear(colorA, colorB, t), [colorA, colorB, t]);
   const deltaE = useMemo(() => deltaEOk(colorA, colorB), [colorA, colorB]);
@@ -123,19 +123,48 @@ export default function Mixer() {
                 <ArrowLeftRight className="w-3 h-3" /> Inverter
               </button>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={ratio}
-              onChange={(e) => setRatio(Number(e.target.value))}
-              className="w-full"
-              data-testid="mixer-ratio"
-            />
-            <div className="flex justify-between text-[11px] text-zinc-600 mt-1.5 font-mono">
-              <span>{100 - ratio}% A</span>
-              <span className="text-gold">↑</span>
-              <span>{ratio}% B</span>
+
+            {/* Slider customizado: fill cresce da ESQUERDA proporcional ao valor A */}
+            <div className="relative pt-7 pb-1">
+              {/* Percentual centralizado acima do thumb */}
+              <div
+                className="absolute top-0 pointer-events-none select-none"
+                style={{
+                  left: `${ratio}%`,
+                  transform: "translateX(-50%)",
+                }}
+                data-testid="mixer-ratio-label"
+              >
+                <span className="text-[11px] font-mono text-gold font-semibold tracking-wider whitespace-nowrap">
+                  {ratio}%
+                </span>
+              </div>
+
+              {/* Track */}
+              <div className="relative h-2 rounded-full bg-zinc-200 overflow-hidden">
+                <div
+                  className="absolute inset-y-0 left-0 bg-gold transition-[width] duration-150 ease-out"
+                  style={{ width: `${ratio}%` }}
+                  data-testid="mixer-ratio-fill"
+                />
+              </div>
+
+              {/* Input range invisível, cobre toda a área do track */}
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={ratio}
+                onChange={(e) => setRatio(Number(e.target.value))}
+                className="absolute left-0 right-0 top-7 h-2 w-full cursor-pointer opacity-0"
+                aria-label="Proporção de Cor A"
+                data-testid="mixer-ratio"
+              />
+            </div>
+
+            <div className="flex justify-between text-[10px] uppercase tracking-[0.22em] text-zinc-600 mt-3 font-medium">
+              <span data-testid="mixer-label-a">Cor A</span>
+              <span data-testid="mixer-label-b">Cor B</span>
             </div>
           </div>
 
