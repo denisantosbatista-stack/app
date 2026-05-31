@@ -24,6 +24,7 @@ import Pricing from "@/pages/Pricing";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import UpgradeInfoModal from "@/components/UpgradeInfoModal";
+import RequireAuth from "@/components/RequireAuth";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { usePaletteStore } from "@/store/usePaletteStore";
 
@@ -57,7 +58,22 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/studio" element={<Studio />} />
-            <Route path="/library" element={<Library />} />
+            <Route
+              path="/library"
+              element={
+                <RequireAuth>
+                  <Library />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/biblioteca"
+              element={
+                <RequireAuth>
+                  <Library />
+                </RequireAuth>
+              }
+            />
             <Route path="/calculator" element={<Calculator />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/mixer" element={<Mixer />} />

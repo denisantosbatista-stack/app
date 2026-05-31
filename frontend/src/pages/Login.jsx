@@ -11,7 +11,12 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  // Aceita ?next=/rota (preferencial) e location.state.from (fallback)
+  const nextParam = new URLSearchParams(location.search).get("next");
+  const from =
+    (nextParam && nextParam.startsWith("/") ? nextParam : null) ||
+    location.state?.from?.pathname ||
+    "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
