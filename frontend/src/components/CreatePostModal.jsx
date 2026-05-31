@@ -147,7 +147,7 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit }) {
               </div>
               <Field
                 label="Título da peça"
-                placeholder="Ex.: Geode Cosmos · azul cobalto"
+                placeholder="Ex.: Geodo Cósmico · azul cobalto"
                 value={title}
                 onChange={setTitle}
                 testId="feed-create-title"
@@ -162,7 +162,7 @@ export default function CreatePostModal({ isOpen, onClose, onSubmit }) {
               />
               <Field
                 label="Tags (separadas por vírgula)"
-                placeholder="geode, ocean, premium"
+                placeholder="geodo, oceano, premium"
                 value={tags}
                 onChange={setTags}
                 testId="feed-create-tags"

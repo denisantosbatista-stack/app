@@ -197,7 +197,7 @@ export default function CreateItemModal({ isOpen, onClose, onSubmit }) {
               </div>
               <Field
                 label="Título"
-                placeholder="Ex.: Molde Geode Ø8cm — silicone premium"
+                placeholder="Ex.: Molde Geodo Ø8cm — silicone premium"
                 value={title}
                 onChange={setTitle}
                 testId="market-create-title"
@@ -228,7 +228,7 @@ export default function CreateItemModal({ isOpen, onClose, onSubmit }) {
               </div>
               <Field
                 label="Tags (separadas por vírgula)"
-                placeholder="molde, premium, geode"
+                placeholder="molde, premium, geodo"
                 value={tags}
                 onChange={setTags}
                 testId="market-create-tags"

@@ -25,7 +25,18 @@ function saveLiked(set) {
   }
 }
 
-const POPULAR_TAGS = ["minimalista", "joalheria", "geode", "ocean", "petal", "fluido", "cosmico", "natural"];
+// value = tag persistida (lowercase, sem acento — para filtro no backend)
+// label = exibição em CAIXA ALTA com acentuação PT-BR
+const POPULAR_TAGS = [
+  { value: "minimalista", label: "MINIMALISTA" },
+  { value: "joalheria", label: "JOALHERIA" },
+  { value: "geodo", label: "GEODO" },
+  { value: "oceano", label: "OCEANO" },
+  { value: "floral", label: "FLORAL" },
+  { value: "fluido", label: "FLUIDO" },
+  { value: "cosmico", label: "CÓSMICO" },
+  { value: "natural", label: "NATURAL" },
+];
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -162,17 +173,17 @@ export default function Feed() {
         </button>
         {POPULAR_TAGS.map((t) => (
           <button
-            key={t}
-            onClick={() => setActiveTag(t)}
-            className={`text-xs px-3 py-1.5 rounded-sm border transition-colors uppercase tracking-[0.18em] inline-flex items-center gap-1 ${
-              activeTag === t
+            key={t.value}
+            onClick={() => setActiveTag(t.value)}
+            className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.18em] inline-flex items-center gap-1 ${
+              activeTag === t.value
                 ? "border-gold bg-gold/10 text-gold"
                 : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
             }`}
-            data-testid={`feed-tag-${t}`}
+            data-testid={`feed-tag-${t.value}`}
           >
             <Hash className="w-3 h-3" />
-            {t}
+            {t.label}
           </button>
         ))}
       </div>
