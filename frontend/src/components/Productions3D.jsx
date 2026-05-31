@@ -113,14 +113,14 @@ function GeodoMesh({ palette, texture }) {
         <meshPhysicalMaterial
           map={texture || null}
           color={hasTex ? "#ffffff" : colors[0]}
-          metalness={hasTex ? 0.12 : 0.35}
-          roughness={hasTex ? 0.35 : 0.15}
-          clearcoat={1}
-          clearcoatRoughness={0.15}
-          envMapIntensity={1.2}
+          metalness={hasTex ? 0.12 : 0.25}
+          roughness={hasTex ? 0.35 : 0.28}
+          clearcoat={0.6}
+          clearcoatRoughness={0.35}
+          envMapIntensity={0.7}
           emissive={hasTex ? new THREE.Color("#ffffff") : colors[1]}
           emissiveMap={texture || null}
-          emissiveIntensity={hasTex ? 0.35 : 0.12}
+          emissiveIntensity={hasTex ? 0.25 : 0.04}
           toneMapped={true}
         />
       </mesh>
@@ -147,14 +147,14 @@ function BandejaMesh({ palette, texture }) {
         <meshPhysicalMaterial
           map={texture || null}
           color={hasTex ? "#ffffff" : colors[0]}
-          metalness={hasTex ? 0.1 : 0.4}
-          roughness={hasTex ? 0.3 : 0.1}
-          clearcoat={1}
-          clearcoatRoughness={0.08}
-          envMapIntensity={1.4}
+          metalness={hasTex ? 0.1 : 0.3}
+          roughness={hasTex ? 0.3 : 0.25}
+          clearcoat={0.55}
+          clearcoatRoughness={0.3}
+          envMapIntensity={0.75}
           emissive={hasTex ? new THREE.Color("#ffffff") : new THREE.Color("#000000")}
           emissiveMap={texture || null}
-          emissiveIntensity={hasTex ? 0.3 : 0}
+          emissiveIntensity={hasTex ? 0.22 : 0}
         />
       </mesh>
       <mesh position={[0, 0.1, 0]} rotation={[-0.25, 0, 0]}>
@@ -180,14 +180,14 @@ function ColarMesh({ palette, texture }) {
         <meshPhysicalMaterial
           map={texture || null}
           color={hasTex ? "#ffffff" : colors[0]}
-          metalness={hasTex ? 0.1 : 0.3}
-          roughness={hasTex ? 0.28 : 0.12}
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-          envMapIntensity={1.3}
+          metalness={hasTex ? 0.1 : 0.25}
+          roughness={hasTex ? 0.28 : 0.28}
+          clearcoat={0.55}
+          clearcoatRoughness={0.3}
+          envMapIntensity={0.7}
           emissive={hasTex ? new THREE.Color("#ffffff") : (colors[2] || colors[1])}
           emissiveMap={texture || null}
-          emissiveIntensity={hasTex ? 0.35 : 0.18}
+          emissiveIntensity={hasTex ? 0.25 : 0.06}
         />
       </mesh>
       {/* alça dourada */}
@@ -371,20 +371,20 @@ export default function Productions3D({ palette, activePiece }) {
                 camera={{ position: [0, 0.6, 3.4], fov: 38 }}
                 onCreated={() => setCanvasMounted(true)}
                 style={{ width: "100%", height: "100%" }}
-                gl={{ toneMappingExposure: 1.2 }}
+                gl={{ toneMappingExposure: 0.95 }}
               >
                 <color attach="background" args={["#0a0a0c"]} />
-                <ambientLight intensity={0.9} />
-                <hemisphereLight args={["#ffffff", "#1a1a1f", 0.55]} />
-                <directionalLight position={[2, 3, 2]} intensity={1.6} />
+                <ambientLight intensity={0.35} />
+                <hemisphereLight args={["#ffffff", "#1a1a1f", 0.25]} />
+                <directionalLight position={[2, 3, 2]} intensity={0.9} />
                 <directionalLight
                   position={[-3, 2, -1]}
-                  intensity={0.7}
+                  intensity={0.4}
                   color="#D4AF37"
                 />
-                <pointLight position={[0, 2, 2]} intensity={0.9} />
+                <pointLight position={[0, 2, 2]} intensity={0.5} />
                 <Suspense fallback={null}>
-                  <Environment preset="studio" background={false} />
+                  <Environment preset="studio" background={false} environmentIntensity={0.45} />
                   <Piece shape={shape} palette={palette} textureUrl={textureUrl} />
                 </Suspense>
                 <ContactShadows

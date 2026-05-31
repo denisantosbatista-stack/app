@@ -38,13 +38,13 @@ function GeodoMesh({ palette, texture }) {
       h("meshPhysicalMaterial", {
         map: texture || null,
         color: texture ? "#ffffff" : colors[0],
-        metalness: 0.35,
-        roughness: 0.15,
-        clearcoat: 1,
-        clearcoatRoughness: 0.15,
-        envMapIntensity: 1.2,
+        metalness: 0.25,
+        roughness: 0.28,
+        clearcoat: 0.6,
+        clearcoatRoughness: 0.35,
+        envMapIntensity: 0.7,
         emissive: colors[1],
-        emissiveIntensity: 0.12,
+        emissiveIntensity: 0.04,
       })
     )
   );
@@ -66,11 +66,11 @@ function BandejaMesh({ palette, texture }) {
       h("meshPhysicalMaterial", {
         map: texture || null,
         color: texture ? "#ffffff" : colors[0],
-        metalness: 0.4,
-        roughness: 0.1,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
-        envMapIntensity: 1.4,
+        metalness: 0.3,
+        roughness: 0.25,
+        clearcoat: 0.55,
+        clearcoatRoughness: 0.3,
+        envMapIntensity: 0.75,
       })
     ),
     h(
@@ -98,13 +98,13 @@ function ColarMesh({ palette, texture }) {
       h("meshPhysicalMaterial", {
         map: texture || null,
         color: texture ? "#ffffff" : colors[0],
-        metalness: 0.3,
-        roughness: 0.12,
-        clearcoat: 1,
-        clearcoatRoughness: 0.1,
-        envMapIntensity: 1.3,
+        metalness: 0.25,
+        roughness: 0.28,
+        clearcoat: 0.55,
+        clearcoatRoughness: 0.3,
+        envMapIntensity: 0.7,
         emissive: colors[2] || colors[1],
-        emissiveIntensity: 0.18,
+        emissiveIntensity: 0.06,
       })
     ),
     h(

@@ -100,16 +100,16 @@ function PreviewCanvas({ palette, shape, label, testid }) {
             camera={{ position: [0, 0.6, 3.4], fov: 38 }}
             onCreated={() => setMounted(true)}
             style={{ width: "100%", height: "100%" }}
-            gl={{ toneMappingExposure: 1.2 }}
+            gl={{ toneMappingExposure: 0.95 }}
           >
             <color attach="background" args={["#0a0a0c"]} />
-            <ambientLight intensity={0.9} />
-            <hemisphereLight args={["#ffffff", "#1a1a1f", 0.55]} />
-            <directionalLight position={[2, 3, 2]} intensity={1.6} />
-            <directionalLight position={[-3, 2, -1]} intensity={0.7} color="#D4AF37" />
-            <pointLight position={[0, 2, 2]} intensity={0.9} />
+            <ambientLight intensity={0.35} />
+            <hemisphereLight args={["#ffffff", "#1a1a1f", 0.25]} />
+            <directionalLight position={[2, 3, 2]} intensity={0.9} />
+            <directionalLight position={[-3, 2, -1]} intensity={0.4} color="#D4AF37" />
+            <pointLight position={[0, 2, 2]} intensity={0.5} />
             <Suspense fallback={null}>
-              <Environment preset="studio" background={false} />
+              <Environment preset="studio" background={false} environmentIntensity={0.45} />
               {/* `key` força remount quando paleta muda, garantindo atualização instantânea */}
               <Piece
                 key={`${shape}-${palette?.id || "none"}`}
