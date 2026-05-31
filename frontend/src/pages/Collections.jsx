@@ -47,6 +47,8 @@ export default function Collections() {
   ]);
   const [customPiece, setCustomPiece] = useState("");
   const [loading, setLoading] = useState(false);
+  const [themeError, setThemeError] = useState("");
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [collection, setCollection] = useState(null);
   const [mockups, setMockups] = useState({}); // index -> { loading, image_base64, mime_type }
   const savePalette = usePaletteStore((s) => s.savePalette);
@@ -79,9 +81,11 @@ export default function Collections() {
   async function generate() {
     const t = theme.trim();
     if (!t) {
+      setThemeError("Descreva o tema da coleção para continuar.");
       toast.error("Descreva o tema da coleção");
       return;
     }
+    setThemeError("");
     if (pieces.length === 0) {
       toast.error("Selecione ao menos uma peça");
       return;
@@ -89,24 +93,61 @@ export default function Collections() {
     setLoading(true);
     setCollection(null);
     setMockups({});
+    setRetryAttempt(0);
+
+    const MAX_ATTEMPTS = 3;
+    const RETRY_DELAY_MS = 1500;
+    let lastError = null;
+
     try {
-      const res = await fetch(`${API_BASE}/api/ai/collection`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme: t, pieces }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${res.status}`);
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        setRetryAttempt(attempt);
+        try {
+          const res = await fetch(`${API_BASE}/api/ai/collection`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ theme: t, pieces }),
+          });
+
+          if (res.status === 503) {
+            lastError = new Error("Serviço indisponível (503)");
+            if (attempt < MAX_ATTEMPTS) {
+              toast.loading(
+                `Servidor ocupado, tentando novamente (${attempt}/${MAX_ATTEMPTS})…`,
+                { id: "collection-retry", duration: RETRY_DELAY_MS }
+              );
+              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+              continue;
+            }
+            throw lastError;
+          }
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          toast.dismiss("collection-retry");
+          setCollection(data);
+          toast.success(`"${data.collection_name}" criada!`);
+          return;
+        } catch (innerErr) {
+          // Apenas relança erros que não sejam 503 retentáveis
+          if (innerErr?.message !== "Serviço indisponível (503)") {
+            throw innerErr;
+          }
+          lastError = innerErr;
+        }
       }
-      const data = await res.json();
-      setCollection(data);
-      toast.success(`"${data.collection_name}" criada!`);
+      throw lastError || new Error("Falha ao gerar coleção");
     } catch (e) {
+      toast.dismiss("collection-retry");
       toast.error(e.message || "Erro ao gerar coleção");
       console.error(e);
     } finally {
       setLoading(false);
+      setRetryAttempt(0);
     }
   }
 
@@ -208,12 +249,31 @@ export default function Collections() {
         <label className="label-eyebrow text-zinc-500 block mb-2">Tema da coleção</label>
         <input
           value={theme}
-          onChange={(e) => setTheme(e.target.value)}
+          onChange={(e) => {
+            setTheme(e.target.value);
+            if (themeError) setThemeError("");
+          }}
           placeholder='Ex: "Coleção oceano premium com toques de champagne"'
           maxLength={200}
-          className="w-full bg-ink border border-black/[0.08] rounded-sm px-4 py-3 text-sm md:text-base focus:outline-none focus:border-gold transition-colors"
+          aria-invalid={!!themeError}
+          aria-describedby={themeError ? "collection-theme-error" : undefined}
+          className={`w-full bg-ink border rounded-sm px-4 py-3 text-sm md:text-base focus:outline-none transition-colors ${
+            themeError
+              ? "border-red-500/70 focus:border-red-500"
+              : "border-black/[0.08] focus:border-gold"
+          }`}
           data-testid="collection-theme-input"
         />
+        {themeError && (
+          <p
+            id="collection-theme-error"
+            role="alert"
+            className="text-xs text-red-500 mt-1.5"
+            data-testid="collection-theme-error"
+          >
+            {themeError}
+          </p>
+        )}
         <div className="flex flex-wrap gap-1.5 mt-2">
           {SUGGESTIONS.map((s) => (
             <button
@@ -295,13 +355,17 @@ export default function Collections() {
 
         <button
           onClick={generate}
-          disabled={loading || !theme.trim() || pieces.length === 0}
+          disabled={loading}
           className="btn-gold mt-6 px-6 py-3 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="generate-collection-btn"
         >
           {loading ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Criando coleção…
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span data-testid="generate-collection-loading-text">
+                Gerando sua coleção...
+                {retryAttempt > 1 ? ` (tentativa ${retryAttempt}/3)` : ""}
+              </span>
             </>
           ) : (
             <>
