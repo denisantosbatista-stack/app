@@ -40,6 +40,8 @@ logger = logging.getLogger(__name__)
 
 # ===== Routers =====
 from routers.ai import router as ai_router  # noqa: E402
+from routers.analytics import init_analytics  # noqa: E402
+from routers.analytics import router as analytics_router  # noqa: E402
 from routers.auth import init_auth  # noqa: E402
 from routers.auth import router as auth_router  # noqa: E402
 from routers.challenges import router as challenges_router  # noqa: E402
@@ -56,6 +58,7 @@ from routers.system import router as system_router  # noqa: E402
 async def lifespan(app: FastAPI):
     """Ciclo de vida do app: inicializa auth e fecha o cliente Mongo."""
     await init_auth()
+    await init_analytics()
     try:
         yield
     finally:
@@ -75,6 +78,7 @@ app.include_router(og_router)
 app.include_router(svd_video_router)
 app.include_router(ai_router)
 app.include_router(palettes_router)
+app.include_router(analytics_router)
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).
