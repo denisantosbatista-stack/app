@@ -341,10 +341,7 @@ export default function Productions3D({ palette, activePiece }) {
 
         <div
           className="aspect-[16/10] rounded-sm overflow-hidden border border-black/10 relative"
-          style={{
-            background:
-              "radial-gradient(ellipse at 30% 20%, #1a1a1f 0%, #0a0a0c 60%, #050507 100%)",
-          }}
+          style={{ background: "#0a0a0a" }}
           data-testid="prod3d-canvas"
         >
           {/* Skeleton/loader enquanto WebGL inicializa ou se não houver suporte */}
