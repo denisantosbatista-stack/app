@@ -1,9 +1,92 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { MOCKUPS } from "@/data/palettes";
 
-export default function MockupShowcase() {
+// Mapeamento de "mármore CSS" por id do mockup — substitui as imagens externas
+// (que causavam riscos de direitos autorais / carregamento quebrado) por
+// gradientes radiais e cônicos representando veios reais de mármore.
+//
+// Cada paleta:
+// - base: cor predominante da pedra
+// - vein: cor dos veios metálicos (ouro / prata)
+// - accent: tom secundário usado nas manchas
+const MARBLE_STYLES = {
+  clock: {
+    base: "#1A1A1A",
+    vein: "#D4AF37",
+    accent: "#3A2E1A",
+  },
+  tray: {
+    base: "#F4F1EC",
+    vein: "#C0C0C0",
+    accent: "#E5DCD0",
+  },
+  geode: {
+    base: "#1B3A6B",
+    vein: "#D4AF37",
+    accent: "#0E2347",
+  },
+};
+
+function MarbleSurface({ id }) {
+  const { base, vein, accent } =
+    MARBLE_STYLES[id] || MARBLE_STYLES.clock;
+
+  // Composição multi-camadas: fundo sólido + manchas + veios diagonais.
+  // Usamos `conic-gradient` para simular veios irregulares e radial para profundidade.
+  const background = [
+    // veios finos diagonais (ouro/prata)
+    `linear-gradient(118deg, transparent 0%, transparent 38%, ${vein}55 39%, ${vein}AA 40%, ${vein}55 41%, transparent 42%, transparent 62%, ${vein}33 63%, ${vein}77 64%, transparent 65%, transparent 100%)`,
+    // veio largo secundário
+    `linear-gradient(72deg, transparent 0%, transparent 55%, ${vein}22 56%, ${vein}55 58%, ${vein}22 60%, transparent 61%, transparent 100%)`,
+    // manchas claras/escuras
+    `radial-gradient(ellipse 60% 50% at 22% 28%, ${accent}99, transparent 60%)`,
+    `radial-gradient(ellipse 70% 55% at 78% 75%, ${accent}77, transparent 65%)`,
+    `radial-gradient(ellipse 45% 40% at 50% 90%, ${vein}22, transparent 70%)`,
+    // base sólida
+    `linear-gradient(135deg, ${base} 0%, ${base} 100%)`,
+  ].join(", ");
+
   return (
-    <section className="py-24 md:py-32 px-6 md:px-10 max-w-7xl mx-auto" data-testid="mockup-showcase">
+    <div
+      className="absolute inset-0 transition-transform duration-[1400ms] ease-out group-hover:scale-110"
+      style={{ background }}
+      aria-hidden="true"
+    >
+      {/* brilho de polimento sutil */}
+      <div
+        className="absolute inset-0 mix-blend-overlay opacity-70"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255,255,255,0.45) 0%, transparent 55%)",
+        }}
+      />
+      {/* granulação fina (textura de pedra) */}
+      <div
+        className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.6) 0.5px, transparent 0.5px), radial-gradient(rgba(0,0,0,0.3) 0.5px, transparent 0.5px)",
+          backgroundSize: "3px 3px, 5px 5px",
+          backgroundPosition: "0 0, 1px 2px",
+        }}
+      />
+    </div>
+  );
+}
+
+export default function MockupShowcase() {
+  const navigate = useNavigate();
+
+  const goToStudio = (id) => {
+    navigate("/studio");
+  };
+
+  return (
+    <section
+      className="py-24 md:py-32 px-6 md:px-10 max-w-7xl mx-auto"
+      data-testid="mockup-showcase"
+    >
       <motion.div
         initial={{ opacity: 0, y: 28, filter: "blur(8px)" }}
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -18,7 +101,7 @@ export default function MockupShowcase() {
           </h2>
           <p className="text-zinc-600 mt-3 max-w-lg">
             Visualize como suas paletas podem renascer em peças tangíveis — desde
-            relógios estatement até bandejas de mármore dourado.
+            relógios statement até bandejas de mármore dourado.
           </p>
         </div>
       </motion.div>
@@ -48,30 +131,36 @@ export default function MockupShowcase() {
             }}
             whileHover={{ y: -10, scale: 1.015 }}
             transition={{ type: "spring", stiffness: 240, damping: 22 }}
-            className="group relative overflow-hidden rounded-sm aspect-[4/5] cursor-pointer shadow-lg hover:shadow-gold-lg transition-shadow duration-700"
+            onClick={() => goToStudio(m.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                goToStudio(m.id);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="group relative overflow-hidden rounded-sm aspect-[4/5] cursor-pointer shadow-lg hover:shadow-gold-lg transition-shadow duration-700 focus:outline-none focus:ring-2 focus:ring-gold/60"
             data-testid={`mockup-${m.id}`}
+            aria-label={`Abrir Studio — ${m.label}`}
           >
-            <img
-              src={m.url}
-              alt={m.label}
-              className="w-full h-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-110"
-              loading="lazy"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.style.background =
-                  "linear-gradient(135deg, #C9A96E, #2A2A2A)";
-                e.currentTarget.removeAttribute("src");
-              }}
-            />
+            <MarbleSurface id={m.id} />
+
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
+
             {/* Badge EXEMPLO — conteúdo curado de demonstração */}
             <span
               className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30 z-10"
-              style={{ background: "rgba(212, 175, 55, 0.85)", color: "#FFFFFF", textShadow: "0 1px 1px rgba(0,0,0,0.25)" }}
+              style={{
+                background: "rgba(212, 175, 55, 0.85)",
+                color: "#FFFFFF",
+                textShadow: "0 1px 1px rgba(0,0,0,0.25)",
+              }}
               data-testid={`mockup-exemplo-badge-${m.id}`}
             >
               Exemplo
             </span>
+
             <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between">
               <div>
                 <div className="text-[10px] tracking-[0.32em] uppercase text-gold mb-1">
