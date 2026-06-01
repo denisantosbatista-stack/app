@@ -136,7 +136,7 @@ export default function FoundersOffer() {
                     className="font-display text-6xl md:text-7xl leading-none text-bone"
                     data-testid="founders-remaining"
                   >
-                    {SEATS_TAKEN}
+                    {seatsTaken}
                   </span>
                   <span className="text-sm text-ink-muted">
                     de {TOTAL_SEATS} vagas

@@ -316,6 +316,8 @@ export default function Feed() {
           toast.success("Publicado no feed");
         }}
       />
+        </>
+      )}
     </div>
   );
 }
