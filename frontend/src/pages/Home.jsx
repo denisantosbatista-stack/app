@@ -1,7 +1,6 @@
 import Hero from "@/components/Hero";
 import TrendingPalettes from "@/components/TrendingPalettes";
 import MockupShowcase from "@/components/MockupShowcase";
-import ToolsGrid from "@/components/ToolsGrid";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight } from "lucide-react";
@@ -28,7 +27,6 @@ export default function Home() {
 
       <TrendingPalettes />
       <MockupShowcase />
-      <ToolsGrid />
 
       {/* Final CTA */}
       <section className="py-16 md:py-24 px-6 md:px-10 max-w-7xl mx-auto">
