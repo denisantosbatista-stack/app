@@ -1,11 +1,73 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PRESET_PALETTES, PALETTE_BACKDROPS } from "@/data/palettes";
-import { isDark } from "@/utils/color";
 import { Flame } from "lucide-react";
+
+// A1 — Mapeamento estrito categoria → legenda. Normalize case-insensitive + sem acentos.
+const norm = (s) =>
+  (s || "")
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const CATEGORY_LEGENDS = {
+  floral: "Ideal para bandejas florais e pingentes",
+  geodo: "Perfeita para geodos e quadros decorativos",
+  luxo: "Sofisticada para bandejas e relógios premium",
+  pastel: "Suave para joias e porta-retratos",
+  oceano: "Vibrante para mesas e fundos marinhos",
+  marmore: "Elegante para bandejas e quadros statement",
+  minimalista: "Clean para peças modernas e utilitários",
+  galaxia: "Dramática para geodos e arte abstrata",
+  metalico: "Impactante para relógios e peças statement",
+  acido: "Ousada para arte abstrata e quadros",
+  boho: "Orgânica para porta-joias e peças naturais",
+  pave: "Delicada para joias e pingentes finos",
+  foil: "Luminosa para bandejas e quadros dourados",
+  holografico: "Futurista para peças colecionáveis",
+  espelhado: "Reflexiva para mesas e objetos de design",
+};
+const FALLBACK_LEGEND = "Versátil para diversas peças de resina";
+
+const getCategoryLegend = (style) => {
+  const key = norm(style);
+  // match exato ou por prefixo (ex: "pave-cristais" → "pave")
+  if (CATEGORY_LEGENDS[key]) return CATEGORY_LEGENDS[key];
+  const prefix = Object.keys(CATEGORY_LEGENDS).find((k) => key.startsWith(k));
+  return prefix ? CATEGORY_LEGENDS[prefix] : FALLBACK_LEGEND;
+};
 
 export default function TrendingPalettes() {
   const featured = PRESET_PALETTES.slice(0, 3);
+  const navigate = useNavigate();
+  const [selectedId, setSelectedId] = useState(null);
+
+  // A2 — Clique na paleta dispara feedback visual de 1.5s, salva em localStorage e navega.
+  const handlePaletteClick = (palette) => {
+    if (selectedId) return; // evita cliques duplos durante transição
+    setSelectedId(palette.id);
+    try {
+      localStorage.setItem(
+        "lindart_palette_preview",
+        JSON.stringify({
+          paletteId: palette.id,
+          name: palette.name,
+          colors: palette.colors,
+          style: palette.style,
+          ts: Date.now(),
+        })
+      );
+    } catch {
+      // ignora falha de storage (modo privado etc.)
+    }
+    setTimeout(() => {
+      navigate("/studio", {
+        state: { paletteId: palette.id, fromHome: true, name: palette.name },
+      });
+    }, 1500);
+  };
 
   return (
     <section className="py-24 md:py-32 px-6 md:px-10 max-w-7xl mx-auto" data-testid="trending-palettes">
@@ -61,6 +123,8 @@ export default function TrendingPalettes() {
       >
         {featured.map((p) => {
           const backdrop = PALETTE_BACKDROPS[p.id];
+          const isSelected = selectedId === p.id;
+          const legend = getCategoryLegend(p.style);
           return (
             <motion.div
               key={p.id}
@@ -74,16 +138,20 @@ export default function TrendingPalettes() {
                   transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
                 },
               }}
-              whileHover={{ y: -8, scale: 1.015 }}
+              whileHover={!selectedId ? { y: -8, scale: 1.015 } : undefined}
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
             >
-              <Link
-                to="/studio"
-                state={{ paletteId: p.id }}
-                className="group block bg-ink-surface rounded-sm overflow-hidden border border-black/[0.06] hover:border-gold/40 transition-all duration-500 hover:shadow-gold"
+              <button
+                type="button"
+                onClick={() => handlePaletteClick(p)}
+                disabled={!!selectedId}
+                className={`group block w-full text-left bg-ink-surface rounded-sm overflow-hidden border transition-all duration-500 ${
+                  isSelected
+                    ? "border-gold ring-2 ring-gold/60 shadow-gold-lg scale-[1.02]"
+                    : "border-black/[0.06] hover:border-gold/40 hover:shadow-gold"
+                } ${selectedId && !isSelected ? "opacity-50" : ""}`}
                 data-testid={`trending-card-${p.id}`}
               >
-                {/* Atmospheric backdrop — gerado das próprias cores da paleta */}
                 <div className="relative h-44 overflow-hidden">
                   <div
                     aria-label={p.name}
@@ -91,7 +159,6 @@ export default function TrendingPalettes() {
                     className="absolute inset-0 w-full h-full transition-transform duration-1000 group-hover:scale-110"
                     data-testid={`trending-photo-${p.id}`}
                   />
-                  {/* Cristalline texture overlay para feel "resina premium" */}
                   <div
                     aria-hidden
                     className="absolute inset-0 pointer-events-none opacity-50 mix-blend-overlay"
@@ -100,9 +167,7 @@ export default function TrendingPalettes() {
                         "repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 9px), repeating-linear-gradient(-30deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 7px)",
                     }}
                   />
-                  {/* Subtle dark gradient for legibility */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                  {/* Badge EXEMPLO — conteúdo curado de demonstração */}
                   <span
                     className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30"
                     style={{ background: "rgba(212, 175, 55, 0.85)", color: "#FFFFFF", textShadow: "0 1px 1px rgba(0,0,0,0.25)" }}
@@ -110,34 +175,48 @@ export default function TrendingPalettes() {
                   >
                     Exemplo
                   </span>
-                  {/* Style badge */}
                   <div className="absolute top-3 right-3 text-[9px] tracking-[0.22em] uppercase px-2 py-1 bg-white/85 backdrop-blur-sm text-ink-text rounded-sm">
                     {p.style}
                   </div>
-                  {/* Color swatches strip overlay */}
+                  {/* A1 — Color swatches strip SEM exibição de hex */}
                   <div className="absolute inset-x-0 bottom-0 flex h-10">
                     {p.colors.map((c) => (
                       <div
                         key={`${p.id}-${c.hex}-${c.role}`}
                         style={{ background: c.hex }}
                         className="flex-1 relative transition-all duration-500 group-hover:flex-[1.2]"
-                      >
-                        <span
-                          className={`absolute inset-x-0 bottom-1 text-center text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity ${
-                            isDark(c.hex) ? "text-white" : "text-black"
-                          }`}
-                        >
-                          {c.hex.toUpperCase()}
-                        </span>
-                      </div>
+                      />
                     ))}
                   </div>
+                  {/* Feedback visual de seleção (1.5s antes de navegar) */}
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+                      data-testid={`trending-card-selected-${p.id}`}
+                    >
+                      <motion.div
+                        initial={{ scale: 0.7, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                        className="text-[10px] tracking-[0.3em] uppercase text-gold-hover font-semibold px-4 py-2 rounded-sm border border-gold/60 bg-black/60"
+                      >
+                        ✦ Abrindo Studio…
+                      </motion.div>
+                    </motion.div>
+                  )}
                 </div>
                 <div className="p-4">
                   <div className="font-display text-lg leading-tight">{p.name}</div>
-                  <div className="text-xs text-zinc-600">{p.description}</div>
+                  <div
+                    className="text-xs text-zinc-600 mt-1"
+                    data-testid={`trending-legend-${p.id}`}
+                  >
+                    {legend}
+                  </div>
                 </div>
-              </Link>
+              </button>
             </motion.div>
           );
         })}
