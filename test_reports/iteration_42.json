@@ -1,0 +1,53 @@
+{
+  "summary": "Iter 42 — Share Tracking E2E (OG aliases piece/palette, POST /api/analytics/share tolerante a falha) + Wait-List público (/wait-list, POST /api/waitlist idempotente, GET /api/waitlist/count). All 18 test cases (T1–T18) PASSED. Backend pytest 12/12, Frontend Playwright 6/6.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_share_waitlist_iter42.py",
+    "/app/test_reports/pytest/iter42_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "waitlist.py: POST handler returns 500 when Mongo fails (correct — only the /analytics/share endpoint is silenced fire-and-forget, per spec).",
+    "analytics.py /analytics/share: empty body returns 422 — matches spec (Pydantic validation runs before handler try/except, so failure-before-handler is not silenced — intentional).",
+    "og.py aliases /piece and /palette are thin wrappers — they reuse marketplace/dna handlers and inherit caching and 404 OG-fallback behavior. Good DRY.",
+    "WaitList.jsx: select pre-selection from URL ?categoria=, fallback to 'aneis' on invalid, dynamic H1 — all working.",
+    "App.js: isPublic flag correctly suppresses Navbar on /wait-list and /dna/*."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_share_waitlist_iter42.py (new)"
+  ],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% (6/6)"},
+  "test_credentials": "Not required — both flows are public (no auth).",
+  "seed_data_creation": "Created TEST waitlist entries with unique-uuid emails per test run; idempotency verified via duplicate POST. Plus 1 e2e submit via UI (e2e-iter42-<ts>@example.com, categoria=aneis).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend regression file: /app/backend/tests/test_share_waitlist_iter42.py covers T1..T12 (3 share endpoint cases, 2 OG alias cases, 7 waitlist cases). Frontend critical selectors: data-testid='waitlist-page'|'waitlist-categoria-select'|'waitlist-email-input'|'waitlist-nome-input'|'waitlist-submit-btn'|'waitlist-success'|'waitlist-another-btn'. /wait-list is intentionally Navbar-less (isPublic in App.js). /api/analytics/share is fire-and-forget — empty body returns 422 (pre-handler validation), valid bodies always {ok:true}.",
+  "verified_evidence": {
+    "T1_share_full": "200 {ok:true}",
+    "T2_share_empty": "422 (Pydantic)",
+    "T3_share_no_ref": "200 {ok:true}",
+    "T4_piece_404": "404 + OG metatags",
+    "T5_palette_404": "404 + OG metatags",
+    "T6_waitlist_create": "{ok:true, created:true, categoria:'aneis'}",
+    "T7_waitlist_duplicate": "{ok:true, created:false}",
+    "T8_invalid_categoria": "normaliza para 'outros'",
+    "T9_invalid_email": "422",
+    "T10_count_aneis": "ok + int count",
+    "T11_count_all": "categoria='all' + total",
+    "T12_count_xyz": "normaliza para 'outros'",
+    "T13_default_categoria": "select=aneis, H1='Anéis de resina chegando em breve.'",
+    "T14_luminarias": "select=luminarias, H1='Luminárias de resina chegando em breve.'",
+    "T15_invalid_fallback": "select=aneis, H1='Anéis…' (não quebra)",
+    "T16_form_submit": "data-testid='waitlist-success' visível + botão 'Inscrever outra categoria'",
+    "T17_feed_ref_share": "1 POST /api/analytics/share disparado ao acessar /feed?ref=share",
+    "T18_no_navbar": "0 elementos nav/header-navbar na página /wait-list"
+  }
+}

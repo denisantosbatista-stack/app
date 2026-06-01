@@ -89,6 +89,26 @@ export default function Marketplace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
+  // Share tracking E2E — dispara em /marketplace?ref=share (fire-and-forget).
+  // Identifica item específico via ?item=<id> quando disponível; senão "list".
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("ref") !== "share") return;
+      const itemId = params.get("item") || "list";
+      const key = `lindart.share.tracked.marketplace.${itemId}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      fetch(`${API_BASE}/api/analytics/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "marketplace", id: itemId, ref: "share" }),
+      }).catch(() => {});
+    } catch {
+      /* fire-and-forget */
+    }
+  }, []);
+
   async function handleClick(item) {
     if (!item.link) {
       toast("Item sem link externo configurado", { duration: 1800 });

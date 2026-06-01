@@ -94,6 +94,26 @@ export default function Feed() {
     fetchPick();
   }, []);
 
+  // Share tracking E2E — dispara em /feed?ref=share (fire-and-forget).
+  // Identifica post específico via ?post=<id> quando disponível; senão "list".
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("ref") !== "share") return;
+      const postId = params.get("post") || "list";
+      const key = `lindart.share.tracked.feed.${postId}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      fetch(`${API_BASE}/api/analytics/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "feed", id: postId, ref: "share" }),
+      }).catch(() => {});
+    } catch {
+      /* fire-and-forget */
+    }
+  }, []);
+
   async function handleLike(post) {
     if (liked.has(post.id)) {
       toast("Você já curtiu este post ✦", { duration: 1400 });

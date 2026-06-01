@@ -640,6 +640,37 @@ async def og_profile_page(handle: str, request: Request):
     )
 
 
+# ─────────────────────── Aliases públicos (piece/palette) ───────────────────
+# Os clients externos (campanhas, fluxos antigos, share-tracking E2E) podem
+# referenciar `piece` (item do marketplace) e `palette` (DNA Visual). Mantemos
+# como aliases finos para não duplicar template/SVG e preservar 100% das rotas
+# existentes.
+
+
+@router.get("/piece/{piece_id}", response_class=HTMLResponse)
+async def og_piece_page(piece_id: str, request: Request):
+    """Alias de `/api/og/marketplace/{item_id}`. `piece` == item do marketplace."""
+    return await og_marketplace_page(piece_id, request)
+
+
+@router.get("/piece/{piece_id}/image.svg")
+async def og_piece_image_svg(piece_id: str):
+    """Alias da imagem OG de marketplace."""
+    return await og_marketplace_image_svg(piece_id)
+
+
+@router.get("/palette/{palette_id}", response_class=HTMLResponse)
+async def og_palette_page(palette_id: str, request: Request):
+    """Alias de `/api/og/dna/{share_id}`. `palette` == DNA Visual."""
+    return await og_dna_page(palette_id, request)
+
+
+@router.get("/palette/{palette_id}/image.svg")
+async def og_palette_image_svg(palette_id: str):
+    """Alias da imagem OG do DNA."""
+    return await og_dna_image_svg(palette_id)
+
+
 @router.get("/profile/{handle}/image.svg")
 async def og_profile_image_svg(handle: str):
     """Imagem OG (SVG) do perfil. 1200×630. Usa paleta assinatura agregada."""

@@ -56,6 +56,8 @@ from routers.profiles import router as profiles_router  # noqa: E402
 from routers.seed_content import ensure_seed_content  # noqa: E402
 from routers.svd_video import router as svd_video_router  # noqa: E402
 from routers.system import router as system_router  # noqa: E402
+from routers.waitlist import init_waitlist  # noqa: E402
+from routers.waitlist import router as waitlist_router  # noqa: E402
 
 
 @asynccontextmanager
@@ -64,6 +66,7 @@ async def lifespan(app: FastAPI):
     await init_auth()
     await init_analytics()
     await init_leads()
+    await init_waitlist()
     await ensure_seed_content()
     try:
         yield
@@ -93,6 +96,7 @@ app.include_router(ai_router)
 app.include_router(palettes_router)
 app.include_router(analytics_router)
 app.include_router(leads_router)
+app.include_router(waitlist_router)
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).

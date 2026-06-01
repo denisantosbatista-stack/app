@@ -17,6 +17,7 @@ import Marketplace from "@/pages/Marketplace";
 import Challenges from "@/pages/Challenges";
 import PublicProfile from "@/pages/PublicProfile";
 import PublicDNAPage from "@/pages/PublicDNAPage";
+import WaitList from "@/pages/WaitList";
 import Privacy from "@/pages/Privacy";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -31,7 +32,7 @@ import { usePaletteStore } from "@/store/usePaletteStore";
 function App() {
   const loadSaved = usePaletteStore((s) => s.loadSaved);
   const location = useLocation();
-  const isPublic = location.pathname.startsWith("/dna/");
+  const isPublic = location.pathname.startsWith("/dna/") || location.pathname === "/wait-list";
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   useEffect(() => {
@@ -44,6 +45,7 @@ function App() {
         <div className="min-h-screen bg-bone text-ink-text" data-testid="app-public">
           <Routes>
             <Route path="/dna/:id" element={<PublicDNAPage />} />
+            <Route path="/wait-list" element={<WaitList />} />
           </Routes>
         </div>
       </AuthProvider>

@@ -39,6 +39,25 @@ export default function PublicDNAPage() {
     };
   }, [id]);
 
+  // Share tracking E2E — dispara em /dna/<id>?ref=share (fire-and-forget).
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("ref") !== "share") return;
+      const key = `lindart.share.tracked.dna.${id}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      fetch(`${API_BASE}/api/analytics/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "dna", id, ref: "share" }),
+      }).catch(() => {});
+    } catch {
+      /* fire-and-forget */
+    }
+  }, [id]);
+
   const downloadPng = async () => {
     if (!cardRef.current) return;
     setDownloading(true);

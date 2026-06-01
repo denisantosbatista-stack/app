@@ -132,6 +132,33 @@ async def analytics_hit(payload: HitIn, request: Request):
     return {"ok": True, "tracked": True}
 
 
+# ────────── POST /api/analytics/share (público, tolerante a falha) ──────────
+class ShareEventIn(BaseModel):
+    source: str = Field(..., min_length=1, max_length=40)
+    id: str = Field(..., min_length=1, max_length=200)
+    ref: Optional[str] = Field(default=None, max_length=40)
+
+
+@router.post("/analytics/share")
+async def analytics_share(payload: ShareEventIn, request: Request):
+    """Registra um evento de compartilhamento vindo de `?ref=share` em
+    `share_events`. PÚBLICO, sem auth, fire-and-forget — qualquer falha
+    interna (Mongo offline, schema, etc.) é silenciada e o endpoint sempre
+    devolve ``{"ok": true}`` para não derrubar a UX da página pública.
+    """
+    try:
+        await db.share_events.insert_one({
+            "source": (payload.source or "").lower().strip()[:40],
+            "id": (payload.id or "").strip()[:200],
+            "ref": ((payload.ref or "").strip()[:40] or None),
+            "timestamp": datetime.now(timezone.utc),
+            "user_agent": (request.headers.get("user-agent", "") or "")[:300],
+        })
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(f"[analytics/share] insert ignorado: {exc}")
+    return {"ok": True}
+
+
 # ────────── GET /api/users/me/analytics ──────────
 @router.get("/users/me/analytics")
 async def my_analytics(user: dict = Depends(get_current_user)):

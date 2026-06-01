@@ -29,15 +29,32 @@ export default function ShareSheet({ open, onClose, url, title, description }) {
 
   if (typeof document === "undefined") return null;
 
+  // Anexa ?ref=share (ou &ref=share) à URL compartilhada para que as páginas
+  // públicas possam disparar o tracking em /api/analytics/share. Idempotente:
+  // se já houver ref=share, retorna a URL como está.
+  const withRefShare = (raw) => {
+    if (!raw || typeof raw !== "string") return raw;
+    try {
+      const u = new URL(raw, window.location.origin);
+      if (u.searchParams.get("ref") === "share") return u.toString();
+      u.searchParams.set("ref", "share");
+      return u.toString();
+    } catch {
+      const sep = raw.includes("?") ? "&" : "?";
+      return raw.includes("ref=share") ? raw : `${raw}${sep}ref=share`;
+    }
+  };
+  const sharedUrl = withRefShare(url);
+
   const safeTitle = title || "Veja isso no LindArt";
   const safeDesc = description || "";
   const message = safeDesc
-    ? `${safeTitle}\n${safeDesc}\n${url}`
-    : `${safeTitle}\n${url}`;
+    ? `${safeTitle}\n${safeDesc}\n${sharedUrl}`
+    : `${safeTitle}\n${sharedUrl}`;
 
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(sharedUrl);
       setCopied(true);
       toast.success("Link copiado");
       setTimeout(() => setCopied(false), 1800);
@@ -56,14 +73,14 @@ export default function ShareSheet({ open, onClose, url, title, description }) {
     // se não houver, copia o link e abre o Instagram.
     if (navigator.share) {
       try {
-        await navigator.share({ title: safeTitle, text: safeDesc, url });
+        await navigator.share({ title: safeTitle, text: safeDesc, url: sharedUrl });
         return;
       } catch {
         /* user cancelou — segue para fallback */
       }
     }
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(sharedUrl);
       toast.success("Link copiado — cole no seu Story ou bio do Instagram");
     } catch {
       /* ignore */
@@ -116,7 +133,7 @@ export default function ShareSheet({ open, onClose, url, title, description }) {
             {/* Preview do link */}
             <div className="mb-5 border border-black/[0.08] rounded-sm px-3 py-2.5 bg-ink-surface flex items-center gap-2 text-xs text-zinc-600 truncate">
               <Link2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span className="truncate" data-testid="share-sheet-url">{url}</span>
+              <span className="truncate" data-testid="share-sheet-url">{sharedUrl}</span>
             </div>
 
             {/* Ações */}

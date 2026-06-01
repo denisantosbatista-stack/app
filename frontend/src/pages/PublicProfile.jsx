@@ -83,6 +83,25 @@ export default function PublicProfile() {
     };
   }, [handle]);
 
+  // Share tracking E2E — dispara em /u/<handle>?ref=share (fire-and-forget).
+  useEffect(() => {
+    if (!handle) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("ref") !== "share") return;
+      const key = `lindart.share.tracked.profile.${handle}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      fetch(`${API_BASE}/api/analytics/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "profile", id: handle, ref: "share" }),
+      }).catch(() => {});
+    } catch {
+      /* fire-and-forget */
+    }
+  }, [handle]);
+
   if (loading) {
     return (
       <div
