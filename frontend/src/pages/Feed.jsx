@@ -178,9 +178,13 @@ export default function Feed() {
   }
 
   // Distribui posts em 2 / 3 / 4 colunas para masonry CSS
+  // Spec: dedup por id ANTES de renderizar — Map preserva ordem e descarta repetidos
   const columns = useMemo(() => {
+    const uniquePosts = Array.from(
+      new Map(posts.map((p) => [p.id || p._id, p])).values()
+    );
     const cols = [[], [], [], []];
-    posts.forEach((p, i) => cols[i % 4].push(p));
+    uniquePosts.forEach((p, i) => cols[i % 4].push(p));
     return cols;
   }, [posts]);
 

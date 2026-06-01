@@ -174,7 +174,8 @@ function ChallengeCard({ ch, onOpen }) {
               </span>
               {isEmpty && (
                 <span
-                  className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase px-2.5 py-1 rounded-sm border border-gold/50 bg-gold/10 text-gold"
+                  className="inline-flex items-center gap-1 uppercase tracking-[0.18em] bg-gold/10 text-gold border border-gold/50"
+                  style={{ fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}
                   data-testid={`challenge-first-badge-${ch.id}`}
                 >
                   Seja a primeira ✦

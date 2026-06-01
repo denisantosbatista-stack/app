@@ -121,6 +121,14 @@ export default function MockupShowcase() {
             <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between group-hover:opacity-0 transition-opacity duration-500">
               <div>
                 <div className="font-display text-2xl" data-testid={`mockup-label-${m.id}`}>{m.label}</div>
+                {m.legend && (
+                  <div
+                    className="text-[12px] text-bone/80 mt-1 leading-snug max-w-[28ch]"
+                    data-testid={`mockup-legend-${m.id}`}
+                  >
+                    {m.legend}
+                  </div>
+                )}
               </div>
               <motion.div
                 whileHover={{ rotate: -8, scale: 1.12 }}

@@ -58,7 +58,8 @@ export default function Home() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <div
-              className="mt-4 text-[11px] md:text-xs text-zinc-600 tracking-[0.04em]"
+              className="mt-4 text-zinc-600 tracking-[0.04em]"
+              style={{ fontSize: "12px" }}
               data-testid="home-final-cta-subtext"
             >
               Plano gratuito disponível · cancele quando quiser

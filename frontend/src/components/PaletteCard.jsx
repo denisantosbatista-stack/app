@@ -36,7 +36,10 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
     toast.success("Link copiado para compartilhar");
   };
 
-  const category = CATEGORY_STYLES[palette.style] || CATEGORY_STYLES.minimalista;
+  const styleId = (palette.style || "minimalista").toString();
+  const category = CATEGORY_STYLES[styleId] || CATEGORY_STYLES.minimalista;
+  // Spec: sentence case dinâmico do próprio id de categoria (Floral, Geodo, Pastel, etc.)
+  const categoryLabel = styleId.charAt(0).toUpperCase() + styleId.slice(1).toLowerCase();
   const popularity = popularityFor(palette.id);
 
   // SEMPRE exatamente 4 chips uniformes
@@ -107,7 +110,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
           className={`absolute top-2 left-2 inline-flex items-center text-[10px] tracking-[0.04em] font-semibold px-2 py-0.5 rounded-sm border backdrop-blur-sm ${category.cls}`}
           data-testid={`palette-category-${palette.id}`}
         >
-          {category.label}
+          {categoryLabel}
         </span>
 
         {/* Watermark LindArt ® */}

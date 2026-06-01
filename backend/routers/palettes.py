@@ -155,17 +155,23 @@ def _sanitize_palette_name(name: str) -> str:
 
 
 def _is_test_palette(doc: dict) -> bool:
-    """Marca como teste se source=='test' ou nome começa com prefixos de teste."""
+    """Spec: description contém 'teste' OU name == 'Trend Salva' OU is_test==True.
+    Compat: source=='test' ou prefixos legados (test/saved/temp/lorem)."""
+    if doc.get("is_test") is True:
+        return True
+    if "teste" in (doc.get("description") or "").lower():
+        return True
+    if (doc.get("name") or "").strip().lower() == "trend salva":
+        return True
     if (doc.get("source") or "").lower() == "test":
         return True
-    name = doc.get("name") or ""
-    return bool(_TEST_NAME_RE.match(name))
+    return bool(_TEST_NAME_RE.match(doc.get("name") or ""))
 
 
 def _hex_key(doc: dict) -> tuple:
-    """Tupla dos 4 primeiros hex em uppercase — chave de deduplicação."""
+    """Tupla ordenada dos 4 primeiros hex em uppercase — dedup independente da ordem."""
     colors = doc.get("colors") or []
-    return tuple((c.get("hex") or "").upper() for c in colors[:4])
+    return tuple(sorted((c.get("hex") or "").upper() for c in colors[:4]))
 
 
 @router.get("/palettes", response_model=List[Palette])
