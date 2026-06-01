@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Heart, Plus, Loader2, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck, Share2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
+import { authFetch } from "../utils/api";
 import CreatePostModal from "../components/CreatePostModal";
 import ShareSheet from "../components/ShareSheet";
 
@@ -40,7 +41,7 @@ const POPULAR_TAGS = [
 
 export default function Feed() {
   const navigate = useNavigate();
-  const { isAuthenticated, authHeaders } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState(null);
@@ -217,12 +218,8 @@ export default function Feed() {
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
         onSubmit={async (payload) => {
-          const res = await fetch(`${API_BASE}/api/feed`, {
+          const res = await authFetch("/feed", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...authHeaders(),
-            },
             body: JSON.stringify(payload),
           });
           if (!res.ok) {

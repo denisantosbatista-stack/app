@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Crown } from "lucide-react";
 import PieceShape from "@/components/PieceShape";
+import NotifyMeModal from "@/components/NotifyMeModal";
 import { PIECES, STYLES } from "@/data/palettes";
 
 export function StyleSelector({ activeStyleId, onChange, activeStyle }) {
@@ -79,6 +80,7 @@ export function PieceSelector({ activePieceId, onChange, palette }) {
       .filter(Boolean),
     []
   );
+  const [notifyOpen, setNotifyOpen] = useState(false);
 
   return (
     <div data-testid="piece-selector-limited">
@@ -111,12 +113,19 @@ export function PieceSelector({ activePieceId, onChange, palette }) {
         })}
       </div>
 
-      <p
-        className="text-xs text-[#D4AF37] mt-4 italic tracking-wide text-center"
+      <button
+        type="button"
+        onClick={() => setNotifyOpen(true)}
+        className="block mx-auto mt-4 group cursor-pointer"
         data-testid="piece-coming-soon"
+        aria-label="Quero ser avisado quando chegarem novas peças"
       >
-        Mais produções em breve
-      </p>
+        <span className="text-xs text-[#D4AF37] italic tracking-wide border-b border-dashed border-[#D4AF37]/40 group-hover:border-[#D4AF37] group-hover:text-gold-deep transition-colors">
+          Mais produções em breve · me avise
+        </span>
+      </button>
+
+      <NotifyMeModal open={notifyOpen} onClose={() => setNotifyOpen(false)} />
     </div>
   );
 }

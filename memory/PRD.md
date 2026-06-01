@@ -25,6 +25,13 @@ visual, calculadora de proporções, marketplace e feed comunitário.
   - `PieceSelectors`: galeria limitada a 3 peças exemplares (`pingente-gota`, `bandeja`, `geodo`). Busca/categorias ocultas. Aviso em dourado itálico: "Mais produções em breve" (`data-testid="piece-coming-soon"`).
   - Adicionado item `geodo` em `PIECES` (`shape: "prism"`, `category: "decorativo"`).
   - `Productions3D.mapPieceTo3DShape`: shapes `prism`/`hex`/`cube` → 3D `geodo` (icosaedro).
+- Lead capture + authFetch (Jun 2026 — sessão atual):
+  - `backend/routers/leads.py` — `POST /api/leads/notify-me` salva interesse em `lead_notifications` (idempotente por email+interest, índices `email`, `(email,interest)`, `created_at`).
+  - `components/NotifyMeModal.jsx` — modal completo (nome, email, interesse, mensagem) acionado pelo clique no texto "Mais produções em breve · me avise" no Studio.
+  - Helper `authFetch()` + `authFetchJson()` em `utils/api.js` (Bearer automático, dispara `lindart:auth-expired` em 401).
+  - `AuthContext` escuta `lindart:auth-expired` e desloga o usuário automaticamente.
+  - Pilotos migrados: `Feed.jsx` (POST /feed) e `Marketplace.jsx` (POST /marketplace) agora usam `authFetch`.
+  - Smoke test E2E: modal abre, form submete, lead persistido no Mongo, sucesso visível.
 
 ### Arquitetura
 - **Frontend**: `/app/frontend/src/`
@@ -45,14 +52,14 @@ visual, calculadora de proporções, marketplace e feed comunitário.
 - Nenhum item P1 aberto no momento.
 
 ### P2
-- OG Cards para compartilhamento de paletas em redes sociais.
-- Tracking Analytics/Reach via `?ref=share`.
+- OG Cards para compartilhamento de paletas em redes sociais — ✅ implementado em `routers/og.py`.
+- Tracking Analytics/Reach via `?ref=share` — ✅ implementado em `routers/analytics.py` (`POST /api/analytics/hit`, `GET /api/users/me/analytics`).
 
 ### P3 / Refactor
-- Centralizar chamadas de API via `authFetch()` em todos os componentes do frontend.
+- `authFetch()` disponível em `utils/api.js` e adotado em `Feed.jsx` e `Marketplace.jsx` (pilotos). Pendente: migrar demais componentes (`PublicProfile.jsx`, `PublicDNAPage.jsx`, `OnboardingVideo.jsx`, `DNAShareModal.jsx`, `MixerSwirl.jsx`) conforme oportunidade.
 
 ### Phase 4 (pós-lançamento)
-- Integração com Fal.ai Video Generation (SVD 2.0) — geração de vídeos a partir de paletas.
+- ✅ Integração com Fal.ai Video Generation (SVD) implementada em `routers/svd_video.py`. UI de geração de vídeo a partir do Studio ainda pode receber polimento futuro.
 
 ## Health
 - Broken: None

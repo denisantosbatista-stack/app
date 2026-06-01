@@ -55,6 +55,13 @@ export function AuthProvider({ children }) {
     fetchMe();
   }, [fetchMe]);
 
+  // authFetch dispara este evento ao receber 401 — sincroniza o estado do app.
+  useEffect(() => {
+    const onExpired = () => setUser(false);
+    window.addEventListener("lindart:auth-expired", onExpired);
+    return () => window.removeEventListener("lindart:auth-expired", onExpired);
+  }, []);
+
   const login = useCallback(async (email, password) => {
     const { data } = await axios.post(
       `${API}/auth/login`,

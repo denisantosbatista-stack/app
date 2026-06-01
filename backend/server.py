@@ -47,6 +47,8 @@ from routers.auth import init_auth  # noqa: E402
 from routers.auth import router as auth_router  # noqa: E402
 from routers.challenges import router as challenges_router  # noqa: E402
 from routers.feed import router as feed_router  # noqa: E402
+from routers.leads import init_leads  # noqa: E402
+from routers.leads import router as leads_router  # noqa: E402
 from routers.marketplace import router as marketplace_router  # noqa: E402
 from routers.og import router as og_router  # noqa: E402
 from routers.palettes import router as palettes_router  # noqa: E402
@@ -61,6 +63,7 @@ async def lifespan(app: FastAPI):
     """Ciclo de vida do app: inicializa auth e fecha o cliente Mongo."""
     await init_auth()
     await init_analytics()
+    await init_leads()
     await ensure_seed_content()
     try:
         yield
@@ -89,6 +92,7 @@ app.include_router(svd_video_router)
 app.include_router(ai_router)
 app.include_router(palettes_router)
 app.include_router(analytics_router)
+app.include_router(leads_router)
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).

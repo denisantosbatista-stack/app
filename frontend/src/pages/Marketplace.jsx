@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
+import { authFetch } from "../utils/api";
 import CreateItemModal from "../components/CreateItemModal";
 import ShareSheet from "../components/ShareSheet";
 
@@ -49,7 +50,7 @@ function formatBRL(value) {
 
 export default function Marketplace() {
   const navigate = useNavigate();
-  const { isAuthenticated, authHeaders } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState(null);
@@ -206,12 +207,8 @@ export default function Marketplace() {
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
         onSubmit={async (payload) => {
-          const res = await fetch(`${API_BASE}/api/marketplace`, {
+          const res = await authFetch("/marketplace", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...authHeaders(),
-            },
             body: JSON.stringify(payload),
           });
           if (!res.ok) {

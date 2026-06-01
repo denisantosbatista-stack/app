@@ -152,3 +152,93 @@ export async function chamarIA(path, body, { maxTentativas = 3, timeoutMs = 6000
   // mas mantemos para satisfazer análise estática.
   throw new ApiError("Falha desconhecida.", { tipo: "servidor" });
 }
+
+// ============================================================
+// authFetch — helper centralizado para chamadas autenticadas.
+// Anexa automaticamente o Bearer token (mesma chave usada por AuthContext.jsx)
+// e normaliza URLs relativas a /api. Em 401, dispara o evento global
+// 'lindart:auth-expired' que o AuthContext escuta para deslogar a sessão.
+// ============================================================
+const TOKEN_KEY = "lindart.auth.token";
+
+function buildUrl(path) {
+  if (!path) return API_BASE;
+  if (/^https?:\/\//i.test(path)) return path;
+  if (path.startsWith("/api/")) {
+    // já vem com /api — usar mesmo origin do API_BASE
+    const origin = API_BASE.replace(/\/api$/, "");
+    return `${origin}${path}`;
+  }
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE}${normalized}`;
+}
+
+/**
+ * Wrapper de fetch que injeta Authorization: Bearer <token> quando há sessão.
+ * Mantém a mesma API do fetch nativo (mesmos argumentos, mesmo Response).
+ *
+ * @param {string} path  caminho relativo (ex.: '/feed') ou URL absoluta
+ * @param {RequestInit} [options]  opções do fetch nativo
+ * @returns {Promise<Response>}
+ */
+export async function authFetch(path, options = {}) {
+  const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+  const headers = new Headers(options.headers || {});
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  // Default JSON content-type se houver body objeto e o header não foi setado
+  if (
+    options.body &&
+    typeof options.body === "string" &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const resp = await fetch(buildUrl(path), {
+    ...options,
+    headers,
+    credentials: options.credentials || "include",
+  });
+
+  if (resp.status === 401 && token) {
+    // Token inválido/expirado — limpa e notifica o app
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+    } catch (_) {
+      /* noop */
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("lindart:auth-expired"));
+    }
+  }
+
+  return resp;
+}
+
+/**
+ * authFetchJson — atalho que já parseia JSON e lança Error com a detail do backend.
+ */
+export async function authFetchJson(path, options = {}) {
+  const resp = await authFetch(path, options);
+  let data = null;
+  try {
+    data = await resp.json();
+  } catch (_) {
+    /* sem corpo */
+  }
+  if (!resp.ok) {
+    const detail = data?.detail;
+    const msg = Array.isArray(detail)
+      ? detail.map((d) => d?.msg || JSON.stringify(d)).join(" · ")
+      : typeof detail === "string"
+      ? detail
+      : `HTTP ${resp.status}`;
+    const err = new Error(msg);
+    err.status = resp.status;
+    err.detail = detail;
+    throw err;
+  }
+  return data;
+}
