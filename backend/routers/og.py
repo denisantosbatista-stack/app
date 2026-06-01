@@ -26,6 +26,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from ._shared import db, normalize_handle
 
+# Import lazy do cache de tendências (LLM-gerado, sem persistência). Importar
+# em runtime nas funções para evitar circular import com routers/ai.py.
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # Jinja2 env próprio do router — escopo local, sem depender de globals do server.py.
@@ -699,5 +702,137 @@ async def og_profile_image_svg(handle: str):
         subtitle=stats_line,
         footer_left="Paleta assinatura",
         colors=palette,
+    )
+    return _svg_response(svg)
+
+
+# ─────────────────────────── Trends (AI) OG ───────────────────────────
+# As tendências (`/api/ai/trends`) são geradas pela IA e ficam em cache em
+# memória dentro de `routers.ai._TRENDS_CACHE`. Aqui expomos um OG endpoint
+# que busca a tendência por slug (slugify(name)) dentro do cache e gera os
+# metatags + imagem SVG. Se a tendência expirou/não existe, retorna 404 com
+# OG mínimo. Humanos são redirecionados para `/trends?paleta={slug}&ref=share`.
+
+
+def _slugify_trend(name: str) -> str:
+    """Slug ASCII kebab a partir do nome da tendência. Reversível o bastante
+    para servir como identificador estável durante a vida do cache."""
+    import unicodedata
+
+    if not name:
+        return ""
+    s = unicodedata.normalize("NFKD", str(name)).encode("ascii", "ignore").decode("ascii")
+    s = re.sub(r"[^a-zA-Z0-9]+", "-", s).strip("-").lower()
+    return s[:80]
+
+
+def _find_trend_by_id(trend_id: str) -> Optional[dict]:
+    """Procura uma tendência no cache em memória de `routers.ai`. Match por
+    slug do `name` ou pelo `id` (caso o LLM tenha incluído). Retorna o dict
+    da tendência ou None."""
+    try:
+        from routers.ai import _TRENDS_CACHE  # import lazy p/ evitar ciclo
+    except Exception:
+        return None
+    data = (_TRENDS_CACHE or {}).get("data") or {}
+    trends = data.get("trends") or []
+    target = (trend_id or "").strip().lower()
+    if not target:
+        return None
+    for t in trends:
+        if not isinstance(t, dict):
+            continue
+        if str(t.get("id") or "").strip().lower() == target:
+            return t
+        if _slugify_trend(t.get("name") or "") == target:
+            return t
+    return None
+
+
+@router.get("/trend/{trend_id}", response_class=HTMLResponse)
+async def og_trend_page(trend_id: str, request: Request):
+    """Página HTML com Open Graph tags da tendência de cor (Trends IA).
+    Crawlers (WhatsApp/IG/X/FB) leem os metatags; humanos são redirecionados
+    para `/trends?paleta={trend_id}&ref=share`."""
+    origin = _absolute_origin(request)
+    redirect_path = f"/trends?paleta={trend_id}&ref=share"
+
+    trend = _find_trend_by_id(trend_id)
+    if not trend:
+        return _og_404_html(
+            title="Paleta de tendência não encontrada",
+            description="Essa receita expirou ou ainda não foi gerada nesta sessão.",
+            redirect_path="/trends",
+            origin=origin,
+        )
+
+    name = (trend.get("name") or "Tendência").strip()[:80] or "Tendência"
+    tagline = (trend.get("tagline") or "").strip()
+    colors = [
+        c for c in (trend.get("colors") or [])
+        if isinstance(c, str) and _HEX_RE.fullmatch(c.strip())
+    ][:6]
+    if not colors:
+        colors = list(_DEFAULT_PALETTE)
+
+    title = f"{name} · Tendência em resina — LindArt"
+    desc_parts: List[str] = []
+    if tagline:
+        desc_parts.append(tagline)
+    if colors:
+        desc_parts.append("Paleta: " + " ".join(colors))
+    desc_parts.append("Veja a receita completa em epóxi no LindArt.")
+    description = " · ".join(desc_parts)[:280]
+
+    redirect_abs = f"{origin}{redirect_path}" if origin else redirect_path
+    og_image_abs = (
+        f"{origin}/api/og/trend/{trend_id}/image.svg"
+        if origin
+        else f"/api/og/trend/{trend_id}/image.svg"
+    )
+
+    # Reusa o template genérico (dna_og.html) — mesmo layout de paleta.
+    template = _jinja_env.get_template("dna_og.html")
+    html = template.render(
+        signature=name,
+        title=title,
+        description=description,
+        colors=colors,
+        redirect_path=redirect_path,
+        redirect_abs=redirect_abs,
+        og_image_abs=og_image_abs,
+        og_alt=f"{name} — Tendência cromática em resina",
+    )
+    return HTMLResponse(
+        content=html,
+        headers={"Cache-Control": "public, max-age=600, s-maxage=600"},
+    )
+
+
+@router.get("/trend/{trend_id}/image.svg")
+async def og_trend_image_svg(trend_id: str):
+    """Imagem OG (SVG 1200×630) da tendência. Usa paleta da tendência ou
+    fallback default. 404 silencioso — sempre retorna um SVG válido (não
+    quebra o preview se cache expirou)."""
+    trend = _find_trend_by_id(trend_id) or {}
+    name = (trend.get("name") or "Tendência").strip()[:60] or "Tendência"
+    tagline = (trend.get("tagline") or "").strip()[:90]
+    colors = [
+        c for c in (trend.get("colors") or [])
+        if isinstance(c, str) and _HEX_RE.fullmatch(c.strip())
+    ][:5]
+    if not colors:
+        colors = list(_DEFAULT_PALETTE)
+
+    svg = _build_og_palette_svg(
+        eyebrow="LINDART · TENDÊNCIA",
+        title_text=name,
+        title_size=72,
+        title_y=270,
+        subtitle=tagline,
+        subtitle_y=330,
+        subtitle_size=28,
+        footer_left="Receita em resina",
+        colors=colors,
     )
     return _svg_response(svg)

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, TrendingUp, Flame, Copy, Loader2, Sparkles, Beaker } from "lucide-react";
+import { RefreshCw, TrendingUp, Flame, Copy, Loader2, Sparkles, Beaker, Share2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
+import ShareSheet from "@/components/ShareSheet";
 import {
   Dialog,
   DialogContent,
@@ -204,7 +205,26 @@ export default function Trends() {
   const [focus, setFocus] = useState("geral");
   const [recipeOpen, setRecipeOpen] = useState(false);
   const [recipeTrend, setRecipeTrend] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
   const savePalette = usePaletteStore((s) => s.savePalette);
+
+  // Slug ASCII kebab espelhando `_slugify_trend` no backend (routers/og.py).
+  function slugifyTrend(name) {
+    if (!name) return "";
+    return String(name)
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .toLowerCase()
+      .slice(0, 80);
+  }
+
+  // URL pública de share — aponta para o OG endpoint que serve metatags
+  // (crawlers) e redireciona humanos para `/trends?paleta={slug}&ref=share`.
+  const recipeShareUrl = recipeTrend
+    ? `${API_BASE}/api/og/trend/${slugifyTrend(recipeTrend.id || recipeTrend.name)}`
+    : "";
 
   function copyHex(hex) {
     navigator.clipboard.writeText(hex);
@@ -641,6 +661,15 @@ export default function Trends() {
                   <Copy className="w-3 h-3" /> Copiar paleta
                 </button>
                 <button
+                  type="button"
+                  onClick={() => setShareOpen(true)}
+                  className="px-3 py-2 rounded-sm border border-black/[0.08] text-zinc-600 hover:border-gold hover:text-gold transition-colors text-[10px] tracking-[0.18em] uppercase inline-flex items-center gap-1"
+                  data-testid="trend-recipe-share"
+                  aria-label="Compartilhar receita"
+                >
+                  <Share2 className="w-3 h-3" /> Compartilhar receita 🔗
+                </button>
+                <button
                   onClick={() => {
                     saveAsPalette(recipeTrend);
                     setRecipeOpen(false);
@@ -662,6 +691,19 @@ export default function Trends() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        url={recipeShareUrl}
+        title={recipeTrend ? `${recipeTrend.name} · Tendência em resina` : "Tendência em resina"}
+        description={
+          recipeTrend
+            ? (recipeTrend.tagline || "Receita visual da paleta") +
+              (recipeTrend.colors?.length ? " · " + recipeTrend.colors.join(" ") : "")
+            : "Veja esta receita de paleta em resina no LindArt."
+        }
+      />
     </div>
   );
 }
