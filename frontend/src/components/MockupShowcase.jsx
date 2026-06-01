@@ -104,31 +104,23 @@ export default function MockupShowcase() {
             {/* Overlay base (sempre visível, suave) */}
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
 
-            {/* Overlay de hover — escurece + revela CTA "Visualizar no Studio" */}
+            {/* Overlay de hover — escurece + revela CTA "Visualizar no Studio →" */}
             <div
               className="absolute inset-0 bg-ink/55 opacity-0 group-hover:opacity-100 transition-opacity duration-500 backdrop-blur-[2px] flex items-center justify-center pointer-events-none"
               aria-hidden="true"
+              data-testid={`mockup-overlay-${m.id}`}
             >
               <div className="text-center px-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                <div className="text-[10px] tracking-[0.32em] uppercase text-gold mb-2">
-                  Inspiração
-                </div>
-                <div className="font-display text-xl md:text-2xl text-bone mb-3 leading-tight">
-                  Visualize no Studio
-                </div>
-                <div className="inline-flex items-center gap-2 text-[11px] tracking-[0.22em] uppercase text-gold-hover">
-                  Explorar peça
-                  <span aria-hidden="true">→</span>
+                <div className="font-display text-xl md:text-2xl text-bone leading-tight inline-flex items-center gap-2">
+                  Visualizar no Studio
+                  <span aria-hidden="true" className="text-gold">→</span>
                 </div>
               </div>
             </div>
 
             <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between group-hover:opacity-0 transition-opacity duration-500">
               <div>
-                <div className="text-[10px] tracking-[0.32em] uppercase text-gold mb-1">
-                  Premium
-                </div>
-                <div className="font-display text-2xl">{m.label}</div>
+                <div className="font-display text-2xl" data-testid={`mockup-label-${m.id}`}>{m.label}</div>
               </div>
               <motion.div
                 whileHover={{ rotate: -8, scale: 1.12 }}

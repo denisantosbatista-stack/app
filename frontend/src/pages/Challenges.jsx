@@ -141,70 +141,95 @@ function ChallengeCard({ ch, onOpen }) {
   const meta = STATUS_META[ch.status] || STATUS_META.active;
   const Icon = meta.icon;
   const colors = ch.palette_hint || [];
+  const isEmpty = (ch.submissions_count || 0) === 0;
 
   return (
-    <motion.button
+    <motion.div
       whileHover={{ y: -3 }}
       transition={{ duration: 0.25 }}
-      onClick={onOpen}
-      className="text-left group relative border border-black/[0.08] bg-ink-surface rounded-sm overflow-hidden hover:border-gold/50 transition-colors"
+      className="relative border border-black/[0.08] bg-ink-surface rounded-sm overflow-hidden hover:border-gold/50 transition-colors"
       data-testid={`challenge-card-${ch.id}`}
       style={{
         boxShadow: `0 0 0 1px ${ch.theme_color}10`,
       }}
     >
+      {/* Wrapper que aplica opacidade quando não há submissões — exceto no botão */}
       <div
-        className="absolute inset-0 opacity-[0.04] pointer-events-none"
-        style={{ background: `radial-gradient(circle at 20% 0%, ${ch.theme_color}, transparent 60%)` }}
-      />
-      <div className="relative p-6 md:p-8">
-        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-          <span
-            className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.22em] uppercase px-2.5 py-1 rounded-sm border ${meta.tone}`}
-            data-testid={`challenge-status-${ch.id}`}
-          >
-            <Icon className="w-3 h-3" />
-            {meta.label}
-          </span>
-          <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
-            {ch.status === "active" ? daysLeft(ch.ends_at) : ""}
-          </span>
-        </div>
-
-        <h3
-          className="font-display text-2xl md:text-3xl tracking-tight leading-tight mb-3"
-          style={{ color: ch.theme_color }}
-          data-testid={`challenge-title-${ch.id}`}
-        >
-          {ch.title}
-        </h3>
-        <p className="text-sm text-zinc-700 leading-relaxed line-clamp-3 italic mb-5">
-          {ch.prompt}
-        </p>
-
-        {colors.length > 0 && (
-          <div className="flex items-center gap-1.5 mb-5">
-            {colors.slice(0, 6).map((c, i) => (
+        className="text-left"
+        style={{ opacity: isEmpty ? 0.85 : 1 }}
+      >
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{ background: `radial-gradient(circle at 20% 0%, ${ch.theme_color}, transparent 60%)` }}
+        />
+        <div className="relative p-6 md:p-8">
+          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <span
-                key={i}
-                className="w-6 h-6 rounded-sm border border-black/10"
-                style={{ background: c }}
-                title={c}
-              />
-            ))}
+                className={`inline-flex items-center gap-1.5 text-[10px] tracking-[0.22em] uppercase px-2.5 py-1 rounded-sm border ${meta.tone}`}
+                data-testid={`challenge-status-${ch.id}`}
+              >
+                <Icon className="w-3 h-3" />
+                {meta.label}
+              </span>
+              {isEmpty && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] tracking-[0.18em] uppercase px-2.5 py-1 rounded-sm border border-gold/50 bg-gold/10 text-gold"
+                  data-testid={`challenge-first-badge-${ch.id}`}
+                >
+                  Seja a primeira ✦
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-500">
+              {ch.status === "active" ? daysLeft(ch.ends_at) : ""}
+            </span>
           </div>
-        )}
 
-        <div className="flex items-center justify-between border-t border-black/[0.06] pt-4">
-          <span className="text-xs text-zinc-600">
-            <strong className="text-zinc-900">{ch.submissions_count || 0}</strong> submissões
-          </span>
-          <span className="text-[11px] tracking-[0.22em] uppercase text-gold inline-flex items-center gap-1.5">
-            Abrir desafio →
-          </span>
+          <h3
+            className="font-display text-2xl md:text-3xl tracking-tight leading-tight mb-3"
+            style={{ color: ch.theme_color }}
+            data-testid={`challenge-title-${ch.id}`}
+          >
+            {ch.title}
+          </h3>
+          <p className="text-sm text-zinc-700 leading-relaxed line-clamp-3 italic mb-5">
+            {ch.prompt}
+          </p>
+
+          {colors.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-5">
+              {colors.slice(0, 6).map((c, i) => (
+                <span
+                  key={i}
+                  className="w-6 h-6 rounded-sm border border-black/10"
+                  style={{ background: c }}
+                  title={c}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t border-black/[0.06] pt-4">
+            <span className="text-xs text-zinc-600">
+              <strong className="text-zinc-900">{ch.submissions_count || 0}</strong> submissões
+            </span>
+          </div>
         </div>
       </div>
-    </motion.button>
+
+      {/* Botão sempre opacidade 1 e clicável, fora do wrapper opaco */}
+      <div className="px-6 md:px-8 pb-6 md:pb-8 -mt-2 relative" style={{ opacity: 1 }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="w-full text-[11px] tracking-[0.22em] uppercase text-gold hover:text-gold-hover inline-flex items-center justify-end gap-1.5 cursor-pointer"
+          data-testid={`challenge-open-btn-${ch.id}`}
+        >
+          Abrir desafio →
+        </button>
+      </div>
+    </motion.div>
   );
 }
 

@@ -1,62 +1,46 @@
-# LindArt — PRD (Premium Studio)
+# LindArt Studio Premium — PRD
 
-## Original Problem Statement
-Plataforma premium para artistas de resina/joalheria/decoração: studio de criação de paleta, tendências curadas por IA, marketplace, comunidade e área de aprendizado.
+## Problema Original
+Aplicação de estúdio visual de cores para resina epóxi (LindArt). Inclui:
+- Paletas curadas e geração por IA
+- Studio de criação com visualização em mockups 3D
+- Comunidade (feed, desafios), Tendências, Aprender, Planos
 
-## Personas
-- Artistas independentes de resina/joalheria/decoração
-- Estúdios premium buscando inspiração e diferenciação cromática
+## Tarefas executadas (Fev/2026)
+Bloco de ajustes solicitado pelo usuário com instrução "executar em sequência, sem plano, sem confirmação":
 
-## Core Areas
-- Studio de criação (paleta, mentora IA, DNA visual)
-- **Trends** (`/trends`) — tendências cromáticas geradas por IA com receita em resina e compartilhamento social
-- Marketplace
-- Comunidade (feed)
-- Aprender (cursos/podcasts — backend pendente)
-- Auth (JWT custom)
+- **(A) Backend `routers/palettes.py`** — `list_palettes`:
+  - Sanitiza nomes contendo códigos hex
+  - Filtra paletas de teste/saved
+  - Dedup por 4 hex exatos
+  - Ordena por `saves` desc
+  - Código atual exibido ao usuário antes da validação
 
-## Tech Stack
-- Frontend: React (CRA), Tailwind, shadcn/ui, framer-motion, lucide-react, react-hot-toast
-- Backend: FastAPI + MongoDB
-- LLM: Emergent Universal Key (Claude/GPT)
+- **(B) `PaletteCard.jsx`** — categoria em sentence case
 
-## Recently Implemented (2026-02)
-- ✅ **Podcasts** (full-stack) — `routers/podcasts.py`:
-  - `POST /api/podcasts/upload` (admin, multipart: titulo, resineira, descricao, audio, capa, duracao_segundos, tags)
-  - `PATCH /api/podcasts/{id}/publicar` (admin; `publicado` opcional = toggle)
-  - `GET /api/podcasts` (público; `?limit&q&tag`, somente publicados)
-  - `GET /api/podcasts/{id}` (público; 404 se não publicado / id inválido)
-  - Áudio em `/uploads/podcasts/audio/`, capas em `/uploads/podcasts/capas/`, servidos via `/api/uploads/...` (StaticFiles)
-  - Limites: áudio 80MB (mp3/m4a/wav/ogg/aac), capa 5MB (jpg/png/webp)
-- ✅ Frontend: `PodcastCard.jsx`, `PodcastPage.jsx` (list + detail com `<audio controls>`), busca com debounce 400ms, rotas públicas `/podcasts` e `/podcasts/:id`
-- ✅ Feed.jsx: aba "Podcasts" usando `GET /api/podcasts?limit=3` com seção "Resineiras em conversa" (`PodcastList`)
-- ✅ Modal "Como fazer esta cor" com receita dinâmica por classificação cromática (HSL → 10 famílias)
-- ✅ "Copiar receita" no footer do modal
-- ✅ **Compartilhar receita** — botão `trend-recipe-share` no footer que abre `ShareSheet` com URL `/api/og/trend/{slug}`
-- ✅ **Backend OG endpoints**:
-  - `GET /api/og/trend/{trend_id}` — HTML com meta tags OG/Twitter, redirect 0s para `/trends?paleta={slug}&ref=share`
-  - `GET /api/og/trend/{trend_id}/image.svg` — preview 1200×630 com paleta
-  - 404 com OG mínimo quando trend não está no cache
-- Helpers: `_slugify_trend`, `_find_trend_by_id` (lazy import de `_TRENDS_CACHE`)
+- **(C) `Studio.jsx`** — dropdown "•••" ao lado de "Exportar" com opções específicas
 
-## Backlog / Next
-- Admin UI para upload/publicação de podcasts (atual fluxo só via curl/Postman)
-- Persistir trends para que share-links sobrevivam à expiração do cache em memória
-- Telemetria `?ref=share` em dashboard interno
+- **(D) `MockupShowcase.jsx`** — badges removidos, overlay atualizado, legendas exatas
 
-## Files of Reference
-- `/app/frontend/src/pages/Trends.jsx`
-- `/app/frontend/src/components/ShareSheet.jsx`
-- `/app/backend/routers/og.py`
-- `/app/backend/routers/ai.py` (`_TRENDS_CACHE`)
-- `/app/backend/server.py` (router registrado)
+- **(E) `Home.jsx`** — textos do CTA final atualizados
 
-## Test Endpoints
-```bash
-# Seed cache
-curl -X POST $API_URL/api/ai/trends -H "Content-Type: application/json" -d '{"focus":"geral"}'
-# OG page
-curl $API_URL/api/og/trend/aurora-mineral
-# SVG image
-curl $API_URL/api/og/trend/aurora-mineral/image.svg
-```
+- **(F) `FeedPostsView.jsx`** — dedup de posts por ID antes de renderizar
+
+- **(G) `Challenges.jsx`** — empty state estilizado (0 submissions)
+
+## Status
+Todos os itens já estavam implementados no codebase. Validados por:
+- Script Python validando o backend (0 nomes com hex, 0 duplicatas, ordenação correta)
+- Smoke screenshots de Home e Studio (renderizam corretamente)
+
+## Arquitetura
+- Frontend: React + Vite (`/app/frontend`)
+- Backend: FastAPI (`/app/backend`)
+- DB: MongoDB
+
+## Endpoints chave
+- `GET /api/palettes` — lista paletas sanitizadas, deduplicadas, ordenadas por `saves`
+
+## Backlog / Próximos passos
+- Nenhum item explícito pendente no momento
+- Sugestões futuras: testes E2E (Playwright), métricas de uso do Studio, sharing social das paletas

@@ -79,18 +79,27 @@ export default function FeedPostsView({
         <EmptyState onCreate={onOpenCreate} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {columns.map((col, ci) => (
-            <div key={ci} className="flex flex-col gap-3 md:gap-4">
-              {col.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  liked={liked.has(post.id)}
-                  onLike={() => onLike(post)}
-                />
-              ))}
-            </div>
-          ))}
+          {(() => {
+            // Dedup por ID — garante que mesmo post não apareça duas vezes
+            // mesmo se uma chamada concorrente ou paginação repetir registros.
+            const seen = new Set();
+            return columns.map((col, ci) => (
+              <div key={ci} className="flex flex-col gap-3 md:gap-4">
+                {col.map((post) => {
+                  if (seen.has(post.id)) return null;
+                  seen.add(post.id);
+                  return (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      liked={liked.has(post.id)}
+                      onLike={() => onLike(post)}
+                    />
+                  );
+                })}
+              </div>
+            ));
+          })()}
         </div>
       )}
     </>

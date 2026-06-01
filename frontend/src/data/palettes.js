@@ -236,17 +236,17 @@ export const PIECES = [
 export const MOCKUPS = [
   {
     id: "clock",
-    label: "Relógio de Resina",
+    label: "Relógio em resina dourada",
     url: "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/8893dddb4a4aac3825178ef63fb561d03bf9657d31147ff1186f4f936a86c88a.png",
   },
   {
     id: "tray",
-    label: "Bandeja Premium",
+    label: "Bandeja mármore & ouro",
     url: "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/7b2d1ab81e6fd84987bce59f1a7c322fdd889a3b38785c1a0285fbbe2e417bfd.png",
   },
   {
     id: "geode",
-    label: "Geodo Decorativo",
+    label: "Geodo estilo cristal",
     url: "https://static.prod-images.emergentagent.com/jobs/41d44dae-5333-4203-8fd5-800873a4aea3/images/558457381e345cb3c1c6c3d72bdad5af5a5268bc28780fa0de83d250e614c681.png",
   },
 ];

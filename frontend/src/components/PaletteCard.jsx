@@ -3,16 +3,16 @@ import { Heart, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { copyToClipboard, isDark } from "@/utils/color";
 
-// Mapeamento de categorias visuais: cores + label EM CAIXA ALTA
+// Mapeamento de categorias visuais: cores + label em sentence case
 const CATEGORY_STYLES = {
-  geodo:       { label: "GEODO",       cls: "bg-gold/25 text-[#7d5a16] border-gold/50" },
-  floral:      { label: "FLORAL",      cls: "bg-rose-100 text-rose-700 border-rose-300/70" },
-  pastel:      { label: "PASTEL",      cls: "bg-purple-100 text-purple-700 border-purple-300/70" },
-  luxo:        { label: "LUXO",        cls: "bg-zinc-900 text-bone border-zinc-700" },
-  minimalista: { label: "MINIMALISTA", cls: "bg-zinc-200 text-zinc-700 border-zinc-400/70" },
-  oceano:      { label: "OCEANO",      cls: "bg-sky-100 text-sky-800 border-sky-300/70" },
-  marmore:     { label: "MÁRMORE",     cls: "bg-stone-200 text-stone-800 border-stone-400/70" },
-  galaxia:     { label: "GALÁXIA",     cls: "bg-indigo-900 text-bone border-indigo-700" },
+  geodo:       { label: "Geodo",       cls: "bg-gold/25 text-[#7d5a16] border-gold/50" },
+  floral:      { label: "Floral",      cls: "bg-rose-100 text-rose-700 border-rose-300/70" },
+  pastel:      { label: "Pastel",      cls: "bg-purple-100 text-purple-700 border-purple-300/70" },
+  luxo:        { label: "Luxo",        cls: "bg-zinc-900 text-bone border-zinc-700" },
+  minimalista: { label: "Minimalista", cls: "bg-zinc-200 text-zinc-700 border-zinc-400/70" },
+  oceano:      { label: "Oceano",      cls: "bg-sky-100 text-sky-800 border-sky-300/70" },
+  marmore:     { label: "Mármore",     cls: "bg-stone-200 text-stone-800 border-stone-400/70" },
+  galaxia:     { label: "Galáxia",     cls: "bg-indigo-900 text-bone border-indigo-700" },
 };
 
 // "Popularidade" estável derivada do id (visual social proof)
@@ -102,9 +102,9 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
           </div>
         ))}
 
-        {/* Badge de categoria (caixa alta, contraste forte) */}
+        {/* Badge de categoria (sentence case, contraste forte) */}
         <span
-          className={`absolute top-2 left-2 inline-flex items-center text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-0.5 rounded-sm border backdrop-blur-sm ${category.cls}`}
+          className={`absolute top-2 left-2 inline-flex items-center text-[10px] tracking-[0.04em] font-semibold px-2 py-0.5 rounded-sm border backdrop-blur-sm ${category.cls}`}
           data-testid={`palette-category-${palette.id}`}
         >
           {category.label}

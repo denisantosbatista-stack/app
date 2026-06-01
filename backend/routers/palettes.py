@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -140,13 +141,62 @@ def _version_out(doc: dict) -> dict:
 
 
 # ===== Palettes CRUD =====
+_HEX_NAME_RE = re.compile(r"#[0-9A-Fa-f]{3,6}")
+_TEST_NAME_RE = re.compile(r"^\s*(test|teste|saved|temp|tmp|lorem)\b", re.IGNORECASE)
+
+
+def _sanitize_palette_name(name: str) -> str:
+    """Substitui nomes contendo códigos hex por 'Mistura Personalizada'."""
+    if not name:
+        return name
+    if _HEX_NAME_RE.search(name):
+        return "Mistura Personalizada"
+    return name
+
+
+def _is_test_palette(doc: dict) -> bool:
+    """Marca como teste se source=='test' ou nome começa com prefixos de teste."""
+    if (doc.get("source") or "").lower() == "test":
+        return True
+    name = doc.get("name") or ""
+    return bool(_TEST_NAME_RE.match(name))
+
+
+def _hex_key(doc: dict) -> tuple:
+    """Tupla dos 4 primeiros hex em uppercase — chave de deduplicação."""
+    colors = doc.get("colors") or []
+    return tuple((c.get("hex") or "").upper() for c in colors[:4])
+
+
 @router.get("/palettes", response_model=List[Palette])
 async def list_palettes(favorite: Optional[bool] = None):
     query = {}
     if favorite is not None:
         query["favorite"] = favorite
     docs = await db.palettes.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
-    return [Palette(**d) for d in docs]
+
+    # 1) sanitiza nomes legados com hex codes
+    for d in docs:
+        d["name"] = _sanitize_palette_name(d.get("name") or "")
+
+    # 2) filtra paletas de teste
+    docs = [d for d in docs if not _is_test_palette(d)]
+
+    # 3) dedup por tupla exata dos 4 hex — mantém a com mais saves
+    deduped: dict = {}
+    for d in docs:
+        key = _hex_key(d)
+        if len(key) < 4 or any(not h for h in key):
+            # paletas com menos de 4 cores válidas: mantém todas (chave única por id)
+            deduped[("__noid__", d.get("id"))] = d
+            continue
+        current = deduped.get(key)
+        if current is None or (d.get("saves") or 0) > (current.get("saves") or 0):
+            deduped[key] = d
+
+    # 4) ordena por saves desc (fallback created_at desc já vem do find)
+    result = sorted(deduped.values(), key=lambda x: x.get("saves") or 0, reverse=True)
+    return [Palette(**d) for d in result]
 
 
 @router.post("/palettes", response_model=Palette)

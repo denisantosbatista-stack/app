@@ -54,9 +54,15 @@ export default function Home() {
               className="btn-gold px-7 md:px-8 py-3.5 md:py-4 rounded-sm text-[11px] md:text-xs tracking-[0.22em] uppercase inline-flex items-center gap-2"
               data-testid="home-final-cta"
             >
-              Abrir Studio
+              Começar grátis — sem cartão
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <div
+              className="mt-4 text-[11px] md:text-xs text-zinc-600 tracking-[0.04em]"
+              data-testid="home-final-cta-subtext"
+            >
+              Plano gratuito disponível · cancele quando quiser
+            </div>
           </div>
         </motion.div>
       </section>
