@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, Plus, Loader2, Image as ImageIcon, RefreshCw, Hash, Crown, BadgeCheck, Share2 } from "lucide-react";
+import { Heart, Plus, RefreshCw, Crown, BadgeCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import { authFetch } from "../utils/api";
 import CreatePostModal from "../components/CreatePostModal";
-import ShareSheet from "../components/ShareSheet";
+import FeedPostsView from "../components/FeedPostsView";
 
 const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const LIKED_KEY = "lindart.feed.liked.v1";
@@ -28,16 +28,7 @@ function saveLiked(set) {
 
 // value = tag persistida (lowercase, sem acento — para filtro no backend)
 // label = exibição em sentence case com acentuação PT-BR
-const POPULAR_TAGS = [
-  { value: "minimalista", label: "Minimalista" },
-  { value: "joalheria", label: "Joalheria" },
-  { value: "geodo", label: "Geodo" },
-  { value: "oceano", label: "Oceano" },
-  { value: "floral", label: "Floral" },
-  { value: "fluido", label: "Fluido" },
-  { value: "cosmico", label: "Cósmico" },
-  { value: "natural", label: "Natural" },
-];
+// Lista usada em FeedPostsView.jsx
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -237,85 +228,41 @@ export default function Feed() {
         <PodcastList podcasts={podcasts} />
       ) : (
         <>
-      {/* Tags */}
-      <div className="flex flex-wrap gap-2 mb-8" data-testid="feed-tags">
-        <button
-          onClick={() => setActiveTag(null)}
-          className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.04em] ${
-            activeTag === null
-              ? "border-gold bg-gold/10 text-gold"
-              : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
-          }`}
-          data-testid="feed-tag-all"
-        >
-          Tudo
-        </button>
-        {POPULAR_TAGS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setActiveTag(t.value)}
-            className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.04em] inline-flex items-center gap-1 ${
-              activeTag === t.value
-                ? "border-gold bg-gold/10 text-gold"
-                : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
-            }`}
-            data-testid={`feed-tag-${t.value}`}
-          >
-            <Hash className="w-3 h-3" />
-            {t.label}
-          </button>
-        ))}
-      </div>
+          <FeedPostsView
+            posts={posts}
+            loading={loading}
+            activeTag={activeTag}
+            setActiveTag={setActiveTag}
+            liked={liked}
+            onLike={handleLike}
+            onOpenCreate={handleOpenCreate}
+            columns={columns}
+          />
 
-      {/* Grid */}
-      {loading && posts.length === 0 ? (
-        <div className="py-20 flex items-center justify-center text-zinc-500">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          Carregando feed…
-        </div>
-      ) : posts.length === 0 ? (
-        <EmptyState onCreate={handleOpenCreate} />
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {columns.map((col, ci) => (
-            <div key={ci} className="flex flex-col gap-3 md:gap-4">
-              {col.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  liked={liked.has(post.id)}
-                  onLike={() => handleLike(post)}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <CreatePostModal
-        isOpen={showCreate}
-        onClose={() => setShowCreate(false)}
-        onSubmit={async (payload) => {
-          const res = await authFetch("/feed", {
-            method: "POST",
-            body: JSON.stringify(payload),
-          });
-          if (!res.ok) {
-            let detail;
-            try {
-              const j = await res.json();
-              detail = j?.detail;
-            } catch {
-              /* ignore */
-            }
-            throw new Error(formatApiErrorDetail(detail) || `HTTP ${res.status}`);
-          }
-          const newPost = await res.json();
-          setPosts((arr) => [newPost, ...arr]);
-          setShowCreate(false);
-          toast.success("Publicado no feed");
-        }}
-      />
+          <CreatePostModal
+            isOpen={showCreate}
+            onClose={() => setShowCreate(false)}
+            onSubmit={async (payload) => {
+              const res = await authFetch("/feed", {
+                method: "POST",
+                body: JSON.stringify(payload),
+              });
+              if (!res.ok) {
+                let detail;
+                try {
+                  const j = await res.json();
+                  detail = j?.detail;
+                } catch {
+                  /* ignore */
+                }
+                throw new Error(formatApiErrorDetail(detail) || `HTTP ${res.status}`);
+              }
+              const newPost = await res.json();
+              setPosts((arr) => [newPost, ...arr]);
+              setShowCreate(false);
+              toast.success("Publicado no feed");
+            }}
+          />
         </>
       )}
     </div>

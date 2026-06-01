@@ -1,0 +1,65 @@
+{
+  "summary": "Iter 44 — Frontend-only UI/UX verification for A) MISTURADOR, B) TENDÊNCIAS, C) CALCULADORA, D) FEED. MISTURADOR (/mixer) and FEED (/feed) pass fully. CALCULADORA mostly passes (highlighted Suggested Price OK, tabs render & switch OK, measure shape selector present) but has TWO design gaps. TENDÊNCIAS (/tendencias) has THREE missing items vs spec: the changes appear to have been applied only to the home-page section TrendingPalettes.jsx (swatches, removed hex text, no Como-fazer-modal in spec for that one), while the actual page at /tendencias = Trends.jsx still renders plain hex text under each card, tags are NOT pill-styled, and there is NO 'Como fazer esta cor' modal/button. No JS console errors on any of the 4 routes. No backend testing performed (frontend-only request).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Trends.jsx (/tendencias)", "issue": "Plain hex text still rendered under each trend card (e.g. '#FF6B35 #F7931E #FDC830'). Task B required swatches INSTEAD of plain hex text. Edits were applied to home-section TrendingPalettes.jsx but NOT to the actual /tendencias route component (Trends.jsx, lines 255-259).", "selector": "[data-testid='trend-card']", "priority": "HIGH"},
+      {"component": "Trends.jsx (/tendencias)", "issue": "'Como fazer esta cor' button/modal is COMPLETELY ABSENT from the /tendencias page. No selector with that text found. Task B required a detailed modal.", "selector": "n/a", "priority": "HIGH"},
+      {"component": "Trends.jsx (/tendencias)", "issue": "Tags are NOT pill-styled (they use small zinc-500 #tag boxes with px-2 py-0.5 rounded-sm bg-ink/40). Task B required pill-style tags.", "selector": "[data-testid='trend-card'] span", "priority": "MEDIUM"},
+      {"component": "CalculatorPanel.jsx tabs", "issue": "Tabs render in ALL CAPS (visual) due to Tailwind `uppercase` class on TabBtn — task C required sentence case display. Source text is sentence case ('Proporções', 'Precificação', 'Medidas 3D') but CSS transforms to 'PROPORÇÕES', 'PRECIFICAÇÃO', 'MEDIDAS 3D'.", "selector": "[data-testid='calc-tab-pricing']", "priority": "MEDIUM"},
+      {"component": "CalculatorPanel.jsx Medidas 3D (mobile 390px)", "issue": "3D shape selector still renders as a wrap-grid of 7 buttons (Cilindro / Esfera / Semiesfera / Quadrado / Retângulo / Cubo / Anel Toro) on small viewports. Task C required these to COLLAPSE into a responsive dropdown on smaller widths.", "selector": "[data-testid='measure-shape-box']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/tendencias", "issues": ["Plain monospace hex codes shown alongside color stripe — duplicates visual info already shown by the stripe. Should be removed or replaced with click-to-copy swatch chips."]},
+      {"screen": "/calculadora tabs", "issues": ["All-caps display fights with the 'sentence case' spec; cognitive load higher and inconsistent with body labels which use Title/Sentence case."]}
+    ]
+  },
+  "verified_passing": [
+    "MISTURADOR: ΔE tooltip present (data-testid='mixer-delta-e-info') with full Portuguese explanatory title.",
+    "MISTURADOR: 'RGB linear' string NOT present anywhere in page (removed).",
+    "MISTURADOR: Spectrum strip rendered with 11 stops (data-testid='mixer-stop-0..100'); each has hover title and on click triggers a toast containing 'copiado' (react-hot-toast, not sonner — acceptable equivalent).",
+    "MISTURADOR: Empty/instructional text OK ('Veja como duas cores se fundem no espaço perceptual OKLab…').",
+    "CALCULADORA: Calculator.jsx is 63 lines — thin wrapper that imports and renders CalculatorPanel. ✓",
+    "CALCULADORA: Suggested Price card highlighted with bg-gradient-to-br from-gold-soft/40 to-gold/30 border border-gold/30 (data-testid='result-preco-venda'). Computed value, lucro and margem real visible. ✓",
+    "CALCULADORA: Tabs switch correctly (Proporções → Precificação → Medidas 3D), all data-testids present and clickable. ✓",
+    "FEED: FeedPostsView imported and rendered by Feed.jsx (verified via grep + DOM). Posts grid loads (Geode dourada pick-da-semana visible), tags row renders, no console errors, no error-class elements."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Apply Task B edits to /app/frontend/src/pages/Trends.jsx (NOT just /app/frontend/src/components/TrendingPalettes.jsx). The /tendencias route uses Trends.jsx — confirm in /app/frontend/src/App.js line 94. Specifically: (a) remove the plain-hex .map at Trends.jsx:255-259 OR convert each to a click-to-copy swatch chip; (b) restyle the tag spans (Trends.jsx:247-253) into pill chips (rounded-full, distinct padding); (c) add a 'Como fazer esta cor' button per trend card that opens a Dialog/modal with proportions/recipe content.",
+    "Task C — Calculator tabs: remove the `uppercase` Tailwind class from TabBtn (CalculatorPanel.jsx:62) or replace the label strings so visual matches the 'sentence case' spec.",
+    "Task C — Medidas 3D mobile: wrap the 7-shape selector in a `<select>` (or shadcn Select) below the `md:` breakpoint while keeping the button grid for `md:` and up. Currently it's always a grid of buttons (data-testid='measure-shape-box').",
+    "Optional: standardize on `sonner` for new toasts as mentioned in the request — Mixer currently uses react-hot-toast and works fine; if sonner is desired for visual consistency, migrate but be aware <Toaster /> mount point must be updated globally."
+  ],
+  "critical_code_review_comments": [
+    "Two components named almost identically (Trends.jsx page vs TrendingPalettes.jsx home-section) are easy to confuse — earlier agent appears to have edited the wrong one for /tendencias. Suggest renaming TrendingPalettes.jsx → HomeTrendingPalettes.jsx for clarity.",
+    "CalculatorPanel.jsx is 570 lines and holds Volume + Pricing + Measure modes plus their sub-components. Borderline; consider splitting into VolumeMode.jsx, PricingMode.jsx, MeasureMode.jsx files to keep <300 lines per file.",
+    "Mixer.jsx spectrum block uses data-testid='mixer-spectrum' but the spec text 'Clique em qualquer stop para copiar o HEX.' is hardcoded; consider extracting interactive spectrum into <PerceptualSpectrum/> for reuse on /studio.",
+    "Feed.jsx → FeedPostsView prop-passing was not deeply audited, but DOM render is clean and no console errors observed; main agent should still verify props (posts, loading, onLike, onPublish) survive when Feed.jsx switches view (posts vs podcasts)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested)", "frontend": "62% — Mixer 100%, Feed 100%, Calculator 60% (3/5), Trends 25% (1/4)"},
+  "test_credentials": "Not used (all 4 routes are public per /app/memory/test_credentials.md).",
+  "seed_data_creation": "None.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "If main agent re-applies Task B edits to Trends.jsx, retest these specifically on /tendencias: (1) no `#......` hex regex matches in [data-testid='trend-card'] text; (2) presence of a button containing 'Como fazer esta cor' that opens a Dialog with role=dialog; (3) tag <span>s use rounded-full class. For Task C, set viewport to 390x844 and confirm [data-testid='measure-shape-box'] is a <select> not <button>; also confirm tab text rendering casing. Mixer and Feed are stable — no need to retest unless their files change. Skip onboarding via localStorage.setItem('lindart.onboarding.v1.completed','1') and 'lindart.tour.v1.seen'='1'.",
+  "rca of the issue": {
+    "tendencias_gap": {
+      "root_cause": "The previous agent's mcp_search_replace edits were applied to /app/frontend/src/components/TrendingPalettes.jsx (which is the home-page 'Em alta' section), NOT to /app/frontend/src/pages/Trends.jsx which is the component actually mounted at the /tendencias and /trends routes (App.js lines 93-94). Both files use similar imagery/tags and were easy to confuse.",
+      "reproduction": "Visit /tendencias → inspect any [data-testid='trend-card'] → see <div class='flex items-center gap-2 text-[11px] text-zinc-500 font-mono'> rendering c.toUpperCase() for each hex (Trends.jsx:255-259).",
+      "mitigation": "Apply the same swatch + pill-tag + Como-fazer-modal pattern to Trends.jsx. The data shape is `t.colors` (array of hex strings) and `t.tags` (array of strings) — same as before."
+    },
+    "calc_tabs_casing": {
+      "root_cause": "Tailwind utility `uppercase` is applied on the TabBtn root (CalculatorPanel.jsx:62), overriding the sentence-case label strings.",
+      "reproduction": "Open /calculadora → inspect any [data-testid^='calc-tab-'] → computed textTransform=uppercase.",
+      "mitigation": "Drop `uppercase` from the TabBtn className (or change to `normal-case`)."
+    },
+    "calc_measure_no_responsive_dropdown": {
+      "root_cause": "MeasureMode renders a flex-wrap grid of 7 buttons unconditionally. There is no mobile breakpoint conditional that swaps to a <select>.",
+      "reproduction": "Set viewport to 390x844 → /calculadora → click Medidas 3D tab → see 7 inline shape buttons instead of dropdown.",
+      "mitigation": "Wrap the shape switcher: render <select> when window width < md; render the grid otherwise. Or use shadcn Select with `md:hidden` / `hidden md:flex` siblings."
+    }
+  }
+}

@@ -33,9 +33,9 @@ export default function CalculatorPanel({ mode: modeProp, onModeChange, initialM
   return (
     <div data-testid="calculator-panel">
       <div className="flex gap-2 mb-6 flex-wrap" role="tablist">
-        <TabBtn active={mode === "volume"} onClick={() => setMode("volume")} icon={CalcIcon} label="PROPORÇÕES" testid="calc-tab-volume" />
-        <TabBtn active={mode === "pricing"} onClick={() => setMode("pricing")} icon={DollarSign} label="PRECIFICAÇÃO" testid="calc-tab-pricing" />
-        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="MEDIDAS 3D" testid="calc-tab-measure" />
+        <TabBtn active={mode === "volume"} onClick={() => setMode("volume")} icon={CalcIcon} label="Proporções" testid="calc-tab-volume" />
+        <TabBtn active={mode === "pricing"} onClick={() => setMode("pricing")} icon={DollarSign} label="Precificação" testid="calc-tab-pricing" />
+        <TabBtn active={mode === "measure"} onClick={() => setMode("measure")} icon={Ruler} label="Medidas 3D" testid="calc-tab-measure" />
       </div>
 
       {mode === "volume" && <VolumeMode compact={compact} />}
