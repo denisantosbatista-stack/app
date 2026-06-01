@@ -140,7 +140,12 @@ export default function MixerSwirl({ colorA, colorB }) {
       }
       if (data.status === "error") {
         setLoadingVideo(false);
-        toast.error(`Falha IA: ${data.detail || "erro"}`, { id: tid });
+        const detail = data.detail || "erro";
+        const msg =
+          data.http_status === 402 || /saldo|balance|locked/i.test(detail)
+            ? detail
+            : `Falha IA: ${detail}`;
+        toast.error(msg, { id: tid, duration: 6000 });
         return;
       }
       // ainda processando — agenda próximo poll (até ~5 min = 60 tentativas a cada 5s)

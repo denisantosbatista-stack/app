@@ -201,7 +201,26 @@ def _run_svd_job(job_id: str, color_a: str, color_b: str, duration: int, size: t
         logger.info(f"SVD job {job_id} ok: bytes={len(video_bytes)}")
     except Exception as e:
         logger.exception(f"SVD job {job_id} error")
-        _svd_set_job_error(job_id, f"Falha SVD 2.0: {e}", status=502)
+        err_text = str(e)
+        # Detecta exaustão de saldo / conta bloqueada no fal.ai e devolve mensagem PT-BR amigável.
+        # httpx.HTTPStatusError contém o body da resposta em e.response.text — onde fica o
+        # "Exhausted balance" do fal.ai. str(e) só traz a linha "Client error '403 Forbidden'".
+        resp_text = ""
+        try:
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                resp_text = getattr(resp, "text", "") or ""
+        except Exception:  # noqa: BLE001
+            resp_text = ""
+        combined = f"{err_text} {resp_text}"
+        if "Exhausted balance" in combined or "User is locked" in combined:
+            _svd_set_job_error(
+                job_id,
+                "Saldo da conta fal.ai esgotado. Recarregue em fal.ai/dashboard/billing para gerar vídeos com SVD 2.0.",
+                status=402,
+            )
+        else:
+            _svd_set_job_error(job_id, f"Falha SVD 2.0: {e}", status=502)
 
 
 def _run_welcome_video_job() -> None:
@@ -247,7 +266,22 @@ def _run_welcome_video_job() -> None:
         logger.info(f"Welcome video (SVD 2.0) saved: {WELCOME_VIDEO_PATH} ({len(video_bytes)} bytes)")
     except Exception as e:
         logger.exception("welcome video generation failed")
-        _WELCOME_JOB = {"status": "error", "error": str(e)[:200]}
+        err_text = str(e)
+        resp_text = ""
+        try:
+            resp = getattr(e, "response", None)
+            if resp is not None:
+                resp_text = getattr(resp, "text", "") or ""
+        except Exception:  # noqa: BLE001
+            resp_text = ""
+        combined = f"{err_text} {resp_text}"
+        if "Exhausted balance" in combined or "User is locked" in combined:
+            _WELCOME_JOB = {
+                "status": "error",
+                "error": "Saldo da conta fal.ai esgotado. Recarregue em fal.ai/dashboard/billing.",
+            }
+        else:
+            _WELCOME_JOB = {"status": "error", "error": err_text[:200]}
 
 
 router = APIRouter(prefix="/api", tags=["svd-video"])

@@ -1,0 +1,37 @@
+{
+  "summary": "Iter 41 — Validação de (a) pipeline Fal.ai SVD, (b) NotifyMeModal, (c) endpoints públicos /api/feed e /api/marketplace via authFetch. Backend: 8/8 pytest passou. Frontend: NotifyMeModal E2E completo no /studio (modal abre, form preenche, submit → tela 'Você está na lista' com data-testid notify-me-success). /feed e /marketplace renderizam cards sem 401/'Sessão expirada'. SVD: /api/ai/generate-video aceita job, /api/ai/video-status retorna status='error' http_status=402 com detail PT-BR 'Saldo da conta fal.ai esgotado…' (comportamento esperado conforme contexto).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter41_leads_svd_feed.py",
+    "/app/test_reports/pytest/iteration_41.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "leads.py idempotência: cobre o caso email+interest duplicado (already_subscribed=true). Bom. Validação Pydantic de email (EmailStr) e name min_length=1 estão presentes — retornaram 422 como esperado.",
+    "svd_video.py captura corretamente o erro 'Exhausted balance' do fal.ai via e.response.text e devolve mensagem PT-BR amigável com http_status=402. Não vaza 'Client error 403 Forbidden'. UX de erro está bem tratada.",
+    "NotifyMeModal.jsx — fluxo completo OK. Toast 'Pronto! Vamos te avisar quando lançar' + tela de sucesso com check verde. data-testids todos presentes e funcionais (modal, name-input, email-input, interest-select, message-input, submit-btn, success).",
+    "PieceSelectors.jsx posiciona o CTA 'Mais produções em breve · me avise' (piece-coming-soon) logo após a grade de peças no Studio — visível sem scroll grande. Boa descoberta de feature.",
+    "authFetch (utils/api.js) trabalha em modo anônimo para endpoints públicos (/api/feed, /api/marketplace) sem disparar redirect/'Sessão expirada' — refatoração validada."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter41_leads_svd_feed.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8)",
+    "frontend": "100% (3/3 fluxos: NotifyMeModal, /feed, /marketplace)"
+  },
+  "test_credentials": "Nenhum login necessário (todos endpoints testados são públicos). admin@lindart.app / Lindart#2026 disponível em backend/.env caso precise.",
+  "seed_data_creation": "Lead criado em MongoDB: lead_notifications {email: qabot+iter41@lindartmail.io, interest: anel} (pytest) e {email: qabot+testagent@lindartmail.io, interest: anel} (Playwright E2E).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Todos os 3 critérios (a/b/c) GREEN. Fal.ai 402 saldo esgotado é o comportamento ESPERADO neste ambiente (account locked). Para testar fluxo de sucesso do SVD seria preciso recarregar saldo na conta fal.ai. Trigger do NotifyMeModal: rota /studio, data-testid='piece-coming-soon' (texto 'Mais produções em breve · me avise'). data-testids do modal: notify-me-modal, notify-me-name-input, notify-me-email-input, notify-me-interest-select, notify-me-message-input, notify-me-submit-btn, notify-me-success, notify-me-done-btn (FECHAR).",
+  "rca of the issue": "n/a — iteração de validação. Nenhum bug encontrado. As 3 features funcionam end-to-end conforme esperado. A mensagem 'Saldo da conta fal.ai esgotado' com http_status=402 confirma que (1) a key FAL_KEY está conectada e o cliente alcança a API fal.ai, e (2) o tratamento de erro PT-BR está sendo aplicado corretamente em svd_video.py (não vaza 'Client error 403 Forbidden')."
+}
