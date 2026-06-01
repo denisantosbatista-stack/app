@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { Heart, Save, Download, Share2, History, MoreHorizontal } from "lucide-react";
+import { Heart, Save, Download, Share2, History, MoreHorizontal, ChevronDown, Sparkles } from "lucide-react";
 import { PRESET_PALETTES, STYLES, PIECES } from "@/data/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteGrid from "@/components/PaletteGrid";
@@ -48,46 +48,6 @@ export default function Studio() {
       window.history.replaceState({}, "", window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Atalhos de teclado: G (gerar), S (salvar), E (exportar), F (favoritar), ? (ajuda)
-  useEffect(() => {
-    const isTypingTarget = (el) => {
-      if (!el) return false;
-      const tag = el.tagName?.toLowerCase();
-      return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
-    };
-    const handler = (e) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isTypingTarget(e.target)) return;
-      const k = e.key.toLowerCase();
-      if (k === "g") {
-        e.preventDefault();
-        const input = document.querySelector('[data-testid="ai-prompt-input"]');
-        if (input) {
-          input.focus();
-          input.scrollIntoView({ behavior: "smooth", block: "center" });
-          toast("Descreva sua paleta e Enter para gerar", { icon: "✨", duration: 2000 });
-        }
-      } else if (k === "s") {
-        e.preventDefault();
-        document.querySelector('[data-testid="save-palette-btn"]')?.click();
-      } else if (k === "e") {
-        e.preventDefault();
-        document.querySelector('[data-testid="export-palette-btn"]')?.click();
-      } else if (k === "f") {
-        e.preventDefault();
-        document.querySelector('[data-testid="fav-palette-btn"]')?.click();
-      } else if (k === "?" || (e.shiftKey && k === "/")) {
-        e.preventDefault();
-        toast(
-          "Atalhos: G gerar · S salvar · E exportar · F favoritar",
-          { icon: "⌨️", duration: 4000 }
-        );
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   const allPalettes = useMemo(
@@ -228,7 +188,7 @@ export default function Studio() {
       </div>
 
       <div className="mt-10">
-        <MarketingPanel palette={activePalette} />
+        <MarketingAccordion palette={activePalette} />
       </div>
 
       <ExportModal
@@ -350,6 +310,32 @@ function HeaderButton({ onClick, icon: Icon, label, testid, primary }) {
     >
       <Icon className="w-3 h-3" /> {label}
     </button>
+  );
+}
+
+function MarketingAccordion({ palette }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="glass rounded-sm border border-black/[0.06]" data-testid="marketing-accordion">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between px-5 py-4 text-left"
+        data-testid="marketing-accordion-toggle"
+      >
+        <span className="inline-flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-gold" />
+          <span className="label-eyebrow text-gold">Gerar legenda para redes sociais</span>
+        </span>
+        <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5">
+          <MarketingPanel palette={palette} />
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -123,19 +123,6 @@ export default function MockupShowcase() {
               </div>
             </div>
 
-            {/* Badge EXEMPLO — conteúdo curado de demonstração */}
-            <span
-              className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30 z-10 pointer-events-none"
-              style={{
-                background: "rgba(212, 175, 55, 0.85)",
-                color: "#FFFFFF",
-                textShadow: "0 1px 1px rgba(0,0,0,0.25)",
-              }}
-              data-testid={`mockup-exemplo-badge-${m.id}`}
-            >
-              Exemplo
-            </span>
-
             <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between group-hover:opacity-0 transition-opacity duration-500">
               <div>
                 <div className="text-[10px] tracking-[0.32em] uppercase text-gold mb-1">

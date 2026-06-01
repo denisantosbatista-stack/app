@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Beaker, Copy, ArrowLeftRight, Check, Sparkles, Wand2, Loader2 } from "lucide-react";
+import { Beaker, Copy, ArrowLeftRight, Check, Sparkles, Wand2, Loader2, Info } from "lucide-react";
 import toast from "react-hot-toast";
-import { mixOklab, mixRgbLinear, deltaEOk } from "@/utils/lab";
+import { mixOklab, deltaEOk } from "@/utils/lab";
 import { copyToClipboard, isDark } from "@/utils/color";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import MixerSwirl from "@/components/MixerSwirl";
@@ -27,7 +27,6 @@ export default function Mixer() {
 
   const t = 1 - ratio / 100;
   const mixedPerceptual = useMemo(() => mixOklab(colorA, colorB, t), [colorA, colorB, t]);
-  const mixedLinear = useMemo(() => mixRgbLinear(colorA, colorB, t), [colorA, colorB, t]);
   const deltaE = useMemo(() => deltaEOk(colorA, colorB), [colorA, colorB]);
 
   // Gera 11 stops (0%, 10%, …, 100%) para mostrar o gradiente perceptual real
@@ -195,21 +194,22 @@ export default function Mixer() {
           <div className="relative space-y-5">
             <div className="flex items-center justify-between">
               <span className="label-eyebrow text-gold">Resultado da mistura</span>
-              <span className="text-[10px] font-mono text-zinc-500">ΔE ≈ {deltaE.toFixed(1)}</span>
+              <span
+                className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-600 cursor-help"
+                title={`ΔE ≈ ${deltaE.toFixed(1)} — diferença perceptual entre Cor A e Cor B (CIELAB ΔE76 sobre OKLab). Quanto maior, mais contrastante.`}
+                data-testid="mixer-delta-e-info"
+                aria-label={`Diferença perceptual: Delta E ${deltaE.toFixed(1)}`}
+              >
+                <Info className="w-3.5 h-3.5" />
+              </span>
             </div>
 
             <MixCard
-              label="OKLab (perceptual)"
+              label="Mistura"
               hex={mixedPerceptual}
               onCopy={() => copyHex(mixedPerceptual)}
               accent
               testid="mixer-result-oklab"
-            />
-            <MixCard
-              label="RGB linear (referência)"
-              hex={mixedLinear}
-              onCopy={() => copyHex(mixedLinear)}
-              testid="mixer-result-rgb"
             />
 
             <button
@@ -249,18 +249,10 @@ export default function Mixer() {
               onClick={() => copyHex(s.hex)}
               className="group relative aspect-[3/4]"
               style={{ background: s.hex }}
-              title={`${s.pct}% B · ${s.hex}`}
+              title={`${s.pct}% B · ${s.hex.toUpperCase()}`}
+              aria-label={`${s.pct}% mistura B · ${s.hex.toUpperCase()}`}
               data-testid={`mixer-stop-${s.pct}`}
-            >
-              <div className={`absolute inset-x-0 bottom-1 text-center text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity ${
-                isDark(s.hex) ? "text-white" : "text-ink"
-              }`}>
-                {s.hex.toUpperCase()}
-              </div>
-              <div className={`absolute top-1 left-1 text-[9px] font-mono ${isDark(s.hex) ? "text-white/70" : "text-ink/70"}`}>
-                {s.pct}
-              </div>
-            </button>
+            />
           ))}
         </div>
         <p className="text-[11px] text-zinc-500 mt-3">
@@ -320,7 +312,7 @@ function MixCard({ label, hex, onCopy, accent, testid }) {
   const dark = isDark(hex);
   return (
     <div
-      className={`p-4 rounded-sm border ${accent ? "border-gold/30" : "border-black/[0.06]"}`}
+      className={`group p-4 rounded-sm border ${accent ? "border-gold/30" : "border-black/[0.06]"}`}
       style={{ background: hex }}
       data-testid={testid}
     >
@@ -329,7 +321,10 @@ function MixCard({ label, hex, onCopy, accent, testid }) {
           <div className={`text-[10px] uppercase tracking-[0.22em] ${dark ? "text-white/70" : "text-ink/70"}`}>
             {label}
           </div>
-          <div className={`font-display text-3xl mt-1 ${dark ? "text-white" : "text-ink"}`}>
+          <div
+            className={`font-display text-3xl mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${dark ? "text-white" : "text-ink"}`}
+            data-testid={`${testid}-hex`}
+          >
             {hex.toUpperCase()}
           </div>
         </div>

@@ -40,7 +40,21 @@ const getCategoryLegend = (style) => {
 };
 
 export default function TrendingPalettes() {
-  const featured = PRESET_PALETTES.slice(0, 3);
+  const featured = (() => {
+    const top3 = PRESET_PALETTES.slice(0, 3);
+    const geodoIdx = top3.findIndex((p) => p.id === "geodo-imperial");
+    if (geodoIdx > 0) {
+      const reordered = [...top3];
+      const [geodo] = reordered.splice(geodoIdx, 1);
+      reordered.unshift(geodo);
+      return reordered;
+    }
+    if (geodoIdx === -1) {
+      const fromAll = PRESET_PALETTES.find((p) => p.id === "geodo-imperial");
+      if (fromAll) return [fromAll, ...top3.slice(0, 2)];
+    }
+    return top3;
+  })();
   const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState(null);
 
@@ -121,10 +135,11 @@ export default function TrendingPalettes() {
         }}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
       >
-        {featured.map((p) => {
+        {featured.map((p, idx) => {
           const backdrop = PALETTE_BACKDROPS[p.id];
           const isSelected = selectedId === p.id;
           const legend = getCategoryLegend(p.style);
+          const isFeatured = idx === 0;
           return (
             <motion.div
               key={p.id}
@@ -171,6 +186,15 @@ export default function TrendingPalettes() {
                   <div className="absolute top-3 right-3 text-[9px] tracking-[0.22em] uppercase px-2 py-1 bg-white/85 backdrop-blur-sm text-ink-text rounded-sm">
                     {p.style}
                   </div>
+                  {isFeatured && (
+                    <div
+                      className="absolute top-3 left-3 inline-flex items-center gap-1.5 text-[9px] tracking-[0.22em] uppercase px-2.5 py-1 bg-gold text-ink rounded-sm font-semibold shadow-gold"
+                      data-testid={`trending-featured-badge-${p.id}`}
+                    >
+                      <Flame className="w-3 h-3" />
+                      Em destaque
+                    </div>
+                  )}
                   {/* A1 — Color swatches strip SEM exibição de hex */}
                   <div className="absolute inset-x-0 bottom-0 flex h-10">
                     {p.colors.map((c) => (
