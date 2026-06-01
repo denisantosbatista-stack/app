@@ -2,79 +2,6 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { MOCKUPS } from "@/data/palettes";
 
-// Mapeamento de "mármore CSS" por id do mockup — substitui as imagens externas
-// (que causavam riscos de direitos autorais / carregamento quebrado) por
-// gradientes radiais e cônicos representando veios reais de mármore.
-//
-// Cada paleta:
-// - base: cor predominante da pedra
-// - vein: cor dos veios metálicos (ouro / prata)
-// - accent: tom secundário usado nas manchas
-const MARBLE_STYLES = {
-  clock: {
-    base: "#1A1A1A",
-    vein: "#D4AF37",
-    accent: "#3A2E1A",
-  },
-  tray: {
-    base: "#F4F1EC",
-    vein: "#C0C0C0",
-    accent: "#E5DCD0",
-  },
-  geode: {
-    base: "#1B3A6B",
-    vein: "#D4AF37",
-    accent: "#0E2347",
-  },
-};
-
-function MarbleSurface({ id }) {
-  const { base, vein, accent } =
-    MARBLE_STYLES[id] || MARBLE_STYLES.clock;
-
-  // Composição multi-camadas: fundo sólido + manchas + veios diagonais.
-  // Usamos `conic-gradient` para simular veios irregulares e radial para profundidade.
-  const background = [
-    // veios finos diagonais (ouro/prata)
-    `linear-gradient(118deg, transparent 0%, transparent 38%, ${vein}55 39%, ${vein}AA 40%, ${vein}55 41%, transparent 42%, transparent 62%, ${vein}33 63%, ${vein}77 64%, transparent 65%, transparent 100%)`,
-    // veio largo secundário
-    `linear-gradient(72deg, transparent 0%, transparent 55%, ${vein}22 56%, ${vein}55 58%, ${vein}22 60%, transparent 61%, transparent 100%)`,
-    // manchas claras/escuras
-    `radial-gradient(ellipse 60% 50% at 22% 28%, ${accent}99, transparent 60%)`,
-    `radial-gradient(ellipse 70% 55% at 78% 75%, ${accent}77, transparent 65%)`,
-    `radial-gradient(ellipse 45% 40% at 50% 90%, ${vein}22, transparent 70%)`,
-    // base sólida
-    `linear-gradient(135deg, ${base} 0%, ${base} 100%)`,
-  ].join(", ");
-
-  return (
-    <div
-      className="absolute inset-0 transition-transform duration-[1400ms] ease-out group-hover:scale-110"
-      style={{ background }}
-      aria-hidden="true"
-    >
-      {/* brilho de polimento sutil */}
-      <div
-        className="absolute inset-0 mix-blend-overlay opacity-70"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255,255,255,0.45) 0%, transparent 55%)",
-        }}
-      />
-      {/* granulação fina (textura de pedra) */}
-      <div
-        className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(rgba(255,255,255,0.6) 0.5px, transparent 0.5px), radial-gradient(rgba(0,0,0,0.3) 0.5px, transparent 0.5px)",
-          backgroundSize: "3px 3px, 5px 5px",
-          backgroundPosition: "0 0, 1px 2px",
-        }}
-      />
-    </div>
-  );
-}
-
 export default function MockupShowcase() {
   const navigate = useNavigate();
 
@@ -165,7 +92,14 @@ export default function MockupShowcase() {
             data-testid={`mockup-${m.id}`}
             aria-label={`Abrir Studio — ${m.label}`}
           >
-            <MarbleSurface id={m.id} />
+            {/* Imagem real da peça de resina */}
+            <img
+              src={m.url}
+              alt={m.label}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-110"
+              data-testid={`mockup-image-${m.id}`}
+            />
 
             {/* Overlay base (sempre visível, suave) */}
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
