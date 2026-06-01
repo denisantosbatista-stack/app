@@ -103,24 +103,36 @@ function PreviewCanvas({ palette, shape, label, testid }) {
             gl={{ toneMappingExposure: 0.95 }}
             frameloop="demand"
           >
-            <color attach="background" args={["#0a0a0c"]} />
-            <ambientLight intensity={0.35} />
-            <hemisphereLight args={["#ffffff", "#1a1a1f", 0.25]} />
-            <directionalLight position={[2, 3, 2]} intensity={0.9} />
-            <directionalLight position={[-3, 2, -1]} intensity={0.4} color="#D4AF37" />
-            <pointLight position={[0, 2, 2]} intensity={0.5} />
-            <Suspense fallback={null}>
-              <Environment preset="studio" background={false} environmentIntensity={0.45} />
-              {/* `key` força remount quando paleta muda, garantindo atualização instantânea */}
-              <Piece
-                key={`${shape}-${palette?.id || "none"}`}
-                shape={shape}
-                palette={palette}
-                textureUrl={null}
-              />
-            </Suspense>
-            <ContactShadows position={[0, -1.2, 0]} opacity={0.45} scale={6} blur={2.4} far={3} />
-            <OrbitControls enablePan={false} enableZoom minDistance={2.4} maxDistance={5} />
+            {/*
+              TODOS os filhos do Canvas são criados via React.createElement (h)
+              em vez de JSX. Motivo: o plugin visual-edits do Emergent injeta
+              atributos x-line-number / x-file-name em qualquer elemento JSX.
+              Tanto intrínsecos do R3F (color, ambientLight, etc.) quanto
+              wrappers do drei (Environment, OrbitControls, ContactShadows)
+              repassam essas props para o reconciler R3F via <primitive>, o
+              que dispara erros em applyProps ("Cannot set x-line-number").
+              Usar createElement diretamente impede o plugin de tocar nestes
+              nós, mantendo a cena renderizando limpa.
+            */}
+            {h("color", { attach: "background", args: ["#0a0a0c"] })}
+            {h("ambientLight", { intensity: 0.35 })}
+            {h("hemisphereLight", { args: ["#ffffff", "#1a1a1f", 0.25] })}
+            {h("directionalLight", { position: [2, 3, 2], intensity: 0.9 })}
+            {h("directionalLight", { position: [-3, 2, -1], intensity: 0.4, color: "#D4AF37" })}
+            {h("pointLight", { position: [0, 2, 2], intensity: 0.5 })}
+            {h(
+              Suspense,
+              { fallback: null },
+              h(Environment, { preset: "studio", background: false, environmentIntensity: 0.45 }),
+              h(Piece, {
+                key: `${shape}-${palette?.id || "none"}`,
+                shape,
+                palette,
+                textureUrl: null,
+              })
+            )}
+            {h(ContactShadows, { position: [0, -1.2, 0], opacity: 0.45, scale: 6, blur: 2.4, far: 3 })}
+            {h(OrbitControls, { enablePan: false, enableZoom: true, minDistance: 2.4, maxDistance: 5 })}
           </Canvas>
         </ThreeBoundary>
       )}
