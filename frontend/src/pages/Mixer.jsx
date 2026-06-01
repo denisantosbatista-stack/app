@@ -62,7 +62,7 @@ export default function Mixer() {
       const c2 = mixOklab(colorA, colorB, 2 / 3).toUpperCase();
       const c3 = colorB.toUpperCase();
       const payload = {
-        name: `Mistura ${c0} × ${c3}`,
+        name: `Mistura Personalizada`,
         description: "Paleta criada no Misturador perceptual (OKLab)",
         colors: [
           { hex: c0, name: "Cor A", role: "principal" },

@@ -472,7 +472,7 @@ export default function Productions3D({ palette, activePiece }) {
           ) : (
             <Wand2 className="w-4 h-4" />
           )}
-          {loading ? `Renderizando… ${Math.round(progress)}%` : "✨ Gerar render fotorrealista"}
+          {loading ? `Renderizando… ${Math.round(progress)}%` : `✨ ${activePiece?.label || "Peça"} realista`}
         </button>
 
         <div className="mt-4 flex items-start gap-2 text-xs text-zinc-300 leading-relaxed" data-testid="prod3d-instructions">

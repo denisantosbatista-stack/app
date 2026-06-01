@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { Heart, Save, Download, Share2, History } from "lucide-react";
+import { Heart, Save, Download, Share2, History, MoreHorizontal } from "lucide-react";
 import { PRESET_PALETTES, STYLES, PIECES } from "@/data/palettes";
 import { usePaletteStore } from "@/store/usePaletteStore";
 import PaletteGrid from "@/components/PaletteGrid";
@@ -247,27 +247,74 @@ export default function Studio() {
 }
 
 function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport, onShare, onVersions, isSaved }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [menuOpen]);
+
+  // Sanitiza nome: nomes legados "Mistura #XXXXXX × #XXXXXX" → "Mistura Personalizada"
+  const displayName = /Mistura\s+#[0-9A-Fa-f]{3,6}/.test(palette.name)
+    ? "Mistura Personalizada"
+    : palette.name;
+
+  const runAndClose = (fn) => () => {
+    setMenuOpen(false);
+    fn?.();
+  };
+
   return (
     <div className="glass rounded-sm p-5" ref={captureRef} data-testid="active-palette-display">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <div className="label-eyebrow text-gold">Paleta ativa</div>
-          <h3 className="font-display text-3xl tracking-tight mt-1">{palette.name}</h3>
+          <h3 className="font-display text-3xl tracking-tight mt-1">{displayName}</h3>
           <p className="text-zinc-600 text-sm">{palette.description}</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <HeaderButton onClick={onSave} icon={Save} label="Salvar" testid="save-palette-btn" />
-          <HeaderButton onClick={onFavorite} icon={Heart} label="Favoritar" testid="fav-palette-btn" />
-          {isSaved && (
-            <HeaderButton
-              onClick={onVersions}
-              icon={History}
-              label="Versões"
-              testid="versions-palette-btn"
-            />
-          )}
-          <HeaderButton onClick={onShare} icon={Share2} label="Compartilhar" testid="share-palette-btn" />
+        <div className="flex gap-2 items-center" ref={menuRef}>
           <HeaderButton onClick={onExport} icon={Download} label="Exportar" testid="export-palette-btn" primary />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="btn-outline-gold px-3 py-2 rounded-sm text-[10px] uppercase tracking-[0.18em] inline-flex items-center gap-1.5"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              aria-label="Mais ações"
+              data-testid="palette-actions-menu-btn"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
+            {menuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-2 z-30 min-w-[180px] glass rounded-sm border border-black/10 shadow-lg py-1"
+                data-testid="palette-actions-menu"
+              >
+                <MenuItem icon={Save} label="Salvar" onClick={runAndClose(onSave)} testid="save-palette-btn" />
+                <MenuItem icon={Heart} label="Favoritar" onClick={runAndClose(onFavorite)} testid="fav-palette-btn" />
+                {isSaved && (
+                  <MenuItem icon={History} label="Versões" onClick={runAndClose(onVersions)} testid="versions-palette-btn" />
+                )}
+                <MenuItem icon={Share2} label="Compartilhar" onClick={runAndClose(onShare)} testid="share-palette-btn" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="grid grid-cols-4 gap-2">
@@ -276,6 +323,20 @@ function ActivePaletteHeader({ palette, captureRef, onSave, onFavorite, onExport
         ))}
       </div>
     </div>
+  );
+}
+
+function MenuItem({ icon: Icon, label, onClick, testid }) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className="w-full px-3 py-2 text-left text-[11px] uppercase tracking-[0.18em] text-zinc-700 hover:bg-gold/15 hover:text-ink-text inline-flex items-center gap-2"
+      data-testid={testid}
+    >
+      <Icon className="w-3.5 h-3.5" /> {label}
+    </button>
   );
 }
 
