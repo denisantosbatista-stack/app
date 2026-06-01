@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { HERO_BG, PRESET_PALETTES } from "@/data/palettes";
 import ResinVisualizer from "@/components/ResinVisualizer";
-import { ArrowRight, Calculator as CalcIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Palette, Box, Download } from "lucide-react";
 
 const STATS = [
   { v: "12+", l: "Paletas premium" },
@@ -144,17 +144,51 @@ export default function Hero() {
                 </motion.span>
               </Link>
             </motion.div>
-            <motion.div whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 320, damping: 22 }}>
-              <Link
-                to="/calculator"
-                className="px-6 py-3.5 rounded-sm text-xs tracking-[0.22em] uppercase inline-flex items-center justify-center gap-2 border border-gold-hover/50 text-gold-hover bg-black/30 backdrop-blur-md hover:bg-black/40 transition-colors duration-500"
-                data-testid="hero-cta-calc"
-              >
-                <CalcIcon className="w-4 h-4" />
-                Calcular proporções
-              </Link>
-            </motion.div>
           </motion.div>
+
+          {/* Mini-steps — fluxo em 3 etapas (A4) */}
+          <motion.ol
+            variants={{
+              hidden: {},
+              visible: { transition: { delayChildren: 0.55, staggerChildren: 0.12 } },
+            }}
+            initial="hidden"
+            animate="visible"
+            className="mt-7 md:mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 text-[11px] md:text-xs tracking-[0.18em] uppercase text-zinc-200"
+            data-testid="hero-mini-steps"
+          >
+            {[
+              { icon: Palette, label: "Escolha a paleta", testid: "hero-step-1" },
+              { icon: Box, label: "Visualize na peça", testid: "hero-step-2" },
+              { icon: Download, label: "Exporte em alta", testid: "hero-step-3" },
+            ].map((step, idx) => (
+              <motion.li
+                key={step.label}
+                variants={{
+                  hidden: { opacity: 0, x: -10, filter: "blur(6px)" },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    filter: "blur(0px)",
+                    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                  },
+                }}
+                className="flex items-center gap-2.5"
+                data-testid={step.testid}
+              >
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-gold-hover/45 bg-black/40 backdrop-blur-sm text-gold-hover">
+                  <step.icon className="w-3.5 h-3.5" strokeWidth={1.6} />
+                </span>
+                <span className="text-bone/90">
+                  <span className="text-gold-hover/70 mr-1.5">0{idx + 1}</span>
+                  {step.label}
+                </span>
+                {idx < 2 && (
+                  <span className="hidden sm:inline-block w-6 h-px bg-gradient-to-r from-gold-hover/60 to-transparent ml-2" aria-hidden="true" />
+                )}
+              </motion.li>
+            ))}
+          </motion.ol>
 
           <motion.div
             initial="hidden"

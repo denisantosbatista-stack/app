@@ -78,17 +78,29 @@ function MarbleSurface({ id }) {
 export default function MockupShowcase() {
   const navigate = useNavigate();
 
-  const goToStudio = (id) => {
-    // Navega para o Studio. Aceita id apenas para futura pré-seleção (não usado hoje).
-    void id;
-    navigate("/studio");
+  const goToStudio = (mockup) => {
+    // A3 — Persiste a peça inspiradora em localStorage para hand-off ao Studio.
+    try {
+      localStorage.setItem(
+        "lindart_piece_preview",
+        JSON.stringify({
+          pieceId: mockup.id,
+          label: mockup.label,
+          source: "mockup-showcase",
+          ts: Date.now(),
+        })
+      );
+    } catch {
+      // ignora falha de storage (modo privado etc.)
+    }
+    navigate("/studio", {
+      state: { pieceId: mockup.id, label: mockup.label, fromHome: true },
+    });
   };
 
-  const handleCardClick = (e, id) => {
-    // Garante que cliques em filhos (badge "Exemplo", ícone "→") sempre
-    // disparam a navegação — evita race conditions com framer-motion whileTap.
+  const handleCardClick = (e, mockup) => {
     if (e && typeof e.stopPropagation === "function") e.stopPropagation();
-    goToStudio(id);
+    goToStudio(mockup);
   };
 
   return (
@@ -140,22 +152,42 @@ export default function MockupShowcase() {
             }}
             whileHover={{ y: -10, scale: 1.015 }}
             transition={{ type: "spring", stiffness: 240, damping: 22 }}
-            onClick={(e) => handleCardClick(e, m.id)}
+            onClick={(e) => handleCardClick(e, m)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                goToStudio(m.id);
+                goToStudio(m);
               }
             }}
             role="button"
             tabIndex={0}
-            className="group relative overflow-hidden rounded-sm aspect-[4/5] cursor-pointer shadow-lg hover:shadow-gold-lg transition-shadow duration-700 focus:outline-none focus:ring-2 focus:ring-gold/60"
+            className="group relative overflow-hidden rounded-sm aspect-[4/3] cursor-pointer shadow-lg hover:shadow-gold-lg transition-shadow duration-700 focus:outline-none focus:ring-2 focus:ring-gold/60"
             data-testid={`mockup-${m.id}`}
             aria-label={`Abrir Studio — ${m.label}`}
           >
             <MarbleSurface id={m.id} />
 
+            {/* Overlay base (sempre visível, suave) */}
             <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
+
+            {/* Overlay de hover — escurece + revela CTA "Visualizar no Studio" */}
+            <div
+              className="absolute inset-0 bg-ink/55 opacity-0 group-hover:opacity-100 transition-opacity duration-500 backdrop-blur-[2px] flex items-center justify-center pointer-events-none"
+              aria-hidden="true"
+            >
+              <div className="text-center px-6 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                <div className="text-[10px] tracking-[0.32em] uppercase text-gold mb-2">
+                  Inspiração
+                </div>
+                <div className="font-display text-xl md:text-2xl text-bone mb-3 leading-tight">
+                  Visualize no Studio
+                </div>
+                <div className="inline-flex items-center gap-2 text-[11px] tracking-[0.22em] uppercase text-gold-hover">
+                  Explorar peça
+                  <span aria-hidden="true">→</span>
+                </div>
+              </div>
+            </div>
 
             {/* Badge EXEMPLO — conteúdo curado de demonstração */}
             <span
@@ -170,7 +202,7 @@ export default function MockupShowcase() {
               Exemplo
             </span>
 
-            <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between">
+            <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between group-hover:opacity-0 transition-opacity duration-500">
               <div>
                 <div className="text-[10px] tracking-[0.32em] uppercase text-gold mb-1">
                   Premium
