@@ -42,6 +42,161 @@ function saveCache(data) {
   }
 }
 
+// ── Receita real por família de cor (pigmentação para resina epóxi) ──
+function hexToHsl(hex) {
+  let h = String(hex || "").replace("#", "").trim();
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return null;
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let s = 0;
+  let hue = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) hue = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) hue = (b - r) / d + 2;
+    else hue = (r - g) / d + 4;
+    hue *= 60;
+  }
+  return { h: hue, s: s * 100, l: l * 100 };
+}
+
+function classifyColor(hex) {
+  const hsl = hexToHsl(hex);
+  if (!hsl) return "neutro";
+  const { h, s, l } = hsl;
+  if (l > 90) return "branco";
+  if (l < 15) return "preto";
+  if (s < 20) return "neutro";
+  if (h >= 280 && h <= 360 && s >= 20 && s <= 60 && l >= 60 && l <= 85) return "pastel-rosa";
+  if (h >= 40 && h <= 60 && s > 40) return "dourado";
+  if (h >= 10 && h < 40 && s > 40) return "laranja";
+  if ((h >= 340 || h < 10) && s > 40) return "vermelho";
+  if (h >= 260 && h < 300 && s > 30) return "roxo";
+  if (h >= 180 && h < 240 && s > 30) return "azul";
+  if (h >= 100 && h < 160 && s > 30) return "verde";
+  return "neutro";
+}
+
+const RECIPES = {
+  branco: {
+    nome: "Branco translúcido",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento branco titânio 2–3%", "Mica pérola 1% (opcional para brilho)"],
+    proporcao: "Máx 3% de pigmento total — excesso opacifica e interfere na cura",
+    tecnica: "Adicione pigmento branco aos poucos — pequenas doses controlam a opacidade",
+    aviso: "Pigmento branco em excesso pode inibir a cura da resina",
+  },
+  preto: {
+    nome: "Preto profundo",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento preto intenso 1–2%"],
+    proporcao: "Máx 2% — preto é muito concentrado, pouco já cobre",
+    tecnica: "Use conta-gotas. 1 gota por 100ml já cria efeito translúcido profundo",
+    aviso: "Preto em excesso bloqueia a foto-iniciação em resinas UV",
+  },
+  dourado: {
+    nome: "Dourado · amarelo quente",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Mica dourada 2–4%", "Pigmento amarelo ouro 1% (para saturação)"],
+    proporcao: "2–4% de mica dourada · misturar devagar para não criar grumos",
+    tecnica: "Adicione a mica dourada por último, após misturar os demais componentes",
+    aviso: "Micas metálicas podem sedimentar — verta rápido após misturar",
+  },
+  laranja: {
+    nome: "Laranja · coral · terracota",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento laranja queimado 2–3%", "Toque de vermelho 0.5% para profundidade"],
+    proporcao: "2–3% total · testar em 10ml antes de escalar",
+    tecnica: "Misture laranja com o endurecedor antes de combinar com a resina",
+    aviso: "Tons quentes amarelecem mais sob luz UV — use resina com filtro UV",
+  },
+  vermelho: {
+    nome: "Vermelho · rosa quente",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento vermelho carmim 2–3%", "Mica rosê 1% para suavizar"],
+    proporcao: "2–3% total",
+    tecnica: "Vermelho puro pode virar marrom com certos endurecedores — teste antes",
+    aviso: "Pigmentos vermelhos orgânicos podem reagir com resinas ácidas",
+  },
+  "pastel-rosa": {
+    nome: "Rosa · lilás pastel",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento rosa quartzo 1–2%", "Mica pérola 1% para luminosidade"],
+    proporcao: "1–2% total · tons pastéis pedem pouco pigmento",
+    tecnica: "Menos é mais — adicione 0.5% por vez até atingir o tom desejado",
+    aviso: null,
+  },
+  roxo: {
+    nome: "Roxo · ametista",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento violeta 2–3%", "Mica lilás 1% para translucidez"],
+    proporcao: "2–3% total",
+    tecnica: "Roxo profundo: use base translúcida para criar efeito de profundidade em camadas",
+    aviso: null,
+  },
+  azul: {
+    nome: "Azul · celeste",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento azul cobalto 2–3%", "Mica azul gelo 1% para brilho"],
+    proporcao: "2–3% total",
+    tecnica: "Movimentos circulares lentos para efeito marmóreo natural",
+    aviso: null,
+  },
+  verde: {
+    nome: "Verde · esmeralda",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Pigmento verde esmeralda 2–3%", "Toque de amarelo 0.5% para vibrância"],
+    proporcao: "2–3% total",
+    tecnica: "Verde + camadas translúcidas criam efeito de profundidade tipo malaquita",
+    aviso: null,
+  },
+  neutro: {
+    nome: "Neutro · cinza · prata",
+    base: "Resina cristalina transparente",
+    pigmentos: ["Mica prata 2–3%", "Pigmento cinza 0.5% para profundidade"],
+    proporcao: "2–3% de mica · cinza puro: adicionar 0.5% de preto + branco separadamente",
+    tecnica: "Micas metálicas criam efeito espelho em superfícies polidas",
+    aviso: "Micas sedimentam — verta imediatamente após misturar",
+  },
+};
+
+function getReceitaCor(hex) {
+  const family = classifyColor(hex);
+  const data = RECIPES[family] || RECIPES.neutro;
+  return { family, ...data };
+}
+
+const BASE_COMUM =
+  "Resina cristalina transparente como base — aplique o pigmento após misturar resina e endurecedor.";
+
+function buildRecipeText(trend) {
+  if (!trend) return "";
+  const lines = [];
+  lines.push(`Receita — ${trend.name || "Paleta"}`);
+  if (trend.tagline) lines.push(trend.tagline);
+  lines.push("");
+  lines.push(`Base: ${BASE_COMUM}`);
+  lines.push("");
+  (trend.colors || []).forEach((c, idx) => {
+    const r = getReceitaCor(c);
+    lines.push(`Cor ${idx + 1} — ${c.toUpperCase()} · ${r.nome}`);
+    lines.push("Pigmentos:");
+    r.pigmentos.forEach((p) => lines.push(`  • ${p}`));
+    lines.push(`Proporção: ${r.proporcao}`);
+    lines.push(`Técnica: ${r.tecnica}`);
+    if (r.aviso) lines.push(`Atenção: ${r.aviso}`);
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+
+
 export default function Trends() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -361,48 +516,94 @@ export default function Trends() {
                 ))}
               </div>
 
-              {/* Recipe by color */}
+              {/* Base comum */}
+              <div
+                className="rounded-sm border border-gold/20 bg-gold/5 p-4 text-xs text-zinc-700 leading-relaxed"
+                data-testid="trend-recipe-base"
+              >
+                <div className="label-eyebrow text-gold mb-1">Base</div>
+                {BASE_COMUM}
+              </div>
+
+              {/* Recipe by color — receita real por família */}
               <div>
                 <div className="label-eyebrow text-gold mb-3">Receita por cor</div>
-                <ul className="space-y-2" data-testid="trend-recipe-list">
+                <ul className="space-y-4" data-testid="trend-recipe-list">
                   {(recipeTrend.colors || []).map((c, idx) => {
-                    const pct = Math.round(100 / Math.max((recipeTrend.colors || []).length, 1));
+                    const r = getReceitaCor(c);
                     return (
-                      <li key={c} className="flex items-center gap-3 text-sm">
-                        <span
-                          style={{ background: c }}
-                          className="w-9 h-9 rounded-full border border-black/10 shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 text-zinc-800">
-                            <span className="font-medium">Cor {idx + 1}</span>
-                            <span className="font-mono text-xs text-zinc-500">{c.toUpperCase()}</span>
+                      <li
+                        key={c}
+                        className="rounded-sm border border-black/[0.06] bg-white/40 p-3"
+                        data-testid={`trend-recipe-item-${c.replace("#", "")}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span
+                            style={{ background: c }}
+                            className="w-6 h-6 rounded-full border border-black/10 shrink-0 mt-0.5"
+                            aria-hidden="true"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <span className="font-medium text-zinc-900">{r.nome}</span>
+                              <span className="font-mono text-[11px] text-zinc-500">
+                                {c.toUpperCase()}
+                              </span>
+                              <span className="text-[10px] tracking-[0.18em] uppercase text-zinc-400">
+                                Cor {idx + 1}
+                              </span>
+                            </div>
+
+                            <div className="mb-2">
+                              <div className="text-[10px] tracking-[0.18em] uppercase text-gold mb-1">
+                                Pigmentos
+                              </div>
+                              <ul className="list-disc pl-4 text-xs text-zinc-700 space-y-0.5">
+                                {r.pigmentos.map((p) => (
+                                  <li key={p}>{p}</li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            <div className="mb-2">
+                              <div className="text-[10px] tracking-[0.18em] uppercase text-gold mb-1">
+                                Proporção
+                              </div>
+                              <div className="text-xs text-zinc-700">{r.proporcao}</div>
+                            </div>
+
+                            <div className="mb-2">
+                              <div className="text-[10px] tracking-[0.18em] uppercase text-gold mb-1">
+                                Técnica
+                              </div>
+                              <div className="text-xs italic text-zinc-600 leading-relaxed">
+                                {r.tecnica}
+                              </div>
+                            </div>
+
+                            {r.aviso && (
+                              <div
+                                className="mt-2 rounded-sm border border-amber-300/60 bg-amber-100/60 px-3 py-2 text-xs text-amber-900 leading-relaxed flex items-start gap-2"
+                                data-testid={`trend-recipe-warning-${c.replace("#", "")}`}
+                              >
+                                <span aria-hidden="true">⚠</span>
+                                <span>
+                                  <span className="font-medium">Atenção:</span> {r.aviso}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <div className="text-xs text-zinc-500 leading-relaxed">
-                            ~{pct}% da mistura · 2–3 gotas de pigmento por 50&nbsp;ml de resina
-                          </div>
+                          <button
+                            onClick={() => copyHex(c)}
+                            className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 hover:text-gold inline-flex items-center gap-1 shrink-0"
+                            data-testid={`trend-recipe-copy-${c.replace("#", "")}`}
+                          >
+                            <Copy className="w-3 h-3" /> Hex
+                          </button>
                         </div>
-                        <button
-                          onClick={() => copyHex(c)}
-                          className="text-[10px] tracking-[0.18em] uppercase text-zinc-600 hover:text-gold inline-flex items-center gap-1"
-                          data-testid={`trend-recipe-copy-${c.replace('#','')}`}
-                        >
-                          <Copy className="w-3 h-3" /> Copiar
-                        </button>
                       </li>
                     );
                   })}
-                </ul>
-              </div>
-
-              {/* Tips */}
-              <div className="rounded-sm border border-gold/20 bg-gold/5 p-4 text-xs text-zinc-700 leading-relaxed">
-                <div className="label-eyebrow text-gold mb-2">Dicas de aplicação</div>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>Pese a resina e o catalisador em proporção 2:1 (ou conforme fabricante).</li>
-                  <li>Adicione o pigmento antes de unir as partes para evitar bolhas.</li>
-                  <li>Para efeitos marmorizados, despeje as cores em camadas e mexa apenas a superfície.</li>
-                  <li>Cure por 24h a 25°C antes de desmoldar.</li>
                 </ul>
               </div>
 
@@ -420,7 +621,18 @@ export default function Trends() {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    const txt = buildRecipeText(recipeTrend);
+                    navigator.clipboard.writeText(txt);
+                    toast.success("Receita copiada");
+                  }}
+                  className="px-3 py-2 rounded-sm border border-gold/30 text-gold hover:bg-gold/10 transition-colors text-[10px] tracking-[0.18em] uppercase inline-flex items-center gap-1"
+                  data-testid="trend-recipe-copy-recipe"
+                >
+                  <Copy className="w-3 h-3" /> Copiar receita
+                </button>
                 <button
                   onClick={() => copyColors(recipeTrend.colors)}
                   className="px-3 py-2 rounded-sm border border-black/[0.08] text-zinc-600 hover:border-gold hover:text-gold transition-colors text-[10px] tracking-[0.18em] uppercase inline-flex items-center gap-1"
@@ -437,6 +649,13 @@ export default function Trends() {
                   data-testid="trend-recipe-save"
                 >
                   <Sparkles className="w-3 h-3" /> Salvar paleta
+                </button>
+                <button
+                  onClick={() => setRecipeOpen(false)}
+                  className="px-3 py-2 rounded-sm border border-black/[0.08] text-zinc-600 hover:border-zinc-400 transition-colors text-[10px] tracking-[0.18em] uppercase"
+                  data-testid="trend-recipe-close"
+                >
+                  Fechar
                 </button>
               </div>
             </div>
