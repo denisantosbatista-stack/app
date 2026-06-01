@@ -11,7 +11,7 @@ export default function Home() {
       <Hero />
 
       {/* Marquee de inspiração */}
-      <div className="overflow-hidden border-y border-black/[0.04] py-6 bg-ink-surface/50">
+      <div className="overflow-hidden border-y border-black/[0.04] py-12 bg-ink-surface/50">
         <div className="flex gap-10 animate-marquee whitespace-nowrap text-zinc-500 text-xs tracking-[0.32em] uppercase">
           {["a", "b"].map((rep) => (
             <div key={`marquee-${rep}`} className="flex gap-10">
