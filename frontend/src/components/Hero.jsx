@@ -147,16 +147,29 @@ export default function Hero() {
           </motion.div>
 
           {/* Mini-steps — fluxo em 3 etapas (A4) */}
-          <motion.ol
-            variants={{
-              hidden: {},
-              visible: { transition: { delayChildren: 0.55, staggerChildren: 0.12 } },
-            }}
-            initial="hidden"
-            animate="visible"
-            className="mt-7 md:mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 text-[11px] md:text-xs tracking-[0.18em] uppercase text-zinc-200"
-            data-testid="hero-mini-steps"
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-7 md:mt-8 flex items-center gap-2.5 md:gap-3 overflow-x-auto no-scrollbar pr-4"
+            data-testid="hero-mini-steps-wrapper"
           >
+            <span
+              className="shrink-0 text-[9px] md:text-[10px] tracking-[0.28em] uppercase text-gold-hover/90 pr-2.5 border-r border-gold-hover/30"
+              data-testid="hero-mini-steps-prefix"
+            >
+              Antes,
+            </span>
+            <motion.ol
+              variants={{
+                hidden: {},
+                visible: { transition: { delayChildren: 0.55, staggerChildren: 0.12 } },
+              }}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-nowrap items-center gap-x-2.5 md:gap-x-3 text-[9px] md:text-[10px] tracking-[0.12em] md:tracking-[0.14em] uppercase text-zinc-200 whitespace-nowrap"
+              data-testid="hero-mini-steps"
+            >
             {[
               { icon: Palette, label: "Escolha a paleta", testid: "hero-step-1" },
               { icon: Box, label: "Visualize na peça", testid: "hero-step-2" },
@@ -173,22 +186,23 @@ export default function Hero() {
                     transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
                   },
                 }}
-                className="flex items-center gap-2.5"
+                className="flex items-center gap-1.5 md:gap-2 shrink-0"
                 data-testid={step.testid}
               >
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-gold-hover/45 bg-black/40 backdrop-blur-sm text-gold-hover">
-                  <step.icon className="w-3.5 h-3.5" strokeWidth={1.6} />
+                <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full border border-gold-hover/45 bg-black/40 backdrop-blur-sm text-gold-hover shrink-0">
+                  <step.icon className="w-2.5 h-2.5 md:w-3 md:h-3" strokeWidth={1.6} />
                 </span>
                 <span className="text-bone/90">
-                  <span className="text-gold-hover/70 mr-1.5">0{idx + 1}</span>
+                  <span className="text-gold-hover/70 mr-1">0{idx + 1}</span>
                   {step.label}
                 </span>
                 {idx < 2 && (
-                  <span className="hidden sm:inline-block w-6 h-px bg-gradient-to-r from-gold-hover/60 to-transparent ml-2" aria-hidden="true" />
+                  <span className="inline-block w-3 md:w-4 h-px bg-gradient-to-r from-gold-hover/60 to-transparent ml-0.5 md:ml-1 shrink-0" aria-hidden="true" />
                 )}
               </motion.li>
             ))}
           </motion.ol>
+          </motion.div>
 
           <motion.div
             initial="hidden"

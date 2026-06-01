@@ -252,3 +252,13 @@ input:focus, textarea:focus, select:focus {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* Utility — hide scrollbar but keep scrolling (used in Hero mini-steps, MobileNav, tabs) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
