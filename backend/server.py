@@ -52,6 +52,7 @@ from routers.leads import router as leads_router  # noqa: E402
 from routers.marketplace import router as marketplace_router  # noqa: E402
 from routers.og import router as og_router  # noqa: E402
 from routers.palettes import router as palettes_router  # noqa: E402
+from routers.podcasts import router as podcasts_router  # noqa: E402
 from routers.profiles import router as profiles_router  # noqa: E402
 from routers.seed_content import ensure_seed_content  # noqa: E402
 from routers.svd_video import router as svd_video_router  # noqa: E402
@@ -97,6 +98,16 @@ app.include_router(palettes_router)
 app.include_router(analytics_router)
 app.include_router(leads_router)
 app.include_router(waitlist_router)
+app.include_router(podcasts_router)
+
+# Servir uploads de podcasts (áudio + capas) via /api/uploads/...
+UPLOADS_PATH = Path("/uploads")
+UPLOADS_PATH.mkdir(parents=True, exist_ok=True)
+app.mount(
+    "/api/uploads",
+    StaticFiles(directory=str(UPLOADS_PATH)),
+    name="uploads",
+)
 
 # Servir vídeos/imagens estáticos do onboarding (montado dentro do prefixo /api
 # para passar pelo proxy do ingress).

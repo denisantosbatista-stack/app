@@ -22,6 +22,7 @@ import Privacy from "@/pages/Privacy";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Pricing from "@/pages/Pricing";
+import PodcastPage from "@/pages/PodcastPage";
 import OpeningTour from "@/components/OpeningTour";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import UpgradeInfoModal from "@/components/UpgradeInfoModal";
@@ -101,6 +102,8 @@ function App() {
               }
             />
             <Route path="/feed" element={<Feed />} />
+            <Route path="/podcasts" element={<PodcastPage />} />
+            <Route path="/podcasts/:id" element={<PodcastPage />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/challenges" element={<Challenges />} />
             <Route path="/u/:handle" element={<PublicProfile />} />

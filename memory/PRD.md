@@ -21,6 +21,15 @@ Plataforma premium para artistas de resina/joalheria/decoração: studio de cria
 - LLM: Emergent Universal Key (Claude/GPT)
 
 ## Recently Implemented (2026-02)
+- ✅ **Podcasts** (full-stack) — `routers/podcasts.py`:
+  - `POST /api/podcasts/upload` (admin, multipart: titulo, resineira, descricao, audio, capa, duracao_segundos, tags)
+  - `PATCH /api/podcasts/{id}/publicar` (admin; `publicado` opcional = toggle)
+  - `GET /api/podcasts` (público; `?limit&q&tag`, somente publicados)
+  - `GET /api/podcasts/{id}` (público; 404 se não publicado / id inválido)
+  - Áudio em `/uploads/podcasts/audio/`, capas em `/uploads/podcasts/capas/`, servidos via `/api/uploads/...` (StaticFiles)
+  - Limites: áudio 80MB (mp3/m4a/wav/ogg/aac), capa 5MB (jpg/png/webp)
+- ✅ Frontend: `PodcastCard.jsx`, `PodcastPage.jsx` (list + detail com `<audio controls>`), busca com debounce 400ms, rotas públicas `/podcasts` e `/podcasts/:id`
+- ✅ Feed.jsx: aba "Podcasts" usando `GET /api/podcasts?limit=3` com seção "Resineiras em conversa" (`PodcastList`)
 - ✅ Modal "Como fazer esta cor" com receita dinâmica por classificação cromática (HSL → 10 famílias)
 - ✅ "Copiar receita" no footer do modal
 - ✅ **Compartilhar receita** — botão `trend-recipe-share` no footer que abre `ShareSheet` com URL `/api/og/trend/{slug}`
@@ -31,7 +40,7 @@ Plataforma premium para artistas de resina/joalheria/decoração: studio de cria
 - Helpers: `_slugify_trend`, `_find_trend_by_id` (lazy import de `_TRENDS_CACHE`)
 
 ## Backlog / Next
-- **P4**: Backend de Podcasts (`GET /api/podcasts`)
+- Admin UI para upload/publicação de podcasts (atual fluxo só via curl/Postman)
 - Persistir trends para que share-links sobrevivam à expiração do cache em memória
 - Telemetria `?ref=share` em dashboard interno
 

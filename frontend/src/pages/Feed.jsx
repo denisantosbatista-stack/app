@@ -7,6 +7,38 @@ import { useAuth, formatApiErrorDetail } from "../contexts/AuthContext";
 import { authFetch } from "../utils/api";
 import CreatePostModal from "../components/CreatePostModal";
 import FeedPostsView from "../components/FeedPostsView";
+import PodcastCard from "../components/PodcastCard";
+import { Headphones } from "lucide-react";
+
+function PodcastList({ podcasts }) {
+  if (!podcasts || podcasts.length === 0) return null;
+  return (
+    <section data-testid="feed-podcasts-section">
+      <div className="flex items-end justify-between mb-5">
+        <div>
+          <div className="label-eyebrow text-gold mb-2 inline-flex items-center gap-2">
+            <Headphones className="w-3.5 h-3.5" /> Resineiras em conversa
+          </div>
+          <h2 className="font-display text-2xl md:text-3xl tracking-tight leading-tight">
+            Episódios recentes
+          </h2>
+        </div>
+        <Link
+          to="/podcasts"
+          className="text-[11px] tracking-[0.22em] uppercase text-gold hover:underline whitespace-nowrap"
+          data-testid="feed-podcasts-see-all"
+        >
+          Ver todos →
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {podcasts.map((p) => (
+          <PodcastCard key={p.id} podcast={p} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const LIKED_KEY = "lindart.feed.liked.v1";
