@@ -14,16 +14,19 @@ const PRESETS = [
 
 // Mapeamento entre o segmento da URL e o modo interno da calculadora.
 // Usado para que /calculadora/proporcoes, /calculadora/precificacao
-// e /calculadora/medidas abram diretamente na aba certa (compartilhável).
+// e /calculadora/medidas-3d abram diretamente na aba certa (compartilhável).
+// `medidas` é mantido como alias legado e é normalizado para `medidas-3d`
+// (URL canônica) pelo effect de sincronização abaixo.
 const TAB_FROM_PATH = {
   proporcoes: "volume",
   precificacao: "pricing",
+  "medidas-3d": "measure",
   medidas: "measure",
 };
 const PATH_FROM_TAB = {
   volume: "proporcoes",
   pricing: "precificacao",
-  measure: "medidas",
+  measure: "medidas-3d",
 };
 
 export default function Calculator() {
