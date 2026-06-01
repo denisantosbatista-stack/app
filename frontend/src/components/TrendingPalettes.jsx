@@ -168,13 +168,6 @@ export default function TrendingPalettes() {
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                  <span
-                    className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30"
-                    style={{ background: "rgba(212, 175, 55, 0.85)", color: "#FFFFFF", textShadow: "0 1px 1px rgba(0,0,0,0.25)" }}
-                    data-testid={`exemplo-badge-${p.id}`}
-                  >
-                    Exemplo
-                  </span>
                   <div className="absolute top-3 right-3 text-[9px] tracking-[0.22em] uppercase px-2 py-1 bg-white/85 backdrop-blur-sm text-ink-text rounded-sm">
                     {p.style}
                   </div>

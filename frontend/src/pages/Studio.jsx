@@ -175,17 +175,6 @@ export default function Studio() {
           Selecione uma paleta, escolha o estilo e veja a magia em peças reais.
           Toque uma cor para copiar o HEX.
         </p>
-        <div
-          className="hidden md:flex items-center gap-2 mt-4 text-[10px] uppercase tracking-[0.18em] text-zinc-500"
-          data-testid="keyboard-shortcuts-hint"
-        >
-          <span className="opacity-70">Atalhos:</span>
-          <Kbd>G</Kbd><span className="opacity-60">gerar</span>
-          <Kbd>S</Kbd><span className="opacity-60">salvar</span>
-          <Kbd>E</Kbd><span className="opacity-60">exportar</span>
-          <Kbd>F</Kbd><span className="opacity-60">favoritar</span>
-          <Kbd>?</Kbd><span className="opacity-60">ajuda</span>
-        </div>
       </motion.div>
 
       <div className="mb-10">

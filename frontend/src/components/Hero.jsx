@@ -26,9 +26,9 @@ const HERO_MARBLE_BG = {
 };
 
 const STATS = [
-  { v: "12+", l: "Paletas premium" },
+  { v: "22", l: "Paletas curadas" },
   { v: "10", l: "Estilos artísticos" },
-  { v: "∞", l: "Combinações IA" },
+  { v: "✨", l: "IA em segundos" },
 ];
 
 const PARTICLES = Array.from({ length: 14 }, (_, i) => ({
@@ -137,9 +137,7 @@ export default function Hero() {
             className="text-zinc-700 text-sm md:text-base max-w-xl leading-relaxed mb-5 md:mb-6"
             data-testid="hero-description"
           >
-            Visualize paletas em peças reais, gere combinações com IA, calcule
-            proporções com precisão e exporte em qualquer formato — tudo em um
-            só ateliê digital.
+            Da cor à peça — escolha uma paleta, visualize em 3D e exporte para vender.
           </motion.p>
 
           <motion.div

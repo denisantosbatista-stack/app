@@ -136,7 +136,7 @@ export default function PaletteCard({ palette, active, onClick, onFavorite, favo
             className="flex items-center gap-1 mt-1.5 text-[10px] text-zinc-500"
             data-testid={`palette-popularity-${palette.id}`}
           >
-            <Heart className="w-3 h-3 fill-rose-400 text-rose-400" />
+              <Heart className="w-3 h-3 fill-rose-400 text-rose-400" />
             <span className="font-mono text-zinc-700">{popularity}</span>
             <span className="tracking-[0.18em] uppercase opacity-70">saves</span>
           </div>
