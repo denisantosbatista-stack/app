@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, TrendingUp, Flame, Copy, Loader2, Sparkles } from "lucide-react";
+import { RefreshCw, TrendingUp, Flame, Copy, Loader2, Sparkles, Beaker } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { usePaletteStore } from "@/store/usePaletteStore";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 const STORAGE_KEY = "lindart.trends.v1";
@@ -40,7 +47,19 @@ export default function Trends() {
   const [loading, setLoading] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [focus, setFocus] = useState("geral");
+  const [recipeOpen, setRecipeOpen] = useState(false);
+  const [recipeTrend, setRecipeTrend] = useState(null);
   const savePalette = usePaletteStore((s) => s.savePalette);
+
+  function copyHex(hex) {
+    navigator.clipboard.writeText(hex);
+    toast.success(`${hex.toUpperCase()} copiado`);
+  }
+
+  function openRecipe(t) {
+    setRecipeTrend(t);
+    setRecipeOpen(true);
+  }
 
   async function fetchTrends({ refresh = false, currentFocus = focus } = {}) {
     setLoading(true);
@@ -246,15 +265,24 @@ export default function Trends() {
                   {(t.tags || []).slice(0, 4).map((tag) => (
                     <span
                       key={tag}
-                      className="text-[10px] tracking-[0.12em] uppercase text-zinc-500 bg-ink/40 border border-black/[0.06] px-2 py-0.5 rounded-sm"
+                      className="text-[10px] tracking-[0.08em] text-zinc-600 bg-gold/5 border border-gold/20 px-2.5 py-1 rounded-full"
+                      data-testid="trend-tag-pill"
                     >
                       #{tag}
                     </span>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
+                <div className="flex items-center gap-1.5" data-testid="trend-swatches">
                   {(t.colors || []).map((c) => (
-                    <span key={c}>{c.toUpperCase()}</span>
+                    <button
+                      key={c}
+                      onClick={() => copyHex(c)}
+                      title={`Copiar ${c.toUpperCase()}`}
+                      style={{ background: c }}
+                      className="w-7 h-7 rounded-full border border-black/10 shadow-sm hover:scale-110 transition-transform cursor-pointer"
+                      data-testid={`trend-swatch-${c.replace('#','')}`}
+                      aria-label={`Copiar cor ${c}`}
+                    />
                   ))}
                 </div>
                 <div className="mt-4 flex items-center gap-2">
@@ -264,6 +292,14 @@ export default function Trends() {
                     data-testid="trend-save"
                   >
                     <Sparkles className="w-3 h-3" /> Salvar
+                  </button>
+                  <button
+                    onClick={() => openRecipe(t)}
+                    className="px-3 py-2 rounded-sm border border-gold/30 text-gold hover:bg-gold/10 transition-colors text-[10px] tracking-[0.18em] uppercase inline-flex items-center gap-1"
+                    title="Como fazer esta cor"
+                    data-testid="trend-recipe-btn"
+                  >
+                    <Beaker className="w-3 h-3" /> Como fazer esta cor
                   </button>
                   <button
                     onClick={() => copyColors(t.colors)}
@@ -301,6 +337,112 @@ export default function Trends() {
           <Loader2 className="w-3 h-3 animate-spin text-gold" /> Atualizando curadoria…
         </div>
       )}
+
+      {/* Recipe modal — "Como fazer esta cor" */}
+      <Dialog open={recipeOpen} onOpenChange={setRecipeOpen}>
+        <DialogContent
+          className="bg-ink-surface border border-gold/30 max-w-xl text-zinc-800"
+          data-testid="trend-recipe-modal"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl tracking-tight text-zinc-900">
+              {recipeTrend?.name || "Como fazer esta cor"}
+            </DialogTitle>
+            <DialogDescription className="text-zinc-600 italic">
+              {recipeTrend?.tagline || "Receita visual da paleta"}
+            </DialogDescription>
+          </DialogHeader>
+          {recipeTrend && (
+            <div className="space-y-5">
+              {/* Color stripe */}
+              <div className="h-24 flex rounded-sm overflow-hidden border border-black/[0.06]">
+                {(recipeTrend.colors || []).map((c) => (
+                  <div key={c} style={{ background: c }} className="flex-1" />
+                ))}
+              </div>
+
+              {/* Recipe by color */}
+              <div>
+                <div className="label-eyebrow text-gold mb-3">Receita por cor</div>
+                <ul className="space-y-2" data-testid="trend-recipe-list">
+                  {(recipeTrend.colors || []).map((c, idx) => {
+                    const pct = Math.round(100 / Math.max((recipeTrend.colors || []).length, 1));
+                    return (
+                      <li key={c} className="flex items-center gap-3 text-sm">
+                        <span
+                          style={{ background: c }}
+                          className="w-9 h-9 rounded-full border border-black/10 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-zinc-800">
+                            <span className="font-medium">Cor {idx + 1}</span>
+                            <span className="font-mono text-xs text-zinc-500">{c.toUpperCase()}</span>
+                          </div>
+                          <div className="text-xs text-zinc-500 leading-relaxed">
+                            ~{pct}% da mistura · 2–3 gotas de pigmento por 50&nbsp;ml de resina
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => copyHex(c)}
+                          className="text-[10px] tracking-[0.18em] uppercase text-zinc-600 hover:text-gold inline-flex items-center gap-1"
+                          data-testid={`trend-recipe-copy-${c.replace('#','')}`}
+                        >
+                          <Copy className="w-3 h-3" /> Copiar
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {/* Tips */}
+              <div className="rounded-sm border border-gold/20 bg-gold/5 p-4 text-xs text-zinc-700 leading-relaxed">
+                <div className="label-eyebrow text-gold mb-2">Dicas de aplicação</div>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Pese a resina e o catalisador em proporção 2:1 (ou conforme fabricante).</li>
+                  <li>Adicione o pigmento antes de unir as partes para evitar bolhas.</li>
+                  <li>Para efeitos marmorizados, despeje as cores em camadas e mexa apenas a superfície.</li>
+                  <li>Cure por 24h a 25°C antes de desmoldar.</li>
+                </ul>
+              </div>
+
+              {/* Tags */}
+              {recipeTrend.tags && recipeTrend.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {recipeTrend.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-[10px] tracking-[0.08em] text-zinc-600 bg-gold/5 border border-gold/20 px-2.5 py-1 rounded-full"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  onClick={() => copyColors(recipeTrend.colors)}
+                  className="px-3 py-2 rounded-sm border border-black/[0.08] text-zinc-600 hover:border-gold hover:text-gold transition-colors text-[10px] tracking-[0.18em] uppercase inline-flex items-center gap-1"
+                  data-testid="trend-recipe-copy-all"
+                >
+                  <Copy className="w-3 h-3" /> Copiar paleta
+                </button>
+                <button
+                  onClick={() => {
+                    saveAsPalette(recipeTrend);
+                    setRecipeOpen(false);
+                  }}
+                  className="btn-gold px-3 py-2 rounded-sm text-[10px] tracking-[0.18em] uppercase inline-flex items-center gap-1"
+                  data-testid="trend-recipe-save"
+                >
+                  <Sparkles className="w-3 h-3" /> Salvar paleta
+                </button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

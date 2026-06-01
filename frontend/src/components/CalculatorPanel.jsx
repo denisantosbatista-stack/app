@@ -59,7 +59,7 @@ function TabBtn({ active, onClick, icon: Icon, label, testid }) {
     <button
       onClick={onClick}
       data-testid={testid}
-      className={`px-4 py-2.5 rounded-sm text-xs uppercase tracking-[0.18em] inline-flex items-center gap-2 transition-all ${
+      className={`px-4 py-2.5 rounded-sm text-xs normal-case tracking-[0.04em] inline-flex items-center gap-2 transition-all ${
         active
           ? "bg-gold text-ink shadow-gold"
           : "border border-black/10 text-zinc-700 hover:border-gold/40"
@@ -443,7 +443,21 @@ function MeasureMode({ compact }) {
       <div className="glass rounded-sm p-6 space-y-5">
         <div>
           <label className="label-eyebrow block mb-3">Formato do molde</label>
-          <div className="grid grid-cols-3 gap-2">
+          {/* Mobile: dropdown */}
+          <div className="md:hidden">
+            <select
+              value={shape}
+              onChange={(e) => setShape(e.target.value)}
+              data-testid="measure-shape-select"
+              className="w-full px-3 py-2.5 rounded-sm text-sm border border-black/10 bg-ink-surface text-zinc-800 focus:outline-none focus:border-gold/60"
+            >
+              {SHAPES.map((s) => (
+                <option key={s.id} value={s.id}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          {/* Desktop: button grid */}
+          <div className="hidden md:grid grid-cols-3 gap-2" data-testid="measure-shape-box">
             {SHAPES.map((s) => (
               <button
                 key={s.id}
