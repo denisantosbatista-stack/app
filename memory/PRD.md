@@ -79,7 +79,14 @@ visual, calculadora de proporções, marketplace e feed comunitário.
 - Backend `GET /api/podcasts` ainda não implementado (intencional). Frontend já degrada silenciosamente — quando o endpoint existir, basta retornar `[]` ou `[{id,title,cover,audio_url,...}]` e a aba aparece.
 - ✅ Integração com Fal.ai Video Generation (SVD) implementada em `routers/svd_video.py`. UI de geração de vídeo a partir do Studio ainda pode receber polimento futuro.
 
+### UI Polish Frontend (Feb 2026 — sessão atual)
+- ✅ **MISTURADOR** (`Mixer.jsx`, `MixerSwirl.jsx`): tooltips em ΔE, remoção dos valores RGB lineares, espectro interativo (hover/copy hex com toast `sonner`/`react-hot-toast`), novo empty-state com CTA.
+- ✅ **TENDÊNCIAS** (`Trends.jsx` — corrigido em iter_45 após edits incorretas em `TrendingPalettes.jsx`): tags em pílulas (`rounded-full`, `data-testid="trend-tag-pill"`), swatches circulares interativos (`data-testid="trend-swatch-<hex>"`) substituindo texto hex, modal detalhado "Como fazer esta cor" (`data-testid="trend-recipe-btn"`/`trend-recipe-modal`/`trend-recipe-list`) com receita por cor, dicas de aplicação e ações copiar/salvar.
+- ✅ **CALCULADORA** (`Calculator.jsx` → wrapper fino sobre `CalculatorPanel.jsx`): tabs em sentence case (`normal-case`), preço sugerido destacado, tooltips nos inputs, **dropdown responsivo** para "Formato do molde" em mobile (`data-testid="measure-shape-select"` em `md:hidden` vs `data-testid="measure-shape-box"` em `hidden md:grid`).
+- ✅ **FEED** (`Feed.jsx`): extração estrutural do branch de posts para `FeedPostsView.jsx` sem alteração de lógica — props (posts, loading, handlers) preservados e validados.
+- Validado em `/app/test_reports/iteration_45.json` — 100% pass, sem regressões em Mixer/Feed.
+
 ## Health
 - Broken: None
 - Mocked: None
-- Last tested: Feb/2026 — Home polish validado via screenshot + asserts DOM.
+- Last tested: Feb/2026 — UI polish (Tendências/Calculadora/Mixer/Feed) validado via testing_agent_v3_fork iter_45.
