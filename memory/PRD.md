@@ -32,6 +32,11 @@ visual, calculadora de proporções, marketplace e feed comunitário.
   - `AuthContext` escuta `lindart:auth-expired` e desloga o usuário automaticamente.
   - Pilotos migrados: `Feed.jsx` (POST /feed) e `Marketplace.jsx` (POST /marketplace) agora usam `authFetch`.
   - Smoke test E2E: modal abre, form submete, lead persistido no Mongo, sucesso visível.
+- Validação Fal.ai SVD + Leads + authFetch (Iter 41 — Feb 2026):
+  - `svd_video.py`: tratamento de erro melhorado — captura `e.response.text` da `httpx.HTTPStatusError` para detectar `Exhausted balance`/`User is locked` do fal.ai e devolver mensagem PT-BR amigável (`"Saldo da conta fal.ai esgotado. Recarregue em fal.ai/dashboard/billing…"`) com `http_status=402`, em vez de vazar `"Client error '403 Forbidden'"`.
+  - `MixerSwirl.jsx`: toast distingue erro de saldo (mostra `detail` direto) de erro genérico (`Falha IA: …`).
+  - `FAL_KEY` confirmada válida no `backend/.env`; conta fal.ai atualmente com **saldo esgotado** (locked) — recarga necessária para gerar vídeos reais.
+  - testing_agent_v3_fork iter 41: **100% pass** (backend 8/8 pytest, frontend 3/3 E2E playwright). Test file: `/app/backend/tests/test_iter41_leads_svd_feed.py`.
 
 ### Arquitetura
 - **Frontend**: `/app/frontend/src/`
