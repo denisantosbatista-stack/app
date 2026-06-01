@@ -79,7 +79,16 @@ export default function MockupShowcase() {
   const navigate = useNavigate();
 
   const goToStudio = (id) => {
+    // Navega para o Studio. Aceita id apenas para futura pré-seleção (não usado hoje).
+    void id;
     navigate("/studio");
+  };
+
+  const handleCardClick = (e, id) => {
+    // Garante que cliques em filhos (badge "Exemplo", ícone "→") sempre
+    // disparam a navegação — evita race conditions com framer-motion whileTap.
+    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+    goToStudio(id);
   };
 
   return (
@@ -131,7 +140,7 @@ export default function MockupShowcase() {
             }}
             whileHover={{ y: -10, scale: 1.015 }}
             transition={{ type: "spring", stiffness: 240, damping: 22 }}
-            onClick={() => goToStudio(m.id)}
+            onClick={(e) => handleCardClick(e, m.id)}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
@@ -150,7 +159,7 @@ export default function MockupShowcase() {
 
             {/* Badge EXEMPLO — conteúdo curado de demonstração */}
             <span
-              className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30 z-10"
+              className="absolute top-3 left-3 text-[9px] tracking-[0.22em] uppercase font-semibold px-2 py-1 rounded-sm backdrop-blur-sm border border-white/30 z-10 pointer-events-none"
               style={{
                 background: "rgba(212, 175, 55, 0.85)",
                 color: "#FFFFFF",

@@ -95,7 +95,8 @@ function mapPieceTo3DShape(piece) {
     "drop", "ring", "oval", "bracelet", "moon", "star",
     "heart", "circle", "feather", "leaf", "pen", "bookmark",
   ].includes(s)) return "colar";
-  // Geométrico / em pé → geodo (icosaedro)
+  // Geométrico / em pé (prisma, hex, cubo) → geodo (icosaedro)
+  if (["prism", "hex", "cube"].includes(s)) return "geodo";
   return "geodo";
 }
 

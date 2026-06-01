@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Crown, Search, X } from "lucide-react";
+import { Crown } from "lucide-react";
 import PieceShape from "@/components/PieceShape";
-import { PIECES, PIECE_CATEGORIES, STYLES } from "@/data/palettes";
+import { PIECES, STYLES } from "@/data/palettes";
 
 export function StyleSelector({ activeStyleId, onChange, activeStyle }) {
   const [tab, setTab] = useState("classico"); // classico | luxo
@@ -69,93 +69,54 @@ export function StyleSelector({ activeStyleId, onChange, activeStyle }) {
 }
 
 export function PieceSelector({ activePieceId, onChange, palette }) {
-  const [query, setQuery] = useState("");
-  const normalized = query.trim().toLowerCase();
-  const filteredPieces = useMemo(
-    () =>
-      normalized
-        ? PIECES.filter((p) => p.label.toLowerCase().includes(normalized) || p.shape.toLowerCase().includes(normalized))
-        : PIECES,
-    [normalized]
+  // Galeria 3D limitada a 3 peças exemplares enquanto novas produções não estão
+  // disponíveis. As demais peças do catálogo permanecem cadastradas em PIECES e
+  // serão reativadas conforme novos modelos 3D forem aprovados.
+  const VISIBLE_PIECE_IDS = ["pingente-gota", "bandeja", "geodo"];
+  const visiblePieces = useMemo(
+    () => VISIBLE_PIECE_IDS
+      .map((id) => PIECES.find((p) => p.id === id))
+      .filter(Boolean),
+    []
   );
-  const hasResults = filteredPieces.length > 0;
 
   return (
-    <div>
+    <div data-testid="piece-selector-limited">
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <h3 className="font-display text-xl tracking-tight">Tipo de peça</h3>
-        <div className="relative flex-1 min-w-[180px] max-w-[260px]">
-          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar peça…"
-            aria-label="Buscar tipo de peça"
-            className="w-full bg-ink-surface border border-black/[0.08] rounded-sm pl-8 pr-7 py-1.5 text-[11px] tracking-wide text-ink-text placeholder:text-zinc-400 focus:outline-none focus:border-gold/50 transition-colors"
-            data-testid="piece-search-input"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              aria-label="Limpar busca"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-ink-text"
-              data-testid="piece-search-clear"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
       </div>
 
-      {!hasResults && (
-        <div
-          className="text-[11px] text-zinc-500 italic px-1 py-3"
-          data-testid="piece-search-empty"
-        >
-          Nenhuma peça encontrada para "{query}".
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {PIECE_CATEGORIES.map((cat) => {
-          const items = filteredPieces.filter((p) => p.category === cat.id);
-          if (items.length === 0) return null;
+      <div className="grid grid-cols-3 gap-3">
+        {visiblePieces.map((p) => {
+          const active = activePieceId === p.id;
           return (
-            <div key={cat.id} data-testid={`piece-cat-${cat.id}`}>
-              <div className="text-[10px] tracking-[0.22em] uppercase text-zinc-500 mb-2 flex items-center gap-2">
-                <span className="h-px w-4 bg-gold/30" />
-                {cat.label}
+            <button
+              key={p.id}
+              onClick={() => onChange(p.id)}
+              className={`flex flex-col items-center gap-2 p-3 rounded-sm transition-all ${
+                active
+                  ? "bg-ink-elevated ring-1 ring-gold shadow-gold"
+                  : "bg-ink-surface ring-1 ring-black/[0.06] hover:ring-black/20"
+              }`}
+              data-testid={`piece-${p.id}`}
+            >
+              <div className="w-14 h-14">
+                <PieceShape piece={p} palette={palette} size={56} animated={false} />
               </div>
-              <div className="grid grid-cols-5 gap-2">
-                {items.map((p) => {
-                  const active = activePieceId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => onChange(p.id)}
-                      className={`flex flex-col items-center gap-1.5 p-2 rounded-sm transition-all ${
-                        active
-                          ? "bg-ink-elevated ring-1 ring-gold shadow-gold"
-                          : "bg-ink-surface ring-1 ring-black/[0.06] hover:ring-black/20"
-                      }`}
-                      data-testid={`piece-${p.id}`}
-                    >
-                      <div className="w-12 h-12">
-                        <PieceShape piece={p} palette={palette} size={48} animated={false} />
-                      </div>
-                      <span className="text-[9px] uppercase tracking-wider text-zinc-700 text-center leading-tight">
-                        {p.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              <span className="text-[10px] uppercase tracking-wider text-zinc-700 text-center leading-tight">
+                {p.label}
+              </span>
+            </button>
           );
         })}
       </div>
+
+      <p
+        className="text-xs text-[#D4AF37] mt-4 italic tracking-wide text-center"
+        data-testid="piece-coming-soon"
+      >
+        Mais produções em breve
+      </p>
     </div>
   );
 }

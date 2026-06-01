@@ -19,6 +19,12 @@ visual, calculadora de proporções, marketplace e feed comunitário.
   - `TrendingPalettes`: reduzido de 6 → 3 paletas em destaque (`slice(0, 3)`).
   - `MockupShowcase`: confirmado em 3 cards (Relógio de Resina, Bandeja Premium, Geodo Decorativo).
   - Espaçamento vertical interno das seções dobrado: `py-12 md:py-20` → `py-24 md:py-32` em `TrendingPalettes` e `MockupShowcase`.
+- Home + Studio fixes (Feb 2026 — sessão atual):
+  - `MockupShowcase`: cliques nos 3 cards navegam para `/studio` de forma confiável (handler `handleCardClick` com `stopPropagation`, badge "Exemplo" com `pointer-events-none`, suporte a teclado Enter/Space).
+  - Mármore CSS aplicado aos cards Home (sem imagens externas) via `MarbleSurface` + multi-camadas `linear/radial/conic-gradient`.
+  - `PieceSelectors`: galeria limitada a 3 peças exemplares (`pingente-gota`, `bandeja`, `geodo`). Busca/categorias ocultas. Aviso em dourado itálico: "Mais produções em breve" (`data-testid="piece-coming-soon"`).
+  - Adicionado item `geodo` em `PIECES` (`shape: "prism"`, `category: "decorativo"`).
+  - `Productions3D.mapPieceTo3DShape`: shapes `prism`/`hex`/`cube` → 3D `geodo` (icosaedro).
 
 ### Arquitetura
 - **Frontend**: `/app/frontend/src/`

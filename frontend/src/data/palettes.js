@@ -206,6 +206,7 @@ export const PIECES = [
   { id: "lua", label: "Lua Crescente", shape: "moon", category: "joalheria" },
   { id: "estrela", label: "Estrela", shape: "star", category: "joalheria" },
   // Decorativo (inclui peças de mesa & casa)
+  { id: "geodo", label: "Geodo", shape: "prism", category: "decorativo" },
   { id: "bandeja", label: "Bandeja", shape: "tray", category: "decorativo" },
   { id: "porta-copo", label: "Porta-copo", shape: "coaster", category: "decorativo" },
   { id: "sousplat", label: "Sousplat", shape: "sousplat", category: "decorativo" },
