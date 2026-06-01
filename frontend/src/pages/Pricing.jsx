@@ -234,6 +234,13 @@ export default function Pricing() {
                     </div>
                   ) : (
                     <>
+                      <div
+                        className="inline-flex items-center gap-1.5 mb-2 px-2 py-0.5 rounded-full bg-gold/15 border border-gold/40 text-gold-deep text-[9px] tracking-[0.22em] uppercase"
+                        data-testid={`pricing-launch-badge-${plan.id}`}
+                      >
+                        <span className="inline-block w-1 h-1 rounded-full bg-gold animate-pulse" />
+                        Preço de lançamento
+                      </div>
                       <div className="flex items-baseline gap-1">
                         <span className="text-base text-ink-muted">R$</span>
                         <span

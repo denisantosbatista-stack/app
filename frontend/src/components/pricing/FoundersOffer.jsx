@@ -12,7 +12,7 @@ import { Sparkles, Crown, Lock } from "lucide-react";
  * houver endpoint de tracking, basta substituir SEATS_TAKEN.
  */
 const TOTAL_SEATS = 100;
-const SEATS_TAKEN = 37; // mock até endpoint real existir
+const SEATS_TAKEN = 97; // mock até endpoint real existir
 
 export default function FoundersOffer() {
   const remaining = Math.max(0, TOTAL_SEATS - SEATS_TAKEN);
@@ -97,17 +97,17 @@ export default function FoundersOffer() {
             <div className="relative">
               <div className="rounded-md bg-bone/5 border border-gold/20 backdrop-blur-md p-6">
                 <div className="text-[10px] tracking-[0.24em] uppercase text-gold mb-3">
-                  Vagas restantes
+                  Vagas preenchidas
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span
                     className="font-display text-6xl md:text-7xl leading-none text-bone"
                     data-testid="founders-remaining"
                   >
-                    {remaining}
+                    {SEATS_TAKEN}
                   </span>
                   <span className="text-sm text-ink-muted">
-                    de {TOTAL_SEATS}
+                    de {TOTAL_SEATS} vagas
                   </span>
                 </div>
 
@@ -122,8 +122,9 @@ export default function FoundersOffer() {
                   />
                 </div>
                 <p className="mt-3 text-[11px] text-ink-muted">
-                  Quando as 100 vagas acabarem, o programa fecha — e o preço
-                  passa a ser reajustado normalmente.
+                  Restam apenas <strong className="text-gold">{remaining} vagas</strong>.
+                  Quando as 100 acabarem, o programa fecha — e o preço passa a ser
+                  reajustado normalmente.
                 </p>
               </div>
             </div>
