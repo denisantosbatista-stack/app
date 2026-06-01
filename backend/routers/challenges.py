@@ -27,6 +27,21 @@ from .auth import get_current_user
 router = APIRouter(prefix="/api/challenges", tags=["challenges"])
 
 
+# Filtro anti-mock — exclui submissões/desafios de teste/seed das listagens públicas
+MOCK_EXCLUDE_FILTER: dict = {
+    "$nor": [
+        {"handle": {"$regex": "teste", "$options": "i"}},
+        {"handle": {"$regex": "^test_", "$options": "i"}},
+        {"handle": {"$regex": "^e2e", "$options": "i"}},
+        {"title": {"$regex": "^TEST_"}},
+        {"title": {"$regex": "^E2E"}},
+        {"title": {"$regex": "^refactor", "$options": "i"}},
+        {"caption": {"$regex": "^TEST_"}},
+        {"caption": {"$regex": "^E2E"}},
+    ]
+}
+
+
 # ---------- MODELS ----------
 
 class Challenge(BaseModel):
@@ -150,7 +165,7 @@ async def list_challenges(
 ):
     await _ensure_seed()
     cursor = (
-        db.challenges.find({}, {"_id": 0})
+        db.challenges.find({**MOCK_EXCLUDE_FILTER}, {"_id": 0})
         .sort("starts_at", -1)
         .limit(limit)
     )
@@ -158,7 +173,7 @@ async def list_challenges(
     out: List[ChallengeOut] = []
     for d in docs:
         sub_count = await db.challenge_submissions.count_documents(
-            {"challenge_id": d["id"]}
+            {**MOCK_EXCLUDE_FILTER, "challenge_id": d["id"]}
         )
         status = _status_for(d["starts_at"], d["ends_at"])
         out.append(
@@ -181,7 +196,9 @@ async def get_challenge(challenge_id: str):
         raise HTTPException(status_code=404, detail="Desafio não encontrado")
 
     sub_cursor = (
-        db.challenge_submissions.find({"challenge_id": challenge_id}, {"_id": 0})
+        db.challenge_submissions.find(
+            {**MOCK_EXCLUDE_FILTER, "challenge_id": challenge_id}, {"_id": 0}
+        )
         .sort([("votes", -1), ("created_at", -1)])
         .limit(200)
     )

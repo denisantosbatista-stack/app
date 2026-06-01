@@ -393,6 +393,7 @@ const SHAPES = [
   { id: "cylinder", label: "Cilindro", fields: ["d", "h"], hint: "Pingente, vela, geodo" },
   { id: "sphere", label: "Esfera", fields: ["d"], hint: "Bola, gemstone" },
   { id: "hemisphere", label: "Semiesfera", fields: ["d"], hint: "Cabochão, brincos" },
+  { id: "quadrado", label: "Quadrado", fields: ["w", "p", "h"], hint: "Bandeja quadrada, base com profundidade" },
   { id: "box", label: "Retângulo", fields: ["l", "w", "h"], hint: "Bandeja, quadro" },
   { id: "cube", label: "Cubo", fields: ["l"], hint: "Cubo cristal, peso de papel" },
   { id: "torus", label: "Anel (toro)", fields: ["d", "tube"], hint: "Anel, argola" },
@@ -402,16 +403,18 @@ const FIELD_LABELS = {
   d: "Diâmetro (cm)",
   l: "Comprimento (cm)",
   w: "Largura (cm)",
+  p: "Profundidade (cm)",
   h: "Altura (cm)",
   tube: "Espessura do tubo (cm)",
 };
 
 function pieceVolumeMl(shape, dims) {
-  const { d = 0, l = 0, w = 0, h = 0, tube = 0 } = dims;
+  const { d = 0, l = 0, w = 0, p = 0, h = 0, tube = 0 } = dims;
   switch (shape) {
     case "cylinder": return Math.PI * Math.pow(d / 2, 2) * h;
     case "sphere": return (4 / 3) * Math.PI * Math.pow(d / 2, 3);
     case "hemisphere": return (2 / 3) * Math.PI * Math.pow(d / 2, 3);
+    case "quadrado": return w * p * h;
     case "box": return l * w * h;
     case "cube": return Math.pow(l, 3);
     case "torus": return 2 * Math.pow(Math.PI, 2) * (d / 2) * Math.pow(tube / 2, 2);
@@ -421,7 +424,7 @@ function pieceVolumeMl(shape, dims) {
 
 function MeasureMode({ compact }) {
   const [shape, setShape] = useState("cylinder");
-  const [dims, setDims] = useState({ d: 4, l: 10, w: 6, h: 1.5, tube: 0.8 });
+  const [dims, setDims] = useState({ d: 4, l: 10, w: 6, p: 6, h: 1.5, tube: 0.8 });
   const [cavities, setCavities] = useState(1);
   const [batchMl, setBatchMl] = useState(100);
   const [wastePct, setWastePct] = useState(10);

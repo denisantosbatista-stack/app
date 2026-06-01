@@ -26,6 +26,20 @@ router = APIRouter(prefix="/api/marketplace", tags=["marketplace"])
 ALLOWED_TYPES = {"molde", "curso", "preset", "ebook", "ferramenta", "outro"}
 
 
+# Filtro anti-mock — exclui itens de teste/seed das listagens públicas
+MOCK_EXCLUDE_FILTER: dict = {
+    "$nor": [
+        {"handle": {"$regex": "teste", "$options": "i"}},
+        {"handle": {"$regex": "^test_", "$options": "i"}},
+        {"handle": {"$regex": "^e2e", "$options": "i"}},
+        {"title": {"$regex": "^TEST_"}},
+        {"title": {"$regex": "^E2E"}},
+        {"title": {"$regex": "^refactor", "$options": "i"}},
+        {"tags": {"$in": ["test", "teste", "e2e", "refactor"]}},
+    ]
+}
+
+
 class MarketItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:12])
@@ -63,11 +77,14 @@ async def list_items(
     skip: int = Query(0, ge=0),
 ):
     query: dict = {}
-    if type and type in ALLOWED_TYPES:
-        query["type"] = type
     h = normalize_handle(handle)
     if h:
+        # quando um handle específico é solicitado, não aplica filtro anti-mock
         query["handle"] = h
+    else:
+        query = {**MOCK_EXCLUDE_FILTER}
+    if type and type in ALLOWED_TYPES:
+        query["type"] = type
     if q and q.strip():
         # busca simples case-insensitive no título
         query["title"] = {"$regex": q.strip()[:60], "$options": "i"}

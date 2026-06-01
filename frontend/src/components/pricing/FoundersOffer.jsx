@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Sparkles, Crown, Lock } from "lucide-react";
@@ -8,15 +8,47 @@ import { Sparkles, Crown, Lock } from "lucide-react";
  *
  * Aparece logo abaixo do hero da página Pricing. Tem ar de “convite”
  * (não promoção agressiva): paleta de preto + dourado, vidro fosco e
- * micro-animação suave. O contador atual é estimado client-side; quando
- * houver endpoint de tracking, basta substituir SEATS_TAKEN.
+ * micro-animação suave. Faz fetch dinâmico de `/api/waitlist/count?categoria=fundadoras`
+ * com fallback silencioso para o número mock (97) caso a API falhe ou
+ * retorne dado inválido — assim a UI nunca exibe "0 de 100" em produção.
  */
 const TOTAL_SEATS = 100;
-const SEATS_TAKEN = 97; // mock até endpoint real existir
+const FALLBACK_SEATS_TAKEN = 97; // exibido enquanto a API responde / em caso de erro
+const API_BASE = process.env.REACT_APP_BACKEND_URL || "";
 
 export default function FoundersOffer() {
-  const remaining = Math.max(0, TOTAL_SEATS - SEATS_TAKEN);
-  const progress = Math.min(100, (SEATS_TAKEN / TOTAL_SEATS) * 100);
+  const [seatsTaken, setSeatsTaken] = useState(FALLBACK_SEATS_TAKEN);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!API_BASE) return; // sem backend configurado, mantém fallback
+        const res = await fetch(
+          `${API_BASE}/api/waitlist/count?categoria=fundadoras`,
+          { credentials: "omit" }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const raw = Number(data?.count);
+        if (!Number.isFinite(raw) || raw < 0) return;
+        // Degradação silenciosa: se a API ainda não tem inscritos, mantemos
+        // o número estético (97) — nunca exibimos "0/100".
+        if (raw < FALLBACK_SEATS_TAKEN) return;
+        if (!cancelled) {
+          setSeatsTaken(Math.min(TOTAL_SEATS, raw));
+        }
+      } catch {
+        // Fallback silencioso — mantém FALLBACK_SEATS_TAKEN
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const remaining = Math.max(0, TOTAL_SEATS - seatsTaken);
+  const progress = Math.min(100, (seatsTaken / TOTAL_SEATS) * 100);
 
   return (
     <section

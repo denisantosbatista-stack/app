@@ -269,13 +269,6 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <Link
-            to="/studio"
-            className="btn-gold px-5 py-2.5 rounded-sm text-xs tracking-[0.18em] uppercase"
-            data-testid="cta-studio-nav"
-          >
-            ✦ Criar Paleta
-          </Link>
           <button
             type="button"
             onClick={handleDownloadSource}
@@ -463,7 +456,7 @@ export default function Navbar() {
                 className="btn-gold inline-flex px-5 py-2.5 rounded-sm text-xs tracking-[0.18em] uppercase"
                 data-testid="mobile-cta-studio"
               >
-                ✦ Criar Paleta
+                ✦ Studio de Criação
               </Link>
 
               {/* Auth area (mobile) — bloco condicional único */}

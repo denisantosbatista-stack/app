@@ -27,22 +27,24 @@ function saveLiked(set) {
 }
 
 // value = tag persistida (lowercase, sem acento — para filtro no backend)
-// label = exibição em CAIXA ALTA com acentuação PT-BR
+// label = exibição em sentence case com acentuação PT-BR
 const POPULAR_TAGS = [
-  { value: "minimalista", label: "MINIMALISTA" },
-  { value: "joalheria", label: "JOALHERIA" },
-  { value: "geodo", label: "GEODO" },
-  { value: "oceano", label: "OCEANO" },
-  { value: "floral", label: "FLORAL" },
-  { value: "fluido", label: "FLUIDO" },
-  { value: "cosmico", label: "CÓSMICO" },
-  { value: "natural", label: "NATURAL" },
+  { value: "minimalista", label: "Minimalista" },
+  { value: "joalheria", label: "Joalheria" },
+  { value: "geodo", label: "Geodo" },
+  { value: "oceano", label: "Oceano" },
+  { value: "floral", label: "Floral" },
+  { value: "fluido", label: "Fluido" },
+  { value: "cosmico", label: "Cósmico" },
+  { value: "natural", label: "Natural" },
 ];
 
 export default function Feed() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [posts, setPosts] = useState([]);
+  const [podcasts, setPodcasts] = useState([]);
+  const [view, setView] = useState("posts");
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState(null);
   const [liked, setLiked] = useState(loadLiked());
@@ -92,6 +94,26 @@ export default function Feed() {
 
   useEffect(() => {
     fetchPick();
+  }, []);
+
+  // Podcasts — fetch silencioso. Falha graciosamente: aba não renderiza se vazio/erro.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/podcasts?limit=3`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setPodcasts(data);
+        }
+      } catch {
+        /* silencioso */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Share tracking E2E — dispara em /feed?ref=share (fire-and-forget).
@@ -177,13 +199,49 @@ export default function Feed() {
       </motion.header>
 
       {/* Pick da Semana */}
-      {pick && !activeTag && <PickHero pick={pick} liked={liked.has(pick.id)} onLike={() => handleLike(pick)} />}
+      {pick && !activeTag && view === "posts" && <PickHero pick={pick} liked={liked.has(pick.id)} onLike={() => handleLike(pick)} />}
 
+      {/* View switcher (Posts / Podcasts) — só aparece se houver podcasts */}
+      {podcasts.length > 0 && (
+        <div className="flex gap-2 mb-6" role="tablist" data-testid="feed-view-tabs">
+          <button
+            onClick={() => setView("posts")}
+            role="tab"
+            aria-selected={view === "posts"}
+            className={`text-xs px-4 py-2 rounded-sm border transition-colors tracking-[0.04em] ${
+              view === "posts"
+                ? "border-gold bg-gold/10 text-gold"
+                : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
+            }`}
+            data-testid="feed-view-posts"
+          >
+            Posts
+          </button>
+          <button
+            onClick={() => setView("podcasts")}
+            role="tab"
+            aria-selected={view === "podcasts"}
+            className={`text-xs px-4 py-2 rounded-sm border transition-colors tracking-[0.04em] ${
+              view === "podcasts"
+                ? "border-gold bg-gold/10 text-gold"
+                : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
+            }`}
+            data-testid="feed-view-podcasts"
+          >
+            Podcasts
+          </button>
+        </div>
+      )}
+
+      {view === "podcasts" ? (
+        <PodcastList podcasts={podcasts} />
+      ) : (
+        <>
       {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-8" data-testid="feed-tags">
         <button
           onClick={() => setActiveTag(null)}
-          className={`text-xs px-3 py-1.5 rounded-sm border transition-colors uppercase tracking-[0.18em] ${
+          className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.04em] ${
             activeTag === null
               ? "border-gold bg-gold/10 text-gold"
               : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
@@ -196,7 +254,7 @@ export default function Feed() {
           <button
             key={t.value}
             onClick={() => setActiveTag(t.value)}
-            className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.18em] inline-flex items-center gap-1 ${
+            className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.04em] inline-flex items-center gap-1 ${
               activeTag === t.value
                 ? "border-gold bg-gold/10 text-gold"
                 : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
@@ -287,15 +345,7 @@ function PickHero({ pick, liked, onLike }) {
             className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-[1.6s] ease-out"
             data-testid="feed-pick-image"
           />
-          {Array.isArray(pick.tags) && pick.tags.includes("exemplo") && (
-            <div
-              className="absolute top-3 left-3 bg-gold/95 text-ink-text text-[10px] tracking-[0.24em] uppercase px-2.5 py-1 rounded-sm shadow-sm"
-              data-testid={`feed-pick-example-badge-${pick.id}`}
-              title="Conteúdo de demonstração curado pela equipe LindArt"
-            >
-              Exemplo
-            </div>
-          )}
+          {Array.isArray(pick.tags) && false ? null : null}
         </Link>
 
         <div className="p-7 md:p-10 flex flex-col justify-between gap-6">
@@ -396,14 +446,8 @@ function PostCard({ post, liked, onLike }) {
           loading="lazy"
           className="w-full h-auto object-cover block"
         />
-        {Array.isArray(post.tags) && post.tags.includes("exemplo") && (
-          <div
-            className="absolute top-2 left-2 bg-gold/95 text-ink-text text-[10px] tracking-[0.22em] uppercase px-2 py-0.5 rounded-sm shadow-sm"
-            data-testid={`feed-post-example-badge-${post.id}`}
-            title="Conteúdo de demonstração curado pela equipe LindArt"
-          >
-            Exemplo
-          </div>
+        {Array.isArray(post.tags) && false && (
+          <span data-testid={`feed-post-example-badge-${post.id}`} />
         )}
         <button
           onClick={onLike}

@@ -255,7 +255,7 @@ function FilterChip({ active, onClick, children, testId }) {
   return (
     <button
       onClick={onClick}
-      className={`text-xs px-3 py-1.5 rounded-sm border transition-colors uppercase tracking-[0.18em] inline-flex items-center gap-1.5 ${
+      className={`text-xs px-3 py-1.5 rounded-sm border transition-colors tracking-[0.04em] inline-flex items-center gap-1.5 ${
         active
           ? "border-gold bg-gold/10 text-gold"
           : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
@@ -310,15 +310,6 @@ function ItemCard({ item, onOpen }) {
           <Icon className="w-3 h-3" />
           {TYPE_LABEL[item.type] || "Item"}
         </div>
-        {Array.isArray(item.tags) && item.tags.includes("exemplo") && (
-          <div
-            className="absolute top-2 right-2 bg-gold/95 text-ink-text text-[10px] tracking-[0.22em] uppercase px-2 py-1 rounded-sm shadow-sm"
-            data-testid={`market-example-badge-${item.id}`}
-            title="Item de demonstração curado pela equipe LindArt"
-          >
-            Exemplo
-          </div>
-        )}
       </div>
       <div className="p-3 flex flex-col gap-2 flex-1">
         <h3 className="text-sm text-zinc-900 leading-tight line-clamp-2">{item.title}</h3>

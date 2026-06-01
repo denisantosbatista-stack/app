@@ -31,7 +31,7 @@ logger = logging.getLogger("lindart.waitlist")
 router = APIRouter(prefix="/api/waitlist", tags=["waitlist"])
 
 
-VALID_CATEGORIAS = {"aneis", "luminarias", "bandejas", "geodo", "pingentes", "outros"}
+VALID_CATEGORIAS = {"aneis", "luminarias", "bandejas", "geodo", "pingentes", "outros", "fundadoras"}
 _CATEGORIA_RE = re.compile(r"[a-z0-9]{2,30}")
 
 

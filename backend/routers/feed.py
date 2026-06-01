@@ -24,6 +24,20 @@ from .auth import get_current_user
 router = APIRouter(prefix="/api/feed", tags=["feed"])
 
 
+# Filtro anti-mock — exclui posts de teste/seed das listagens públicas
+MOCK_EXCLUDE_FILTER: dict = {
+    "$nor": [
+        {"handle": {"$regex": "teste", "$options": "i"}},
+        {"handle": {"$regex": "^test_", "$options": "i"}},
+        {"handle": {"$regex": "^e2e", "$options": "i"}},
+        {"title": {"$regex": "^TEST_"}},
+        {"title": {"$regex": "^E2E"}},
+        {"title": {"$regex": "^refactor", "$options": "i"}},
+        {"tags": {"$in": ["test", "teste", "e2e", "refactor"]}},
+    ]
+}
+
+
 class FeedPost(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: uuid.uuid4().hex[:12])
@@ -57,16 +71,16 @@ async def pick_of_the_week():
     from datetime import timedelta
     cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
     doc = await db.feed_posts.find_one(
-        {"created_at": {"$gte": cutoff}, "likes": {"$gt": 0}},
+        {**MOCK_EXCLUDE_FILTER, "created_at": {"$gte": cutoff}, "likes": {"$gt": 0}},
         {"_id": 0},
         sort=[("likes", -1), ("created_at", -1)],
     )
     if not doc:
         # fallback: post mais recente que tenha qualquer like (ou último publicado)
         doc = await db.feed_posts.find_one(
-            {"likes": {"$gt": 0}}, {"_id": 0}, sort=[("likes", -1)]
+            {**MOCK_EXCLUDE_FILTER, "likes": {"$gt": 0}}, {"_id": 0}, sort=[("likes", -1)]
         ) or await db.feed_posts.find_one(
-            {}, {"_id": 0}, sort=[("created_at", -1)]
+            {**MOCK_EXCLUDE_FILTER}, {"_id": 0}, sort=[("created_at", -1)]
         )
     return FeedPost(**doc) if doc else None
 
@@ -78,10 +92,11 @@ async def list_feed(
     limit: int = Query(60, ge=1, le=120),
     skip: int = Query(0, ge=0),
 ):
-    query: dict = {}
+    query: dict = {**MOCK_EXCLUDE_FILTER}
     h = normalize_handle(handle)
     if h:
-        query["handle"] = h
+        # quando um handle específico é solicitado, não aplica filtro anti-mock
+        query = {"handle": h}
     if tag:
         query["tags"] = tag.lower()
     cursor = (
