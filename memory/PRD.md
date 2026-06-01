@@ -60,6 +60,15 @@ App em produção com backend FastAPI + frontend React + MongoDB. Última rodada
 - T11 — categorias sentence case ✅
 - T12 — MockupShowcase sem badges antigos ✅
 
+
+## [2026-06-01] Aba 🎙 Podcasts no Feed
+- Aba "🎙 Podcasts" no `Feed.jsx` agora sempre visível ao lado de "Posts" (antes só renderizava com dados).
+- Fetch lazy de `GET /api/podcasts` ao ativar a aba, com estado `podcastsLoading`/`podcastsLoaded`.
+- Grid responsivo 1/2 colunas via `PodcastCard`, link "Ver todos os episódios →" → `/posts`.
+- Empty state amigável: "Episódios em breve — fique de olho nas conversas do ateliê. 🎙".
+- Erros tratados silenciosamente (cai em empty state). Apenas `Feed.jsx` alterado.
+- T1–T6 validados via Playwright + curl `/api/podcasts`.
+
 ## Backlog / P1
 - Testes automatizados pytest em `/app/backend/tests` para `list_palettes` (filtro, dedup, sort)
 - Adicionar `Cypress`/`Playwright` cobrindo T6–T16 visualmente

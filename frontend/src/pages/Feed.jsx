@@ -10,8 +10,34 @@ import FeedPostsView from "../components/FeedPostsView";
 import PodcastCard from "../components/PodcastCard";
 import { Headphones } from "lucide-react";
 
-function PodcastList({ podcasts }) {
-  if (!podcasts || podcasts.length === 0) return null;
+function PodcastList({ podcasts, loading }) {
+  if (loading) {
+    return (
+      <section data-testid="feed-podcasts-section">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="feed-podcasts-skeleton">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="h-40 border border-black/[0.06] bg-ink-surface rounded-sm animate-pulse"
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+  if (!podcasts || podcasts.length === 0) {
+    return (
+      <section
+        data-testid="feed-podcasts-empty"
+        className="border border-black/[0.06] bg-ink-surface rounded-sm p-10 md:p-14 text-center"
+      >
+        <Headphones className="w-8 h-8 mx-auto text-gold/70 mb-3" />
+        <p className="text-zinc-700 text-sm md:text-base italic max-w-md mx-auto leading-relaxed">
+          Episódios em breve — fique de olho nas conversas do ateliê. 🎙
+        </p>
+      </section>
+    );
+  }
   return (
     <section data-testid="feed-podcasts-section">
       <div className="flex items-end justify-between mb-5">
@@ -23,18 +49,20 @@ function PodcastList({ podcasts }) {
             Episódios recentes
           </h2>
         </div>
-        <Link
-          to="/podcasts"
-          className="text-[11px] tracking-[0.22em] uppercase text-gold hover:underline whitespace-nowrap"
-          data-testid="feed-podcasts-see-all"
-        >
-          Ver todos →
-        </Link>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {podcasts.map((p) => (
           <PodcastCard key={p.id} podcast={p} />
         ))}
+      </div>
+      <div className="mt-6 text-center">
+        <Link
+          to="/podcasts"
+          className="text-[11px] tracking-[0.22em] uppercase text-gold hover:underline inline-flex items-center gap-1.5"
+          data-testid="feed-podcasts-see-all"
+        >
+          Ver todos os episódios →
+        </Link>
       </div>
     </section>
   );
@@ -67,6 +95,8 @@ export default function Feed() {
   const { isAuthenticated } = useAuth();
   const [posts, setPosts] = useState([]);
   const [podcasts, setPodcasts] = useState([]);
+  const [podcastsLoading, setPodcastsLoading] = useState(false);
+  const [podcastsLoaded, setPodcastsLoaded] = useState(false);
   const [view, setView] = useState("posts");
   const [loading, setLoading] = useState(true);
   const [activeTag, setActiveTag] = useState(null);
@@ -119,25 +149,32 @@ export default function Feed() {
     fetchPick();
   }, []);
 
-  // Podcasts — fetch silencioso. Falha graciosamente: aba não renderiza se vazio/erro.
+  // Podcasts — fetch ao ativar a aba (lazy). Falha graciosamente: empty state com mensagem amigável.
   useEffect(() => {
+    if (view !== "podcasts" || podcastsLoaded) return;
     let cancelled = false;
     (async () => {
+      setPodcastsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/podcasts?limit=3`);
-        if (!res.ok) return;
+        const res = await fetch(`${API_BASE}/api/podcasts`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!cancelled && Array.isArray(data) && data.length > 0) {
+        if (!cancelled && Array.isArray(data)) {
           setPodcasts(data);
         }
       } catch {
-        /* silencioso */
+        if (!cancelled) setPodcasts([]);
+      } finally {
+        if (!cancelled) {
+          setPodcastsLoading(false);
+          setPodcastsLoaded(true);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [view, podcastsLoaded]);
 
   // Share tracking E2E — dispara em /feed?ref=share (fire-and-forget).
   // Identifica post específico via ?post=<id> quando disponível; senão "list".
@@ -228,40 +265,38 @@ export default function Feed() {
       {/* Pick da Semana */}
       {pick && !activeTag && view === "posts" && <PickHero pick={pick} liked={liked.has(pick.id)} onLike={() => handleLike(pick)} />}
 
-      {/* View switcher (Posts / Podcasts) — só aparece se houver podcasts */}
-      {podcasts.length > 0 && (
-        <div className="flex gap-2 mb-6" role="tablist" data-testid="feed-view-tabs">
-          <button
-            onClick={() => setView("posts")}
-            role="tab"
-            aria-selected={view === "posts"}
-            className={`text-xs px-4 py-2 rounded-sm border transition-colors tracking-[0.04em] ${
-              view === "posts"
-                ? "border-gold bg-gold/10 text-gold"
-                : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
-            }`}
-            data-testid="feed-view-posts"
-          >
-            Posts
-          </button>
-          <button
-            onClick={() => setView("podcasts")}
-            role="tab"
-            aria-selected={view === "podcasts"}
-            className={`text-xs px-4 py-2 rounded-sm border transition-colors tracking-[0.04em] ${
-              view === "podcasts"
-                ? "border-gold bg-gold/10 text-gold"
-                : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
-            }`}
-            data-testid="feed-view-podcasts"
-          >
-            Podcasts
-          </button>
-        </div>
-      )}
+      {/* View switcher (Posts / Podcasts) — sempre visível */}
+      <div className="flex gap-2 mb-6" role="tablist" data-testid="feed-view-tabs">
+        <button
+          onClick={() => setView("posts")}
+          role="tab"
+          aria-selected={view === "posts"}
+          className={`text-xs px-4 py-2 rounded-sm border transition-colors tracking-[0.04em] ${
+            view === "posts"
+              ? "border-gold bg-gold/10 text-gold"
+              : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
+          }`}
+          data-testid="feed-view-posts"
+        >
+          Posts
+        </button>
+        <button
+          onClick={() => setView("podcasts")}
+          role="tab"
+          aria-selected={view === "podcasts"}
+          className={`text-xs px-4 py-2 rounded-sm border transition-colors tracking-[0.04em] inline-flex items-center gap-1.5 ${
+            view === "podcasts"
+              ? "border-gold bg-gold/10 text-gold"
+              : "border-black/[0.08] bg-ink-surface text-zinc-600 hover:border-gold/50"
+          }`}
+          data-testid="feed-view-podcasts"
+        >
+          🎙 Podcasts
+        </button>
+      </div>
 
       {view === "podcasts" ? (
-        <PodcastList podcasts={podcasts} />
+        <PodcastList podcasts={podcasts} loading={podcastsLoading} />
       ) : (
         <>
           <FeedPostsView
