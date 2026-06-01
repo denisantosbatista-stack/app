@@ -32,6 +32,17 @@ visual, calculadora de proporções, marketplace e feed comunitário.
   - `AuthContext` escuta `lindart:auth-expired` e desloga o usuário automaticamente.
   - Pilotos migrados: `Feed.jsx` (POST /feed) e `Marketplace.jsx` (POST /marketplace) agora usam `authFetch`.
   - Smoke test E2E: modal abre, form submete, lead persistido no Mongo, sucesso visível.
+- P0 N1–N5 + UI cleanups + filtros mock + waitlist counter (Iter 43 — Feb 2026):
+  - **N1** — `Login.jsx`: link "voltar" → `/` (`data-testid="login-back-home-link"`).
+  - **N2** — `Calculator.jsx` (MeasureMode/`box` = L×W×H) e `CalculatorPanel.jsx` (Quadrado) com volume em ml.
+  - **N3** — Navbar: removido botão duplicado "Criar paleta".
+  - **N4** — `OpeningTour.jsx`: gerencia apenas a chave `lindart.tour.v1.seen` (NUNCA `localStorage.clear()`). Validado preservando keys arbitrárias.
+  - **N5** — `Feed.jsx`: fetch silencioso `GET /api/podcasts?limit=3`. Aba "Podcasts" só renderiza se `podcasts.length > 0`; 404/erro = degradação silenciosa.
+  - **UI cleanups** — `Feed.jsx` + `Marketplace.jsx`: badges "Exemplo" removidos, filtros/tags em sentence case, dedupe ativo.
+  - **Backend filters** — `routers/feed.py`, `routers/marketplace.py`, `routers/challenges.py`: `$nor`+`$regex` para `teste|TEST_|E2E|refactor` em `handle/title/caption/tags` (case-insensitive).
+  - **Waitlist counter** — `GET /api/waitlist/count?categoria=fundadoras` (`{ok,categoria,count}`); `FoundersOffer.jsx` faz fallback silencioso para `FALLBACK_SEATS_TAKEN = 97`.
+  - Patches emergenciais aplicados pelo testing agent: Feed.jsx fragmento JSX fechado (`</>`), FoundersOffer.jsx `SEATS_TAKEN`→`seatsTaken` (linha 139).
+  - testing_agent_v3_fork iter 43: **100% pass** (backend 11/11, frontend 9/9). Report: `/app/test_reports/iteration_43.json`. Pytest: `/app/backend/tests/test_iter43_p0_fixes.py`.
 - Validação Fal.ai SVD + Leads + authFetch (Iter 41 — Feb 2026):
   - `svd_video.py`: tratamento de erro melhorado — captura `e.response.text` da `httpx.HTTPStatusError` para detectar `Exhausted balance`/`User is locked` do fal.ai e devolver mensagem PT-BR amigável (`"Saldo da conta fal.ai esgotado. Recarregue em fal.ai/dashboard/billing…"`) com `http_status=402`, em vez de vazar `"Client error '403 Forbidden'"`.
   - `MixerSwirl.jsx`: toast distingue erro de saldo (mostra `detail` direto) de erro genérico (`Falha IA: …`).
@@ -61,9 +72,11 @@ visual, calculadora de proporções, marketplace e feed comunitário.
 - Tracking Analytics/Reach via `?ref=share` — ✅ implementado em `routers/analytics.py` (`POST /api/analytics/hit`, `GET /api/users/me/analytics`).
 
 ### P3 / Refactor
+- `Calculator.jsx` ainda é o "fat component" canônico das 3 abas. `CalculatorPanel.jsx` foi criado para "Quadrado" (N2) mas duplica parte da lógica de MeasureMode. **Pendente**: refatorar `Calculator.jsx` para virar wrapper fino sobre `CalculatorPanel.jsx`.
 - `authFetch()` disponível em `utils/api.js` e adotado em `Feed.jsx` e `Marketplace.jsx` (pilotos). Pendente: migrar demais componentes (`PublicProfile.jsx`, `PublicDNAPage.jsx`, `OnboardingVideo.jsx`, `DNAShareModal.jsx`, `MixerSwirl.jsx`) conforme oportunidade.
 
 ### Phase 4 (pós-lançamento)
+- Backend `GET /api/podcasts` ainda não implementado (intencional). Frontend já degrada silenciosamente — quando o endpoint existir, basta retornar `[]` ou `[{id,title,cover,audio_url,...}]` e a aba aparece.
 - ✅ Integração com Fal.ai Video Generation (SVD) implementada em `routers/svd_video.py`. UI de geração de vídeo a partir do Studio ainda pode receber polimento futuro.
 
 ## Health
