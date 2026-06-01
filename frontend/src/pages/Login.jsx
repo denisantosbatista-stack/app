@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useAuth, formatApiErrorDetail } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,17 @@ export default function Login() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
+        <div className="mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs tracking-[0.22em] uppercase text-ink-muted hover:text-gold transition-colors"
+            data-testid="login-back-home-link"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Voltar para o início
+          </Link>
+        </div>
+
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-3 text-gold">
             <Sparkles className="w-4 h-4" />
