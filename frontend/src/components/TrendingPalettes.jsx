@@ -5,10 +5,10 @@ import { isDark } from "@/utils/color";
 import { Flame } from "lucide-react";
 
 export default function TrendingPalettes() {
-  const featured = PRESET_PALETTES.slice(0, 6);
+  const featured = PRESET_PALETTES.slice(0, 3);
 
   return (
-    <section className="py-12 md:py-20 px-6 md:px-10 max-w-7xl mx-auto" data-testid="trending-palettes">
+    <section className="py-24 md:py-32 px-6 md:px-10 max-w-7xl mx-auto" data-testid="trending-palettes">
       <motion.div
         initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
         whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}

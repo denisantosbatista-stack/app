@@ -1,64 +1,54 @@
-# PRD — LindArt Studio Premium (Resin Studio)
+# PRD — 3D Resin Studio (LindArt)
 
 ## Problema original
-Studio visual para resineiras: paletas, calculadora de proporções, comparador (A vs B), IA mentora, feed/marketplace/desafios, planos pagos. Stack: React (frontend) + FastAPI (backend) + MongoDB.
+Aplicação web full-stack (React + FastAPI + MongoDB) — atelê digital para criação,
+visualização e exportação de paletas de cores para resina epóxi 3D, com Studio
+visual, calculadora de proporções, marketplace e feed comunitário.
 
-## Status atual (Fev 2026)
+## User personas
+- **Artista de resina**: cria paletas, calcula proporções, exporta arquivos.
+- **Cliente/visitante**: navega tendências, marketplace e inspirações.
 
-### ✅ Sprint P1 — Polish UX/UI (Fev 2026) — CONCLUÍDO
-- **Home CTA**: "✦ Criar minha primeira paleta" validado em `Hero.jsx`.
-- **Pricing (`/planos`)**: três tiers `Essencial R$47 / Pro R$97 / Studio R$197` em `pricingPlans.js`; badge "PREÇO DE LANÇAMENTO" em `Pricing.jsx`; contador "97 de 100 vagas" em `FoundersOffer.jsx`.
-- **Calculadora (`/calculadora`)**: sub-rotas (lucro, precificação, medidas) navegam sem 404 nem console errors.
-- **Compare 3D (`/compare`) — Bug fix crítico**: o plugin Babel `visual-edits` do Emergent injetava atributos `x-line-number` / `x-file-name` em todo elemento JSX. Wrappers do `@react-three/drei` (`Environment`, `OrbitControls`, `ContactShadows`) repassavam essas props para intrínsecos R3F via `<primitive>`, disparando `R3F: Cannot set "x-line-number"` em `applyProps`. **Fix**: TODOS os filhos do `<Canvas>` em `CompareView3D.jsx` agora são criados via `React.createElement(h, ...)` em vez de JSX. Antes: 8 pageerrors. Depois: 0 erros (validado por `testing_agent_v3_fork` iter 40, 100% green). Adicionado comment block alertando contribuidores a NÃO usar JSX dentro do `<Canvas>`.
-- **Validação automatizada**: `iteration_40.json` reporta 6/6 critérios de aceitação OK; nav regression Home→Compare→Pricing→Calculadora com 0 erros.
+## Estado atual (Feb/2026)
 
-### ✅ Implementado / Estável
-- **Backdrops atmosféricos das Paletas Trending (Fev 2026)**: removidas URLs externas do Unsplash que retornavam imagens não-relacionadas (profissional de laboratório, óculos, paisagens). `PALETTE_BACKDROPS` em `/app/frontend/src/data/palettes.js` gera gradientes radiais derivados das próprias cores da paleta + textura cristalina via `repeating-linear-gradient`. Coerência cromática 100% garantida.
-- **Badge "EXEMPLO" em conteúdo seed (Fev 2026)**: dourado semi-transparente `rgba(212,175,55,0.85)`, texto branco, canto superior-esquerdo. Aplicado em `TrendingPalettes.jsx` (6 cards) e `MockupShowcase.jsx` (3 cards). data-testid: `exemplo-badge-{id}` e `mockup-exemplo-badge-{id}`.
-- Visualizador 2D de resina (ResinVisualizer) — paletas claras corrigidas (sem blob branco).
-- ResinVisualizer canvas 2D com blend modes corretos.
-- Navbar com bloco condicional único `!isAuthenticated ? (Entrar+Cadastrar) : (Avatar+Menu)`.
-- Cor `bone` adicionada ao tailwind (`#F4EFE6` / `bone-warm #EFE6D4`) — corrige botão "Cadastrar" que renderizava preto.
-- Dropdown "Minha conta" filtra itens por `authRequired` — para não autenticados mostra apenas "Ver planos" e "Privacidade".
-- Rotas `/compare` e `/collections` protegidas por `RequireAuth` com toast `react-hot-toast` "Faça login para acessar" e redirect `/login?next=...`.
-- CompareView3D existe mas testes automatizados ainda travam por causa do canvas 3D.
-- **Studio "Tipo de peça" reestruturado (Fev 2026)**: categoria `Mesa & Casa` removida; itens (Bandeja, Porta-copo, Sousplat, Luminária, Folha, Pena, Coração, Prisma, Cubo, Vaso, Castiçal, Tigela, Porta-joias, Cachepô) migrados para `Decorativo`; nova categoria `Objetos Escolares` (Caderno, Caderneta, Caneta, Régua, Marcador, Chaveiro — Marcador/Chaveiro só aqui). Thumbnails 48×48px com nome embaixo. Arquivos: `/app/frontend/src/data/palettes.js`, `/app/frontend/src/components/PieceSelectors.jsx`, `/app/frontend/src/components/PieceShape.jsx`.
-- **Galeria 3D dinâmica (Productions3D)**: tabs fixas Geodo/Bandeja/Colar removidas; o viewer mapeia automaticamente a peça selecionada na biblioteca para a melhor das 3 formas 3D (geodo/bandeja/colar) via `mapPieceTo3DShape()`; badge no canto exibe a peça ativa.
+### Concluído
+- Seed Content (`backend/routers/seed_content.py`) ativo no startup — `feed_posts` & `marketplace_items`.
+- Rota canônica da Calculadora: `/calculadora/medidas` → redirect 301 → `/calculadora/medidas-3d`.
+- Home polish (Feb 2026):
+  - Removida a seção "Ferramentas" do `Home.jsx`.
+  - `TrendingPalettes`: reduzido de 6 → 3 paletas em destaque (`slice(0, 3)`).
+  - `MockupShowcase`: confirmado em 3 cards (Relógio de Resina, Bandeja Premium, Geodo Decorativo).
+  - Espaçamento vertical interno das seções dobrado: `py-12 md:py-20` → `py-24 md:py-32` em `TrendingPalettes` e `MockupShowcase`.
 
-### ✅ Sprint P0 — Seed + Canonização URL (Fev 2026) — CONCLUÍDO
-- **Seed Content** (`/app/backend/routers/seed_content.py`): 3 posts Feed (`Ouro Líquido`, `Oceano Mineral`, `Geode dourada`) + 2 itens Marketplace (`Molde Geodo 28cm`, `E-book Precificação`) sob `@lindart` com `verified=True` e tag `exemplo`. Idempotente — só insere se a coleção `@lindart` estiver vazia. Chamado via `ensure_seed_content()` no `lifespan` de `server.py` (linha 64). Verificado em produção: `GET /api/feed` e `/api/marketplace` retornam os 3+2 itens com tags `["exemplo", ...]`.
-- **URL canônica Calculadora**: `/calculadora/medidas-3d` é o slug canônico (alinhado com o label visível "MEDIDAS 3D"). `/calculadora/medidas` continua aceito como alias legado e é normalizado via `navigate(..., { replace: true })` no `useEffect` de sync. Arquivo: `frontend/src/pages/Calculator.jsx` (`TAB_FROM_PATH` aceita ambos; `PATH_FROM_TAB.measure = "medidas-3d"`).
+### Arquitetura
+- **Frontend**: `/app/frontend/src/`
+  - `pages/`: Home, Feed, Marketplace, Studio, Compare, Pricing, Calculator
+  - `components/`: Hero, TrendingPalettes, MockupShowcase, ToolsGrid (não usado na Home)
+  - `data/palettes.js`: PRESET_PALETTES, MOCKUPS, PALETTE_BACKDROPS
+- **Backend**: `/app/backend/`
+  - `routers/seed_content.py`
+  - APIs: `GET /api/feed`, `GET /api/marketplace`
 
-### 🟡 P1 / 🔴 P0
-- (nenhum item ativo — sprints fechadas).
+### Integrações 3rd party
+- fal.ai (SVD) — requer chave do usuário (Phase 4, pós-lançamento)
+- Claude Sonnet 4.5 / Gemini Nano Banana / OpenAI Whisper — Emergent LLM Key
 
-### 🟢 P2/P3 — Backlog
-- **Compare 3D "Antes/Depois"**: slider arrastável sobre o render 3D para comparar paletas A vs B lado a lado de forma cinematográfica (gerar conteúdo compartilhável Instagram/TikTok).
-- OG Cards para compartilhamento de paletas (pós-launch).
-- Analytics `?ref=share` tracking.
-- Chip "v{n}" nas paletas do Studio.
-- Aplicar `RequireAuth` em `/studio`, `/calculator`, `/mixer` (decisão de produto).
-- Refatorar `Navbar.jsx` (470 linhas → quebrar em subcomponentes).
-- Centralizar `authFetch()`.
-- Fase 4: integração Fal.ai (Stable Video Diffusion 2.0) — pós-launch.
-- Considerar ESLint rule para impedir uso de JSX dentro de `<Canvas>` do R3F (prevenir regressão do bug do plugin `visual-edits`).
-- Pricing badge: texto-fonte é "Preço de lançamento" exibido em uppercase via Tailwind — se SSR/SEO importar, padronizar a string-fonte para "PREÇO DE LANÇAMENTO".
+## Backlog priorizado
 
-## Integrações 3rd-party
-- fal.ai (Stable Video Diffusion 2.0) — chave do usuário.
-- Claude Sonnet 4.5 / Gemini Nano Banana / OpenAI Whisper — Emergent LLM Key.
+### P1
+- Nenhum item P1 aberto no momento.
 
-## Arquivos chave
-- `/app/frontend/src/components/Navbar.jsx` (470 linhas — candidato a refactor)
-- `/app/frontend/src/components/RequireAuth.jsx`
-- `/app/frontend/src/contexts/AuthContext.jsx`
-- `/app/frontend/tailwind.config.js`
-- `/app/frontend/src/App.js`
-- `/app/backend/routers/seed_content.py` (vazio)
+### P2
+- OG Cards para compartilhamento de paletas em redes sociais.
+- Tracking Analytics/Reach via `?ref=share`.
 
-## Modelo de dados (Mongo)
-- `feed_posts`: `{ author_id, content, image, likes }`
-- `marketplace_items`: `{ title, price, tags, author_id }`
+### P3 / Refactor
+- Centralizar chamadas de API via `authFetch()` em todos os componentes do frontend.
 
-## Endpoints relevantes
-- `GET /api/auth/me`, `GET /api/feed`, `GET /api/marketplace`
+### Phase 4 (pós-lançamento)
+- Integração com Fal.ai Video Generation (SVD 2.0) — geração de vídeos a partir de paletas.
+
+## Health
+- Broken: None
+- Mocked: None
+- Last tested: Feb/2026 — Home polish validado via screenshot + asserts DOM.
