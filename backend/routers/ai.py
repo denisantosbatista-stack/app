@@ -33,9 +33,9 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
-from emergentintegrations.llm.openai import OpenAISpeechToText
-from emergentintegrations.llm.openai.text_to_speech import OpenAITextToSpeech
+# from emergentintegrations.llm.chat import ImageContent, LlmChat, UserMessage
+# from emergentintegrations.llm.openai import OpenAISpeechToText
+# from emergentintegrations.llm.openai.text_to_speech import OpenAITextToSpeech
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
