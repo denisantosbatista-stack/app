@@ -15,6 +15,7 @@ import {
   Share2,
 } from "lucide-react";
 import ShareSheet from "../components/ShareSheet";
+import { authFetch } from "@/utils/api";
 
 const API_BASE = (process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL);
 
